@@ -6,229 +6,282 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#F2F2F7">
-    <title>桌球追分 - 一屏版</title>
+    <title>桌球追分 (单机版)</title>
     <style>
         :root {
-            --bg-body: #F2F2F7;
-            --bg-card: #FFFFFF;
-            --text-primary: #000000;
-            --text-secondary: #8E8E93;
-            
-            --color-win: #007AFF;   
-            --color-gold-s: #FF9500; 
-            --color-gold-b: #AF52DE; 
-            --color-gold-9: #FFD60A; 
-            --color-foul: #FF3B30;   
-            --color-let: #FF2D55;    
-
-            --safe-top: env(safe-area-inset-top);
-            --safe-bottom: env(safe-area-inset-bottom);
+            --bg-body: #F2F2F7; --bg-card: #FFFFFF;
+            --c-primary: #007AFF; --c-gold-s: #FF9500; --c-gold-b: #AF52DE; --c-gold-9: #FFD60A; 
+            --c-foul: #FF3B30; --c-let: #FF2D55;    
+            --safe-top: env(safe-area-inset-top); --safe-bottom: env(safe-area-inset-bottom);
         }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
-            background-color: var(--bg-body);
-            margin: 0;
-            padding: 0;
-            /* 强制锁定屏幕高度，禁止滚动 */
-            height: 100vh; 
-            height: 100dvh; 
-            overflow: hidden; 
-            display: flex;
-            flex-direction: column;
-            /* 顶部避开灵动岛，底部预留一点空间 */
-            padding-top: max(10px, var(--safe-top));
-            padding-bottom: max(10px, var(--safe-bottom));
-            box-sizing: border-box;
-            -webkit-user-select: none;
+            background-color: var(--bg-body); margin: 0; padding: 0;
+            height: 100dvh; overflow: hidden; display: flex; flex-direction: column;
+            padding-top: max(10px, var(--safe-top)); padding-bottom: max(10px, var(--safe-bottom));
+            box-sizing: border-box; -webkit-user-select: none;
         }
-
-        /* 1. 顶部栏 (高度固定，尽量扁平) */
+        /* Header */
         header {
-            flex-shrink: 0;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
-            z-index: 10;
+            flex-shrink: 0; height: 44px; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 16px; position: relative;
         }
-
-        .header-title { font-size: 18px; font-weight: 700; opacity: 0.8; }
-
+        .header-left { display: flex; gap: 8px; z-index: 2; }
+        .icon-btn {
+            background: none; border: none; padding: 6px; color: var(--c-primary); 
+            display: flex; align-items: center; cursor: pointer; border-radius: 50%;
+        }
+        .icon-btn:active { background: rgba(0,0,0,0.05); }
+        
+        .header-center {
+            position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+            display: flex; flex-direction: column; align-items: center; z-index: 1; pointer-events: none;
+        }
         .toggle-box {
-            background: #E5E5EA; border-radius: 100px; padding: 2px; display: flex;
+            background: #E5E5EA; border-radius: 100px; padding: 2px; display: flex; pointer-events: auto;
         }
         .toggle-btn {
             border: none; background: none; padding: 2px 12px; border-radius: 100px;
-            font-size: 12px; font-weight: 600; color: var(--text-secondary);
+            font-size: 13px; font-weight: 600; color: #8E8E93; transition: all 0.2s;
         }
         .toggle-btn.active { background: #FFF; color: #000; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .reset-btn { border: none; background: none; color: var(--color-foul); font-size: 14px; font-weight: 600; }
+        .reset-btn { 
+            border: none; background: none; color: var(--c-foul); font-size: 15px; font-weight: 600; 
+            cursor: pointer; z-index: 2;
+        }
 
-        /* 2. 主内容区 (核心：占据剩余所有空间) */
+        .round-indicator-bar {
+            text-align: center; font-size: 13px; font-weight: 600; color: #8E8E93;
+            padding: 6px 0;
+        }
+
+        /* Main */
         main {
-            flex: 1; /* 自动撑满剩余高度 */
-            display: flex;
-            flex-direction: column;
-            justify-content: space-evenly; /* 卡片之间均匀分布 */
-            padding: 0 16px;
-            gap: 12px; /* 卡片间距 */
-            overflow: hidden; /* 防止内部溢出 */
-            padding-bottom: 10px;
+            flex: 1; display: flex; flex-direction: column; justify-content: space-evenly;
+            padding: 0 16px; gap: 10px; overflow: hidden; padding-bottom: 8px;
         }
-
-        /* 卡片样式 */
         .player-card {
-            background: var(--bg-card);
-            border-radius: 18px;
-            padding: 12px 16px; /* 紧凑内边距 */
-            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
-            display: flex;
-            flex-direction: column;
-            justify-content: center; /* 内容垂直居中 */
-            
-            /* 核心：让卡片有伸缩性，但不能无限小 */
-            flex: 1; 
-            min-height: 0; 
+            background: var(--bg-card); border-radius: 18px; padding: 10px 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            display: flex; flex-direction: column; justify-content: center; flex: 1; min-height: 0; 
         }
-
-        /* 头部：改为左右布局以节省垂直空间 */
         .card-header-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px; /* 名字和按钮的距离 */
-            flex-shrink: 0;
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-shrink: 0;
         }
-
-        .left-info { display: flex; align-items: center; gap: 8px; }
-        
+        .left-info { display: flex; align-items: center; gap: 10px; cursor: pointer; }
         .rank-num {
-            width: 20px; height: 20px; background: #F2F2F7; color: #999;
-            font-size: 11px; font-weight: 700; border-radius: 5px;
+            width: 24px; height: 24px; background: var(--c-primary); color: white; 
+            font-size: 14px; font-weight: 700; border-radius: 6px; 
             display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 122, 255, 0.3);
         }
-        
         .p-name { font-size: 17px; font-weight: 600; color: #333; }
+        .p-score { font-size: 34px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+        .score-p { color: #34C759; } .score-n { color: #FF3B30; } .score-z { color: #1C1C1E; }
 
-        /* 分数放在右侧，大字体 */
-        .p-score {
-            font-size: 32px; font-weight: 800; line-height: 1;
-            font-variant-numeric: tabular-nums;
-        }
-        .score-p { color: #34C759; }
-        .score-n { color: #FF3B30; }
-        .score-z { color: #1C1C1E; }
-
-        /* 按钮网格 */
         .btn-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(2, 1fr); /* 强制2行 */
-            gap: 6px;
-            flex: 1; /* 按钮区域占据卡片剩余空间 */
-            min-height: 0;
+            display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr);
+            gap: 6px; flex: 1; min-height: 0; 
         }
-
         .act-btn {
-            border: none; border-radius: 10px;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            cursor: pointer; position: relative;
-            padding: 0; /* 让Flex居中，不需要padding撑大 */
+            border: none; border-radius: 10px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; cursor: pointer; padding: 0;
         }
         .act-btn:active { opacity: 0.6; transform: scale(0.98); }
-
-        .btn-t { font-size: 13px; font-weight: 600; margin-bottom: 1px; }
-        .btn-s { font-size: 9px; opacity: 0.7; font-weight: 500; }
-
-        /* 颜色定义 */
-        .b-norm { background: #E1F0FF; color: var(--color-win); }
-        .b-sgold { background: #FFF3DC; color: var(--color-gold-s); }
-        .b-bgold { background: #F3E5F5; color: var(--color-gold-b); }
+        .btn-t { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+        .btn-s { font-size: 9px; opacity: 0.7; font-weight: 500; letter-spacing: -0.2px; }
+        .b-norm { background: #E1F0FF; color: var(--c-primary); }
+        .b-sgold { background: #FFF3DC; color: var(--c-gold-s); }
+        .b-bgold { background: #F3E5F5; color: var(--c-gold-b); }
         .b-gold9 { background: #FFFDE7; color: #9A7D0A; } 
-        .b-foul { background: #FFEEEE; color: var(--color-foul); }
-        .b-let { background: #FFF0F5; color: var(--color-let); }
+        .b-foul { background: #FFEEEE; color: var(--c-foul); }
+        .b-let { background: #FFF0F5; color: var(--c-let); }
 
-        /* 3. 底部撤销 (浮动或固定在最底) */
         footer {
-            flex-shrink: 0;
-            display: flex;
-            justify-content: center;
-            height: 40px; /* 固定高度 */
+            flex-shrink: 0; display: flex; justify-content: space-between;
+            padding: 0 16px; gap: 12px; height: 42px;
         }
-        
-        .undo-pill {
-            background: #FFF; border: 1px solid #E5E5EA;
-            padding: 0 20px; height: 36px; border-radius: 18px;
-            display: flex; align-items: center; gap: 6px;
-            font-size: 13px; font-weight: 600; color: var(--text-secondary);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        .footer-btn {
+            flex: 1; border-radius: 21px; display: flex; align-items: center; justify-content: center; gap: 6px;
+            font-size: 14px; font-weight: 600; border: none; cursor: pointer;
         }
+        .btn-undo { background: #FFF; color: #555; border: 1px solid #E5E5EA; }
+        .btn-save { background: #1C1C1E; color: #FFF; }
 
+        /* Modals */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px);
+            z-index: 100; display: none; opacity: 0; transition: opacity 0.25s;
+            justify-content: center; align-items: center;
+        }
+        .modal-overlay.show { display: flex; opacity: 1; }
+        .center-box {
+            background: #FFF; width: 300px; max-width: 90%; border-radius: 18px; 
+            padding: 20px; text-align: center; transform: scale(0.9); transition: transform 0.2s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-height: 80vh; overflow-y: auto;
+        }
+        .modal-overlay.show .center-box { transform: scale(1); }
+        .setting-opt {
+            background: #F2F2F7; padding: 10px; border-radius: 10px; margin-bottom: 8px;
+            display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+        }
+        .setting-opt.selected { background: #E1F0FF; border: 1px solid var(--c-primary); }
+
+        /* Stats Grid & Badges */
+        .res-stats { 
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 4px; 
+        }
+        .stat-badge {
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; padding: 4px 2px; border-radius: 4px; 
+            font-weight: 600; margin: 0; white-space: nowrap;
+        }
+        .sb-gold { background: #F3E5F5; color: var(--c-gold-b); }
+        .sb-small { background: #FFF3DC; color: var(--c-gold-s); }
+        .sb-g9 { background: #FFFDE7; color: #9A7D0A; }
+        .sb-win { background: #E1F0FF; color: var(--c-primary); }
+
+        .result-row { display: flex; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid #F2F2F7; }
+        .res-rank { font-size: 24px; width: 36px; padding-top: 0px; text-align: center;}
+        .res-name { flex: 1; text-align: left; font-weight: 700; font-size: 16px; margin-bottom: 4px;}
+        .res-score { font-weight: 800; font-size: 18px; }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="header-title">桌球追分</div>
-        <div class="toggle-box">
-            <button class="toggle-btn" id="mode2" onclick="switchMode(2)">2人</button>
-            <button class="toggle-btn active" id="mode3" onclick="switchMode(3)">3人</button>
+        <div class="header-left">
+            <button class="icon-btn" onclick="openSettings()">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
         </div>
+
+        <div class="header-center">
+            <div class="toggle-box">
+                <button class="toggle-btn" id="mode2" onclick="switchMode(2)">2人</button>
+                <button class="toggle-btn active" id="mode3" onclick="switchMode(3)">3人</button>
+            </div>
+        </div>
+
         <button class="reset-btn" onclick="resetGame()">重置</button>
     </header>
+    
+    <div id="roundDisplay" class="round-indicator-bar">第 0 回合</div>
 
-    <main id="container">
-        </main>
+    <main id="container"></main>
 
     <footer>
-        <button class="undo-pill" onclick="undo()">
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            撤销上一步
+        <button class="footer-btn btn-undo" onclick="undo()">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>撤销
+        </button>
+        <button class="footer-btn btn-save" onclick="settleGame()">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>结算战绩
         </button>
     </footer>
 
+    <div class="modal-overlay" id="settingsModal">
+        <div class="center-box">
+            <div style="font-size:16px; font-weight:700; margin-bottom:12px;">设置规则</div>
+            <div style="text-align:left; font-size:12px; color:#8E8E93; margin-bottom:6px;">2人局计分机制</div>
+            <div class="setting-opt selected" id="optTransfer" onclick="setScoreMode('transfer')">
+                <div><span style="font-weight:600;font-size:14px;">给付制</span><div style="font-size:10px;color:#888">赢+10 输-10</div></div>
+                <div style="color:var(--c-primary); font-weight:bold;">✓</div>
+            </div>
+            <div class="setting-opt" id="optRace" onclick="setScoreMode('race')">
+                <div><span style="font-weight:600;font-size:14px;">抢分制</span><div style="font-size:10px;color:#888">赢+10 输0</div></div>
+                <div style="color:var(--c-primary); font-weight:bold; display:none;">✓</div>
+            </div>
+            <div class="modal-btns" style="margin-top:16px;">
+                <button class="m-btn" style="background:var(--c-primary); color:#FFF; flex:1; padding:10px; border:none; border-radius:12px; font-size:15px; font-weight:600;" onclick="closeSettings()">完成</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="nameModal">
+        <div class="center-box">
+            <div style="font-size:16px; font-weight:700;">修改名字</div>
+            <input type="text" class="modal-input" id="nameInput" placeholder="输入新名字" maxlength="8" style="width:100%; padding:12px; background:#F2F2F7; border:none; border-radius:12px; margin:16px 0; text-align:center;">
+            <div style="display:flex; gap:10px;">
+                <button style="flex:1; padding:10px; border:none; border-radius:12px; background:#F2F2F7; color:#8E8E93; font-weight:600;" onclick="closeNameModal()">取消</button>
+                <button style="flex:1; padding:10px; border:none; border-radius:12px; background:var(--c-primary); color:#FFF; font-weight:600;" onclick="saveName()">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="summaryModal">
+        <div class="center-box" style="width:320px;">
+            <div id="summaryTitle" style="font-size:18px; font-weight:800; margin-bottom:4px;">战局结算</div>
+            <div style="font-size:12px; color:#8E8E93; margin-bottom:16px;">统计已完成</div>
+            <div id="summaryContent"></div>
+            <button style="width:100%; margin-top:16px; padding:12px; background:var(--c-primary); color:#FFF; border:none; border-radius:12px; font-weight:600;" onclick="closeSummary()">关闭</button>
+        </div>
+    </div>
+
 <script>
+    const emptyStats = () => ({ bigGold: 0, smallGold: 0, gold9: 0, normal: 0 });
+
     let state = {
         mode: 3,
+        round: 0, 
+        scoreMode: 'transfer', 
         players: [
-            { id: 0, name: '玩家 A', score: 0 },
-            { id: 1, name: '玩家 B', score: 0 },
-            { id: 2, name: '玩家 C', score: 0 }
+            { id: 0, name: '玩家 A', score: 0, stats: emptyStats() },
+            { id: 1, name: '玩家 B', score: 0, stats: emptyStats() },
+            { id: 2, name: '玩家 C', score: 0, stats: emptyStats() }
         ],
-        history: []
+        history: [] // 仅用于撤销
     };
+    let currentEditIndex = -1;
 
     function getRelations(curr, total) {
-        return {
-            prev: (curr - 1 + total) % total,
-            next: (curr + 1) % total
-        };
+        return { prev: (curr - 1 + total) % total, next: (curr + 1) % total };
     }
 
     function handleAction(idx, type) {
-        saveHistory();
+        saveState(); 
+        state.round++;
+        document.getElementById('roundDisplay').innerText = `第 ${state.round} 回合`;
+
         const total = state.mode;
         const { prev, next } = getRelations(idx, total);
         let ps = state.players;
+        const scores = { normal: 4, smallGold: 7, bigGold: 20, gold9: 8, foul: 1 };
 
-        switch (type) {
-            case 'normal': // 普胜
-                ps[idx].score += 4; ps[prev].score -= 4; break;
-            case 'smallGold': // 小金
-                ps[idx].score += 7; ps[prev].score -= 7; break;
-            case 'bigGold': // 大金
-                ps[idx].score += 20; ps[prev].score -= 10;
-                ps[next].score -= 10; break;
-            case 'gold9': // 黄金9
-                ps[prev].score -= 4; ps[idx].score += 8;
-                ps[next].score -= 4; break;
-            case 'foul': // 普通犯规
-                ps[idx].score -= 1; ps[prev].score += 1; break;
-            case 'letFoul': // 让杆犯规
-                ps[idx].score -= 1; ps[next].score += 1; break;
+        if (!ps[idx].stats) ps[idx].stats = emptyStats();
+        
+        if (type === 'normal') ps[idx].stats.normal++;
+        else if (type === 'smallGold') ps[idx].stats.smallGold++;
+        else if (type === 'bigGold') ps[idx].stats.bigGold++;
+        else if (type === 'gold9') ps[idx].stats.gold9++;
+
+        if (total === 3) {
+            switch (type) {
+                case 'normal': ps[idx].score += 4; ps[prev].score -= 4; break;
+                case 'smallGold': ps[idx].score += 7; ps[prev].score -= 7; break;
+                case 'bigGold': ps[idx].score += 20; ps[prev].score -= 10; ps[next].score -= 10; break;
+                case 'gold9': ps[prev].score -= 4; ps[next].score -= 4; ps[idx].score += 8; break;
+                case 'foul': ps[idx].score -= 1; ps[prev].score += 1; break;
+                case 'letFoul': ps[idx].score -= 1; ps[next].score += 1; break;
+            }
+        } else if (total === 2) {
+            const isRace = state.scoreMode === 'race'; 
+            const opponentIdx = next;
+            switch (type) {
+                case 'normal': 
+                    ps[idx].score += scores.normal; if (!isRace) ps[opponentIdx].score -= scores.normal; 
+                    break;
+                case 'smallGold': 
+                    ps[idx].score += scores.smallGold; if (!isRace) ps[opponentIdx].score -= scores.smallGold; 
+                    break;
+                case 'bigGold': 
+                    ps[idx].score += 10; if (!isRace) ps[opponentIdx].score -= 10; 
+                    break;
+                case 'gold9': 
+                    ps[idx].score += 4; if (!isRace) ps[opponentIdx].score -= 4; 
+                    break;
+                case 'foul': ps[idx].score -= 1; if (!isRace) ps[opponentIdx].score += 1; break;
+                case 'letFoul': ps[idx].score -= 1; if (!isRace) ps[opponentIdx].score += 1; break;
+            }
         }
         render();
         if(navigator.vibrate) navigator.vibrate(15);
@@ -237,80 +290,153 @@
     function render() {
         const box = document.getElementById('container');
         box.innerHTML = '';
+        
+        let txtBig = '通吃 20'; let txtG9 = '通吃 8';
+        if (state.mode === 2) {
+            if (state.scoreMode === 'transfer') { txtBig = '自+10 他-10'; txtG9 = '自+4 他-4'; } 
+            else { txtBig = '自+10'; txtG9 = '自+4'; }
+        }
 
         state.players.forEach((p, i) => {
             let sc = p.score > 0 ? 'score-p' : (p.score < 0 ? 'score-n' : 'score-z');
             let sig = p.score > 0 ? '+' : '';
-
             const el = document.createElement('div');
             el.className = 'player-card';
             el.innerHTML = `
                 <div class="card-header-row">
-                    <div class="left-info" onclick="editName(${i})">
+                    <div class="left-info" onclick="openNameModal(${i})">
                         <div class="rank-num">${i + 1}</div>
                         <div class="p-name">${p.name}</div>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="#CCC"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#CCC"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
                     </div>
                     <div class="p-score ${sc}">${sig}${p.score}</div>
                 </div>
-                
                 <div class="btn-grid">
-                    <button class="act-btn b-norm" onclick="handleAction(${i}, 'normal')">
-                        <span class="btn-t">普胜</span><span class="btn-s">自+4 上-4</span>
-                    </button>
-                    <button class="act-btn b-sgold" onclick="handleAction(${i}, 'smallGold')">
-                        <span class="btn-t">小金</span><span class="btn-s">自+7 上-7</span>
-                    </button>
-                    <button class="act-btn b-bgold" onclick="handleAction(${i}, 'bigGold')">
-                        <span class="btn-t">大金</span><span class="btn-s">通吃 20</span>
-                    </button>
-                    <button class="act-btn b-gold9" onclick="handleAction(${i}, 'gold9')">
-                        <span class="btn-t">黄金9</span><span class="btn-s">通吃 8</span>
-                    </button>
-                    <button class="act-btn b-foul" onclick="handleAction(${i}, 'foul')">
-                        <span class="btn-t">犯规</span><span class="btn-s">给上家 1</span>
-                    </button>
-                    <button class="act-btn b-let" onclick="handleAction(${i}, 'letFoul')">
-                        <span class="btn-t">让杆犯规</span><span class="btn-s">给下家 1</span>
-                    </button>
+                    <button class="act-btn b-bgold" onclick="handleAction(${i}, 'bigGold')"><span class="btn-t">大金</span><span class="btn-s">${txtBig}</span></button>
+                    <button class="act-btn b-sgold" onclick="handleAction(${i}, 'smallGold')"><span class="btn-t">小金</span><span class="btn-s">自+7 上-7</span></button>
+                    <button class="act-btn b-gold9" onclick="handleAction(${i}, 'gold9')"><span class="btn-t">黄金9</span><span class="btn-s">${txtG9}</span></button>
+                    <button class="act-btn b-foul" onclick="handleAction(${i}, 'foul')"><span class="btn-t">犯规</span><span class="btn-s">给上家 1</span></button>
+                    <button class="act-btn b-norm" onclick="handleAction(${i}, 'normal')"><span class="btn-t">普胜</span><span class="btn-s">自+4 上-4</span></button>
+                    <button class="act-btn b-let" onclick="handleAction(${i}, 'letFoul')"><span class="btn-t">让杆犯规</span><span class="btn-s">给下家 1</span></button>
                 </div>
             `;
             box.appendChild(el);
         });
     }
 
-    function switchMode(n) {
-        if (state.mode === n) return;
-        if (!confirm('切换人数会重置比分')) return;
-        state.mode = n;
-        document.getElementById('mode2').className = n === 2 ? 'toggle-btn active' : 'toggle-btn';
-        document.getElementById('mode3').className = n === 3 ? 'toggle-btn active' : 'toggle-btn';
-        state.history = []; state.players = [];
-        const defs = ['玩家 A', '玩家 B', '玩家 C'];
-        for(let i=0; i<n; i++) state.players.push({ id: i, name: defs[i], score: 0 });
-        render();
+    // 纯前端结算函数
+    function settleGame() {
+        if(!confirm("确认结束本局并查看统计吗？")) return;
+        showSummary();
     }
 
-    function editName(i) {
-        const n = prompt("修改名字:", state.players[i].name);
-        if (n && n.trim()) { state.players[i].name = n.trim(); render(); }
+    function showSummary() {
+        document.getElementById('summaryTitle').innerText = `战局结算 (共 ${state.round} 回合)`;
+        
+        const sortedPlayers = [...state.players].sort((a, b) => b.score - a.score);
+        const medals = ['🥇', '🥈', '🥉'];
+        
+        let html = '';
+        sortedPlayers.forEach((p, idx) => {
+            const medal = medals[idx] || (idx + 1);
+            const color = p.score > 0 ? '#34C759' : (p.score < 0 ? '#FF3B30' : '#000');
+            const sign = p.score > 0 ? '+' : '';
+            const st = p.stats || emptyStats();
+            
+            html += `
+                <div class="result-row">
+                    <div class="res-rank">${medal}</div>
+                    <div style="flex:1;">
+                        <div style="display:flex; justify-content:space-between;">
+                            <span class="res-name">${p.name}</span>
+                            <span class="res-score" style="color:${color}">${sign}${p.score}</span>
+                        </div>
+                        <div class="res-stats">
+                            <span class="stat-badge sb-gold">大金:${st.bigGold}</span>
+                            <span class="stat-badge sb-small">小金:${st.smallGold}</span>
+                            <span class="stat-badge sb-g9">黄金9:${st.gold9}</span>
+                            <span class="stat-badge sb-win">普胜:${st.normal}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        document.getElementById('summaryContent').innerHTML = html;
+        const modal = document.getElementById('summaryModal');
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('show'), 10);
     }
-
-    function resetGame() {
-        if (confirm("确定重置?")) {
-            saveHistory(); state.players.forEach(p => p.score = 0); render();
-        }
-    }
-
-    function saveHistory() {
-        if (state.history.length > 20) state.history.shift();
-        state.history.push(JSON.parse(JSON.stringify(state.players)));
+    
+    function closeSummary() {
+        const modal = document.getElementById('summaryModal');
+        modal.classList.remove('show');
+        setTimeout(() => modal.style.display = 'none', 300);
     }
 
     function undo() {
         if (state.history.length === 0) return alert("没有操作可撤销");
-        state.players = state.history.pop(); render();
+        const previousState = state.history.pop();
+        state.players = JSON.parse(JSON.stringify(previousState.players));
+        state.round = Math.max(0, state.round - 1); 
+        document.getElementById('roundDisplay').innerText = `第 ${state.round} 回合`;
+        render();
     }
+    
+    function saveState() {
+        if (state.history.length > 20) state.history.shift();
+        state.history.push({
+            players: JSON.parse(JSON.stringify(state.players))
+        });
+    }
+
+    function resetGame() {
+        if (confirm("确定重置?")) {
+            state.round = 0;
+            document.getElementById('roundDisplay').innerText = `第 0 回合`;
+            state.history = []; 
+            state.players.forEach(p => { p.score = 0; p.stats = emptyStats(); }); 
+            render();
+        }
+    }
+
+    function switchMode(n) {
+        if (state.mode === n) return;
+        if (!confirm('切换人数会重置比分')) return;
+        state.mode = n;
+        state.round = 0; 
+        document.getElementById('roundDisplay').innerText = `第 0 回合`;
+        document.getElementById('mode2').className = n === 2 ? 'toggle-btn active' : 'toggle-btn';
+        document.getElementById('mode3').className = n === 3 ? 'toggle-btn active' : 'toggle-btn';
+        state.history = []; state.players = [];
+        const defs = ['玩家 A', '玩家 B', '玩家 C'];
+        for(let i=0; i<n; i++) state.players.push({ id: i, name: defs[i], score: 0, stats: emptyStats() });
+        render();
+    }
+    
+    const settingsModal = document.getElementById('settingsModal');
+    const optTransfer = document.getElementById('optTransfer');
+    const optRace = document.getElementById('optRace');
+
+    function openSettings() {
+        if (state.scoreMode === 'transfer') {
+            optTransfer.classList.add('selected'); optTransfer.querySelector('div:last-child').style.display = 'block';
+            optRace.classList.remove('selected'); optRace.querySelector('div:last-child').style.display = 'none';
+        } else {
+            optRace.classList.add('selected'); optRace.querySelector('div:last-child').style.display = 'block';
+            optTransfer.classList.remove('selected'); optTransfer.querySelector('div:last-child').style.display = 'none';
+        }
+        settingsModal.style.display = 'flex'; setTimeout(() => settingsModal.classList.add('show'), 10);
+    }
+    function closeSettings() { settingsModal.classList.remove('show'); setTimeout(() => settingsModal.style.display = 'none', 200); render(); }
+    function setScoreMode(mode) { state.scoreMode = mode; openSettings(); }
+    
+    const nModal = document.getElementById('nameModal');
+    const nInput = document.getElementById('nameInput');
+    function openNameModal(i) { currentEditIndex = i; nInput.value = ''; nModal.style.display = 'flex'; setTimeout(() => nModal.classList.add('show'), 10); setTimeout(() => nInput.focus(), 50); }
+    function closeNameModal() { nModal.classList.remove('show'); setTimeout(() => { nModal.style.display = 'none'; nInput.blur(); }, 200); }
+    function saveName() { const val = nInput.value.trim(); if(val) { state.players[currentEditIndex].name = val; render(); } closeNameModal(); }
+    nInput.addEventListener('keypress', (e) => { if(e.key==='Enter') saveName(); });
 
     render();
 </script>
