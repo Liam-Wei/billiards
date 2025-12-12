@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#F2F2F7">
+    <title>桌球追分 - 终极版</title>
+    <style>
+        :root {
+            /* iOS Light Theme Colors */
+            --bg-body: #F2F2F7;
+            --bg-card: #FFFFFF;
+            --text-primary: #000000;
+            --text-secondary: #8E8E93;
+            --divider: #E5E5EA;
+            
+            /* Action Colors */
+            --color-win: #007AFF;   
+            --color-gold-s: #FF9500; 
+            --color-gold-b: #AF52DE; 
+            --color-gold-9: #FFD60A; 
+            --color-foul: #FF3B30;   
+            --color-let: #FF2D55;    
+
+            /* Spacing */
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
+            --radius-l: 24px;
+            --radius-m: 16px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+            background-color: var(--bg-body);
+            margin: 0;
+            padding: 0;
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            -webkit-user-select: none;
+        }
+
+        /* Header */
+        header {
+            padding-top: max(16px, var(--safe-top));
+            padding-bottom: 12px;
+            padding-left: 20px;
+            padding-right: 20px;
+            background: rgba(242, 242, 247, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 99;
+            border-bottom: 0.5px solid rgba(0,0,0,0.05);
+            position: absolute; /* 改为绝对定位，悬浮在上方，不占用 Flex 空间 */
+            top: 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .header-title {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .reset-btn {
+            color: var(--color-foul);
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        /* Toggle Switch */
+        .toggle-container {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #E5E5EA;
+            border-radius: 100px;
+            padding: 2px;
+            display: flex;
+        }
+
+        .toggle-btn {
+            border: none;
+            background: transparent;
+            padding: 4px 16px;
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: all 0.25s ease;
+        }
+
+        .toggle-btn.active {
+            background: #FFF;
+            color: #000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Main Content - 核心修改点 */
+        main {
+            flex: 1;
+            overflow-y: auto; /* 依然允许小屏幕滚动 */
+            padding: 16px;
+            /* 预留头部和底部空间，防止被遮挡 */
+            padding-top: calc(60px + var(--safe-top)); 
+            padding-bottom: calc(80px + var(--safe-bottom)); 
+            
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* 垂直居中核心代码 */
+            gap: 24px; /* 稍微拉大间距，让画面更通透 */
+        }
+
+        /* Player Card */
+        .player-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-l);
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.04); /* 加深阴影增加悬浮感 */
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            transition: transform 0.2s;
+        }
+
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .name-group {
+            display: flex;
+            align-items: center;
+        }
+
+        /* 序号样式 */
+        .rank-badge {
+            width: 24px;
+            height: 24px;
+            background-color: #F2F2F7;
+            color: #8E8E93;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            margin-right: 10px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .player-name {
+            font-size: 19px;
+            font-weight: 600;
+            color: #1c1c1e;
+            margin-right: 6px;
+        }
+
+        .edit-icon { opacity: 0.3; width: 14px; margin-top: 2px;}
+
+        .player-badges {
+            margin-top: 4px;
+            display: flex;
+            gap: 4px;
+            margin-left: 34px;
+        }
+
+        .badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: #F2F2F7;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .score-display {
+            font-size: 40px;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -1.5px;
+            line-height: 1;
+        }
+
+        .score-positive { color: #34C759; }
+        .score-negative { color: #FF3B30; }
+        .score-zero { color: #1C1C1E; }
+
+        /* Grid Actions */
+        .grid-actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            row-gap: 12px;
+        }
+
+        .action-btn {
+            border: none;
+            padding: 12px 4px;
+            border-radius: var(--radius-m);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.1s;
+        }
+
+        .action-btn:active { transform: scale(0.95); opacity: 0.8; }
+
+        .btn-label { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+        .btn-val { font-size: 11px; font-weight: 500; opacity: 0.7; }
+
+        /* Button Variants */
+        .btn-normal { background: #E1F0FF; color: var(--color-win); }
+        .btn-small-gold { background: #FFF3DC; color: var(--color-gold-s); }
+        .btn-big-gold { background: #F3E5F5; color: var(--color-gold-b); }
+        .btn-gold-9 { background: #FFFDE7; color: #9A7D0A; } 
+        .btn-foul { background: #FFEEEE; color: var(--color-foul); }
+        .btn-let { background: #FFF0F5; color: var(--color-let); }
+
+        /* Floating Undo Button */
+        .undo-container {
+            position: fixed;
+            bottom: max(20px, var(--safe-bottom));
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            pointer-events: none; 
+            z-index: 100;
+        }
+
+        .undo-btn {
+            pointer-events: auto;
+            background: rgba(28, 28, 30, 0.85);
+            color: white;
+            padding: 12px 32px;
+            border-radius: 100px;
+            font-size: 15px;
+            font-weight: 600;
+            border: none;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-title">桌球追分</div>
+    <div class="toggle-container">
+        <button class="toggle-btn" id="mode2" onclick="switchMode(2)">2人</button>
+        <button class="toggle-btn active" id="mode3" onclick="switchMode(3)">3人</button>
+    </div>
+    <button class="reset-btn" onclick="resetGame()">重置</button>
+</header>
+
+<main id="game-board">
+    </main>
+
+<div class="undo-container">
+    <button class="undo-btn" onclick="undo()">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        撤销上一步
+    </button>
+</div>
+
+<script>
+    let state = {
+        mode: 3,
+        players: [
+            { id: 0, name: '玩家 A', score: 0 },
+            { id: 1, name: '玩家 B', score: 0 },
+            { id: 2, name: '玩家 C', score: 0 }
+        ],
+        history: []
+    };
+
+    function getRelations(currentIndex, totalPlayers) {
+        const prev = (currentIndex - 1 + totalPlayers) % totalPlayers;
+        const next = (currentIndex + 1) % totalPlayers;
+        return { prev, next };
+    }
+
+    function handleAction(actorIndex, type) {
+        saveHistory();
+
+        const total = state.mode;
+        const { prev, next } = getRelations(actorIndex, total);
+        let players = state.players;
+
+        switch (type) {
+            case 'normal': // 普胜: 4分（上家-4）
+                players[actorIndex].score += 4;
+                players[prev].score -= 4;
+                break;
+
+            case 'smallGold': // 小金: 7分（上家-7）
+                players[actorIndex].score += 7;
+                players[prev].score -= 7;
+                break;
+
+            case 'bigGold': // 大金: 上下家各-10，本人+20
+                players[actorIndex].score += 20;
+                players[prev].score -= 10;
+                if (total === 2) {
+                    players[next].score -= 10; 
+                } else {
+                    players[next].score -= 10;
+                }
+                break;
+
+            case 'gold9': // 黄金9: 上下家各输4分 (本人+8)
+                players[prev].score -= 4;
+                if (total === 2) {
+                    players[next].score -= 4; 
+                    players[actorIndex].score += 8;
+                } else {
+                    players[next].score -= 4;
+                    players[actorIndex].score += 8;
+                }
+                break;
+
+            case 'foul': // 普通犯规: 本人-1，上家+1
+                players[actorIndex].score -= 1;
+                players[prev].score += 1;
+                break;
+
+            case 'letFoul': // 让杆犯规: 本人-1，下家+1
+                players[actorIndex].score -= 1;
+                players[next].score += 1;
+                break;
+        }
+
+        render();
+        vibrate();
+    }
+
+    function render() {
+        const board = document.getElementById('game-board');
+        board.innerHTML = '';
+
+        state.players.forEach((p, index) => {
+            let scoreClass = 'score-zero';
+            let sign = '';
+            if (p.score > 0) { scoreClass = 'score-positive'; sign = '+'; }
+            if (p.score < 0) { scoreClass = 'score-negative'; }
+            
+            const div = document.createElement('div');
+            div.className = 'player-card';
+            div.innerHTML = `
+                <div class="card-top">
+                    <div class="player-info" onclick="editName(${index})">
+                        <div class="name-group">
+                            <div class="rank-badge">${index + 1}</div>
+                            <span class="player-name">${p.name}</span>
+                            <svg class="edit-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                        </div>
+                        <div class="player-badges">
+                            ${state.mode === 3 ? `<span class="badge">上家: ${state.players[getRelations(index, 3).prev].name}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="score-display ${scoreClass}">${sign}${p.score}</div>
+                </div>
+                
+                <div class="grid-actions">
+                    <button class="action-btn btn-normal" onclick="handleAction(${index}, 'normal')">
+                        <span class="btn-label">普胜</span>
+                        <span class="btn-val">自+4 上-4</span>
+                    </button>
+                    <button class="action-btn btn-small-gold" onclick="handleAction(${index}, 'smallGold')">
+                        <span class="btn-label">小金</span>
+                        <span class="btn-val">自+7 上-7</span>
+                    </button>
+                    <button class="action-btn btn-big-gold" onclick="handleAction(${index}, 'bigGold')">
+                        <span class="btn-label">大金</span>
+                        <span class="btn-val">通吃 20分</span>
+                    </button>
+                    <button class="action-btn btn-gold-9" onclick="handleAction(${index}, 'gold9')">
+                        <span class="btn-label">黄金9</span>
+                        <span class="btn-val">通吃 8分</span>
+                    </button>
+                    <button class="action-btn btn-foul" onclick="handleAction(${index}, 'foul')">
+                        <span class="btn-label">犯规</span>
+                        <span class="btn-val">给上家 1分</span>
+                    </button>
+                    <button class="action-btn btn-let" onclick="handleAction(${index}, 'letFoul')">
+                        <span class="btn-label">让杆犯规</span>
+                        <span class="btn-val">给下家 1分</span>
+                    </button>
+                </div>
+            `;
+            board.appendChild(div);
+        });
+    }
+
+    function switchMode(n) {
+        if (state.mode === n) return;
+        if (!confirm('切换人数会重置比分，确定吗？')) return;
+        
+        state.mode = n;
+        document.getElementById('mode2').className = n === 2 ? 'toggle-btn active' : 'toggle-btn';
+        document.getElementById('mode3').className = n === 3 ? 'toggle-btn active' : 'toggle-btn';
+        
+        state.history = [];
+        state.players = [];
+        const defaultNames = ['玩家 A', '玩家 B', '玩家 C'];
+        for(let i=0; i<n; i++) state.players.push({ id: i, name: defaultNames[i], score: 0 });
+        
+        render();
+    }
+
+    function editName(index) {
+        const newName = prompt("修改玩家名字:", state.players[index].name);
+        if (newName && newName.trim() !== "") {
+            state.players[index].name = newName.trim();
+            render();
+        }
+    }
+
+    function resetGame() {
+        if (confirm("确定要归零重置吗？")) {
+            saveHistory();
+            state.players.forEach(p => p.score = 0);
+            render();
+        }
+    }
+
+    function saveHistory() {
+        if (state.history.length > 20) state.history.shift(); 
+        state.history.push(JSON.parse(JSON.stringify(state.players)));
+    }
+
+    function undo() {
+        if (state.history.length === 0) {
+            alert("没有可撤销的操作");
+            return;
+        }
+        state.players = state.history.pop();
+        render();
+    }
+
+    function vibrate() {
+        if (navigator.vibrate) navigator.vibrate(10);
+    }
+
+    render();
+</script>
+</body>
+</html>
