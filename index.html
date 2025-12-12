@@ -324,9 +324,8 @@
         });
     }
 
-    // 纯前端结算函数
+    // 核心修改：点击直接弹出结算
     function settleGame() {
-        if(!confirm("确认结束本局并查看统计吗？")) return;
         showSummary();
     }
 
@@ -438,6 +437,7 @@
     function saveName() { const val = nInput.value.trim(); if(val) { state.players[currentEditIndex].name = val; render(); } closeNameModal(); }
     nInput.addEventListener('keypress', (e) => { if(e.key==='Enter') saveName(); });
 
+    // 初始化
     render();
 </script>
 </body>
