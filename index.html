@@ -6,16 +6,14 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#F2F2F7">
-    <title>桌球追分 - 完美一屏版</title>
+    <title>桌球追分 - 一屏版</title>
     <style>
         :root {
-            /* iOS Light Theme Colors */
             --bg-body: #F2F2F7;
             --bg-card: #FFFFFF;
             --text-primary: #000000;
             --text-secondary: #8E8E93;
             
-            /* Action Colors */
             --color-win: #007AFF;   
             --color-gold-s: #FF9500; 
             --color-gold-b: #AF52DE; 
@@ -23,213 +21,151 @@
             --color-foul: #FF3B30;   
             --color-let: #FF2D55;    
 
-            /* Radius */
-            --radius-l: 20px;
-            --radius-m: 14px;
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
             background-color: var(--bg-body);
             margin: 0;
             padding: 0;
-            color: var(--text-primary);
-            
-            /* 【核心修改】参照参考代码的布局逻辑 */
-            height: 100dvh; /* 强制锁定视口高度 */
-            overflow: hidden; /* 禁止滚动 */
+            /* 强制锁定屏幕高度，禁止滚动 */
+            height: 100vh; 
+            height: 100dvh; 
+            overflow: hidden; 
             display: flex;
             flex-direction: column;
-            justify-content: space-evenly; /* 垂直均匀分布 */
-            align-items: center;
-            
-            /* 适配安全区域 */
-            padding-top: calc(env(safe-area-inset-top) + 10px);
-            padding-bottom: calc(env(safe-area-inset-bottom) + 10px);
+            /* 顶部避开灵动岛，底部预留一点空间 */
+            padding-top: max(10px, var(--safe-top));
+            padding-bottom: max(10px, var(--safe-bottom));
             box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
         }
 
-        /* 1. 头部区域 (不固定，参与 Flex 布局) */
+        /* 1. 顶部栏 (高度固定，尽量扁平) */
         header {
-            width: 100%;
-            padding: 0 24px;
+            flex-shrink: 0;
+            height: 44px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            flex-shrink: 0; /* 防止被压缩 */
-            box-sizing: border-box;
+            padding: 0 20px;
+            z-index: 10;
         }
 
-        .header-title {
-            font-size: 24px;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-        }
+        .header-title { font-size: 18px; font-weight: 700; opacity: 0.8; }
 
-        .toggle-container {
-            background: #E5E5EA;
-            border-radius: 100px;
-            padding: 2px;
-            display: flex;
+        .toggle-box {
+            background: #E5E5EA; border-radius: 100px; padding: 2px; display: flex;
         }
-
         .toggle-btn {
-            border: none;
-            background: transparent;
-            padding: 4px 14px;
-            border-radius: 100px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            transition: all 0.2s;
+            border: none; background: none; padding: 2px 12px; border-radius: 100px;
+            font-size: 12px; font-weight: 600; color: var(--text-secondary);
         }
+        .toggle-btn.active { background: #FFF; color: #000; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .reset-btn { border: none; background: none; color: var(--color-foul); font-size: 14px; font-weight: 600; }
 
-        .toggle-btn.active {
-            background: #FFF;
-            color: #000;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .reset-btn {
-            color: var(--color-foul);
-            background: none;
-            border: none;
-            font-size: 15px;
-            font-weight: 600;
-        }
-
-        /* 2. 主内容区域 (卡片容器) */
+        /* 2. 主内容区 (核心：占据剩余所有空间) */
         main {
-            width: 92%; /* 左右留白 */
-            max-width: 450px;
-            flex: 1; /* 占据剩余所有空间 */
+            flex: 1; /* 自动撑满剩余高度 */
             display: flex;
             flex-direction: column;
-            /* 卡片之间均匀分布 */
-            justify-content: space-evenly; 
-            padding: 10px 0;
+            justify-content: space-evenly; /* 卡片之间均匀分布 */
+            padding: 0 16px;
+            gap: 12px; /* 卡片间距 */
+            overflow: hidden; /* 防止内部溢出 */
+            padding-bottom: 10px;
         }
 
-        /* Player Card */
+        /* 卡片样式 */
         .player-card {
             background: var(--bg-card);
-            border-radius: var(--radius-l);
-            padding: 16px; /*稍微减小内边距以节省空间*/
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            border-radius: 18px;
+            padding: 12px 16px; /* 紧凑内边距 */
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
             display: flex;
             flex-direction: column;
-            position: relative;
-            transition: transform 0.1s;
+            justify-content: center; /* 内容垂直居中 */
+            
+            /* 核心：让卡片有伸缩性，但不能无限小 */
+            flex: 1; 
+            min-height: 0; 
         }
-        
-        /* 点击时的微反馈 */
-        .player-card:active { transform: scale(0.99); }
 
-        .card-top {
+        /* 头部：改为左右布局以节省垂直空间 */
+        .card-header-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
-        }
-
-        .name-group {
-            display: flex;
-            align-items: center;
-        }
-
-        /* 序号 */
-        .rank-badge {
-            width: 22px;
-            height: 22px;
-            background-color: #F2F2F7;
-            color: #8E8E93;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 700;
-            margin-right: 8px;
-        }
-
-        .player-name {
-            font-size: 17px;
-            font-weight: 600;
-            color: #1c1c1e;
-            margin-right: 4px;
-        }
-
-        .edit-icon { opacity: 0.3; width: 12px; }
-
-        .score-display {
-            font-size: 36px; /* 分数稍微调小一点点适配 */
-            font-weight: 800;
-            font-variant-numeric: tabular-nums;
-            line-height: 1;
-        }
-
-        .score-positive { color: #34C759; }
-        .score-negative { color: #FF3B30; }
-        .score-zero { color: #1C1C1E; }
-
-        /* Actions Grid */
-        .grid-actions {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px; /* 减小间距 */
-            row-gap: 8px;
-        }
-
-        .action-btn {
-            border: none;
-            padding: 10px 0;
-            border-radius: var(--radius-m);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            position: relative;
-        }
-
-        .action-btn:active { opacity: 0.6; }
-
-        .btn-label { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
-        .btn-val { font-size: 10px; font-weight: 500; opacity: 0.7; transform: scale(0.9); }
-
-        /* Button Colors */
-        .btn-normal { background: #E1F0FF; color: var(--color-win); }
-        .btn-small-gold { background: #FFF3DC; color: var(--color-gold-s); }
-        .btn-big-gold { background: #F3E5F5; color: var(--color-gold-b); }
-        .btn-gold-9 { background: #FFFDE7; color: #9A7D0A; } 
-        .btn-foul { background: #FFEEEE; color: var(--color-foul); }
-        .btn-let { background: #FFF0F5; color: var(--color-let); }
-
-        /* 3. 底部撤销按钮 (Flex Item) */
-        .undo-container {
+            margin-bottom: 10px; /* 名字和按钮的距离 */
             flex-shrink: 0;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            padding-top: 5px;
         }
 
-        .undo-btn {
-            background: #FFFFFF;
-            color: var(--text-secondary);
-            padding: 10px 24px;
-            border-radius: 100px;
-            font-size: 14px;
-            font-weight: 600;
-            border: 1px solid #E5E5EA;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-            display: flex;
-            align-items: center;
-            gap: 6px;
+        .left-info { display: flex; align-items: center; gap: 8px; }
+        
+        .rank-num {
+            width: 20px; height: 20px; background: #F2F2F7; color: #999;
+            font-size: 11px; font-weight: 700; border-radius: 5px;
+            display: flex; align-items: center; justify-content: center;
         }
         
-        .undo-btn:active { background: #F2F2F7; }
+        .p-name { font-size: 17px; font-weight: 600; color: #333; }
+
+        /* 分数放在右侧，大字体 */
+        .p-score {
+            font-size: 32px; font-weight: 800; line-height: 1;
+            font-variant-numeric: tabular-nums;
+        }
+        .score-p { color: #34C759; }
+        .score-n { color: #FF3B30; }
+        .score-z { color: #1C1C1E; }
+
+        /* 按钮网格 */
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr); /* 强制2行 */
+            gap: 6px;
+            flex: 1; /* 按钮区域占据卡片剩余空间 */
+            min-height: 0;
+        }
+
+        .act-btn {
+            border: none; border-radius: 10px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            cursor: pointer; position: relative;
+            padding: 0; /* 让Flex居中，不需要padding撑大 */
+        }
+        .act-btn:active { opacity: 0.6; transform: scale(0.98); }
+
+        .btn-t { font-size: 13px; font-weight: 600; margin-bottom: 1px; }
+        .btn-s { font-size: 9px; opacity: 0.7; font-weight: 500; }
+
+        /* 颜色定义 */
+        .b-norm { background: #E1F0FF; color: var(--color-win); }
+        .b-sgold { background: #FFF3DC; color: var(--color-gold-s); }
+        .b-bgold { background: #F3E5F5; color: var(--color-gold-b); }
+        .b-gold9 { background: #FFFDE7; color: #9A7D0A; } 
+        .b-foul { background: #FFEEEE; color: var(--color-foul); }
+        .b-let { background: #FFF0F5; color: var(--color-let); }
+
+        /* 3. 底部撤销 (浮动或固定在最底) */
+        footer {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: center;
+            height: 40px; /* 固定高度 */
+        }
+        
+        .undo-pill {
+            background: #FFF; border: 1px solid #E5E5EA;
+            padding: 0 20px; height: 36px; border-radius: 18px;
+            display: flex; align-items: center; gap: 6px;
+            font-size: 13px; font-weight: 600; color: var(--text-secondary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
 
     </style>
 </head>
@@ -237,22 +173,22 @@
 
     <header>
         <div class="header-title">桌球追分</div>
-        <div class="toggle-container">
+        <div class="toggle-box">
             <button class="toggle-btn" id="mode2" onclick="switchMode(2)">2人</button>
             <button class="toggle-btn active" id="mode3" onclick="switchMode(3)">3人</button>
         </div>
         <button class="reset-btn" onclick="resetGame()">重置</button>
     </header>
 
-    <main id="game-board">
+    <main id="container">
         </main>
 
-    <div class="undo-container">
-        <button class="undo-btn" onclick="undo()">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <footer>
+        <button class="undo-pill" onclick="undo()">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             撤销上一步
         </button>
-    </div>
+    </footer>
 
 <script>
     let state = {
@@ -265,157 +201,117 @@
         history: []
     };
 
-    function getRelations(currentIndex, totalPlayers) {
-        const prev = (currentIndex - 1 + totalPlayers) % totalPlayers;
-        const next = (currentIndex + 1) % totalPlayers;
-        return { prev, next };
+    function getRelations(curr, total) {
+        return {
+            prev: (curr - 1 + total) % total,
+            next: (curr + 1) % total
+        };
     }
 
-    function handleAction(actorIndex, type) {
+    function handleAction(idx, type) {
         saveHistory();
         const total = state.mode;
-        const { prev, next } = getRelations(actorIndex, total);
-        let players = state.players;
+        const { prev, next } = getRelations(idx, total);
+        let ps = state.players;
 
         switch (type) {
             case 'normal': // 普胜
-                players[actorIndex].score += 4;
-                players[prev].score -= 4;
-                break;
+                ps[idx].score += 4; ps[prev].score -= 4; break;
             case 'smallGold': // 小金
-                players[actorIndex].score += 7;
-                players[prev].score -= 7;
-                break;
+                ps[idx].score += 7; ps[prev].score -= 7; break;
             case 'bigGold': // 大金
-                players[actorIndex].score += 20;
-                players[prev].score -= 10;
-                if (total === 2) players[next].score -= 10; 
-                else players[next].score -= 10;
-                break;
+                ps[idx].score += 20; ps[prev].score -= 10;
+                ps[next].score -= 10; break;
             case 'gold9': // 黄金9
-                players[prev].score -= 4;
-                if (total === 2) {
-                    players[next].score -= 4; 
-                    players[actorIndex].score += 8;
-                } else {
-                    players[next].score -= 4;
-                    players[actorIndex].score += 8;
-                }
-                break;
+                ps[prev].score -= 4; ps[idx].score += 8;
+                ps[next].score -= 4; break;
             case 'foul': // 普通犯规
-                players[actorIndex].score -= 1;
-                players[prev].score += 1;
-                break;
+                ps[idx].score -= 1; ps[prev].score += 1; break;
             case 'letFoul': // 让杆犯规
-                players[actorIndex].score -= 1;
-                players[next].score += 1;
-                break;
+                ps[idx].score -= 1; ps[next].score += 1; break;
         }
         render();
-        vibrate();
+        if(navigator.vibrate) navigator.vibrate(15);
     }
 
     function render() {
-        const board = document.getElementById('game-board');
-        board.innerHTML = '';
+        const box = document.getElementById('container');
+        box.innerHTML = '';
 
-        state.players.forEach((p, index) => {
-            let scoreClass = 'score-zero';
-            let sign = '';
-            if (p.score > 0) { scoreClass = 'score-positive'; sign = '+'; }
-            if (p.score < 0) { scoreClass = 'score-negative'; }
-            
-            const div = document.createElement('div');
-            div.className = 'player-card';
-            div.innerHTML = `
-                <div class="card-top">
-                    <div class="name-group" onclick="editName(${index})">
-                        <div class="rank-badge">${index + 1}</div>
-                        <span class="player-name">${p.name}</span>
-                        <svg class="edit-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+        state.players.forEach((p, i) => {
+            let sc = p.score > 0 ? 'score-p' : (p.score < 0 ? 'score-n' : 'score-z');
+            let sig = p.score > 0 ? '+' : '';
+
+            const el = document.createElement('div');
+            el.className = 'player-card';
+            el.innerHTML = `
+                <div class="card-header-row">
+                    <div class="left-info" onclick="editName(${i})">
+                        <div class="rank-num">${i + 1}</div>
+                        <div class="p-name">${p.name}</div>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="#CCC"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
                     </div>
-                    <div class="score-display ${scoreClass}">${sign}${p.score}</div>
+                    <div class="p-score ${sc}">${sig}${p.score}</div>
                 </div>
                 
-                <div class="grid-actions">
-                    <button class="action-btn btn-normal" onclick="handleAction(${index}, 'normal')">
-                        <span class="btn-label">普胜</span>
-                        <span class="btn-val">自+4 上-4</span>
+                <div class="btn-grid">
+                    <button class="act-btn b-norm" onclick="handleAction(${i}, 'normal')">
+                        <span class="btn-t">普胜</span><span class="btn-s">自+4 上-4</span>
                     </button>
-                    <button class="action-btn btn-small-gold" onclick="handleAction(${index}, 'smallGold')">
-                        <span class="btn-label">小金</span>
-                        <span class="btn-val">自+7 上-7</span>
+                    <button class="act-btn b-sgold" onclick="handleAction(${i}, 'smallGold')">
+                        <span class="btn-t">小金</span><span class="btn-s">自+7 上-7</span>
                     </button>
-                    <button class="action-btn btn-big-gold" onclick="handleAction(${index}, 'bigGold')">
-                        <span class="btn-label">大金</span>
-                        <span class="btn-val">通吃 20</span>
+                    <button class="act-btn b-bgold" onclick="handleAction(${i}, 'bigGold')">
+                        <span class="btn-t">大金</span><span class="btn-s">通吃 20</span>
                     </button>
-                    <button class="action-btn btn-gold-9" onclick="handleAction(${index}, 'gold9')">
-                        <span class="btn-label">黄金9</span>
-                        <span class="btn-val">通吃 8</span>
+                    <button class="act-btn b-gold9" onclick="handleAction(${i}, 'gold9')">
+                        <span class="btn-t">黄金9</span><span class="btn-s">通吃 8</span>
                     </button>
-                    <button class="action-btn btn-foul" onclick="handleAction(${index}, 'foul')">
-                        <span class="btn-label">犯规</span>
-                        <span class="btn-val">给上家 1</span>
+                    <button class="act-btn b-foul" onclick="handleAction(${i}, 'foul')">
+                        <span class="btn-t">犯规</span><span class="btn-s">给上家 1</span>
                     </button>
-                    <button class="action-btn btn-let" onclick="handleAction(${index}, 'letFoul')">
-                        <span class="btn-label">让杆犯规</span>
-                        <span class="btn-val">给下家 1</span>
+                    <button class="act-btn b-let" onclick="handleAction(${i}, 'letFoul')">
+                        <span class="btn-t">让杆犯规</span><span class="btn-s">给下家 1</span>
                     </button>
                 </div>
             `;
-            board.appendChild(div);
+            box.appendChild(el);
         });
     }
 
     function switchMode(n) {
         if (state.mode === n) return;
-        if (!confirm('切换人数会重置比分，确定吗？')) return;
+        if (!confirm('切换人数会重置比分')) return;
         state.mode = n;
         document.getElementById('mode2').className = n === 2 ? 'toggle-btn active' : 'toggle-btn';
         document.getElementById('mode3').className = n === 3 ? 'toggle-btn active' : 'toggle-btn';
-        state.history = [];
-        state.players = [];
-        const defaultNames = ['玩家 A', '玩家 B', '玩家 C'];
-        for(let i=0; i<n; i++) state.players.push({ id: i, name: defaultNames[i], score: 0 });
+        state.history = []; state.players = [];
+        const defs = ['玩家 A', '玩家 B', '玩家 C'];
+        for(let i=0; i<n; i++) state.players.push({ id: i, name: defs[i], score: 0 });
         render();
     }
 
-    function editName(index) {
-        const newName = prompt("修改玩家名字:", state.players[index].name);
-        if (newName && newName.trim() !== "") {
-            state.players[index].name = newName.trim();
-            render();
-        }
+    function editName(i) {
+        const n = prompt("修改名字:", state.players[i].name);
+        if (n && n.trim()) { state.players[i].name = n.trim(); render(); }
     }
 
     function resetGame() {
-        if (confirm("确定要归零重置吗？")) {
-            saveHistory();
-            state.players.forEach(p => p.score = 0);
-            render();
+        if (confirm("确定重置?")) {
+            saveHistory(); state.players.forEach(p => p.score = 0); render();
         }
     }
 
     function saveHistory() {
-        if (state.history.length > 20) state.history.shift(); 
+        if (state.history.length > 20) state.history.shift();
         state.history.push(JSON.parse(JSON.stringify(state.players)));
     }
 
     function undo() {
-        if (state.history.length === 0) {
-            alert("没有可撤销的操作");
-            return;
-        }
-        state.players = state.history.pop();
-        render();
+        if (state.history.length === 0) return alert("没有操作可撤销");
+        state.players = state.history.pop(); render();
     }
 
-    function vibrate() {
-        if (navigator.vibrate) navigator.vibrate(10);
-    }
-
-    // 初始化
     render();
 </script>
 </body>
