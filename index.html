@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#F2F2F7">
-    <title>桌球追分 - 终极版</title>
+    <title>桌球追分 - 完美一屏版</title>
     <style>
         :root {
             /* iOS Light Theme Colors */
@@ -14,7 +14,6 @@
             --bg-card: #FFFFFF;
             --text-primary: #000000;
             --text-secondary: #8E8E93;
-            --divider: #E5E5EA;
             
             /* Action Colors */
             --color-win: #007AFF;   
@@ -24,11 +23,9 @@
             --color-foul: #FF3B30;   
             --color-let: #FF2D55;    
 
-            /* Spacing */
-            --safe-top: env(safe-area-inset-top);
-            --safe-bottom: env(safe-area-inset-bottom);
-            --radius-l: 24px;
-            --radius-m: 16px;
+            /* Radius */
+            --radius-l: 20px;
+            --radius-m: 14px;
         }
 
         body {
@@ -37,52 +34,40 @@
             margin: 0;
             padding: 0;
             color: var(--text-primary);
-            height: 100vh;
+            
+            /* 【核心修改】参照参考代码的布局逻辑 */
+            height: 100dvh; /* 强制锁定视口高度 */
+            overflow: hidden; /* 禁止滚动 */
             display: flex;
             flex-direction: column;
-            overflow: hidden;
-            -webkit-user-select: none;
+            justify-content: space-evenly; /* 垂直均匀分布 */
+            align-items: center;
+            
+            /* 适配安全区域 */
+            padding-top: calc(env(safe-area-inset-top) + 10px);
+            padding-bottom: calc(env(safe-area-inset-bottom) + 10px);
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* Header */
+        /* 1. 头部区域 (不固定，参与 Flex 布局) */
         header {
-            padding-top: max(16px, var(--safe-top));
-            padding-bottom: 12px;
-            padding-left: 20px;
-            padding-right: 20px;
-            background: rgba(242, 242, 247, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            width: 100%;
+            padding: 0 24px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            z-index: 99;
-            border-bottom: 0.5px solid rgba(0,0,0,0.05);
-            position: absolute; /* 改为绝对定位，悬浮在上方，不占用 Flex 空间 */
-            top: 0;
-            width: 100%;
+            flex-shrink: 0; /* 防止被压缩 */
             box-sizing: border-box;
         }
 
         .header-title {
-            font-size: 22px;
-            font-weight: 700;
+            font-size: 24px;
+            font-weight: 800;
             letter-spacing: -0.5px;
         }
 
-        .reset-btn {
-            color: var(--color-foul);
-            background: none;
-            border: none;
-            font-size: 16px;
-            font-weight: 500;
-        }
-
-        /* Toggle Switch */
         .toggle-container {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
             background: #E5E5EA;
             border-radius: 100px;
             padding: 2px;
@@ -92,12 +77,12 @@
         .toggle-btn {
             border: none;
             background: transparent;
-            padding: 4px 16px;
+            padding: 4px 14px;
             border-radius: 100px;
             font-size: 13px;
             font-weight: 600;
             color: var(--text-secondary);
-            transition: all 0.25s ease;
+            transition: all 0.2s;
         }
 
         .toggle-btn.active {
@@ -106,38 +91,46 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        /* Main Content - 核心修改点 */
+        .reset-btn {
+            color: var(--color-foul);
+            background: none;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        /* 2. 主内容区域 (卡片容器) */
         main {
-            flex: 1;
-            overflow-y: auto; /* 依然允许小屏幕滚动 */
-            padding: 16px;
-            /* 预留头部和底部空间，防止被遮挡 */
-            padding-top: calc(60px + var(--safe-top)); 
-            padding-bottom: calc(80px + var(--safe-bottom)); 
-            
+            width: 92%; /* 左右留白 */
+            max-width: 450px;
+            flex: 1; /* 占据剩余所有空间 */
             display: flex;
             flex-direction: column;
-            justify-content: center; /* 垂直居中核心代码 */
-            gap: 24px; /* 稍微拉大间距，让画面更通透 */
+            /* 卡片之间均匀分布 */
+            justify-content: space-evenly; 
+            padding: 10px 0;
         }
 
         /* Player Card */
         .player-card {
             background: var(--bg-card);
             border-radius: var(--radius-l);
-            padding: 20px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.04); /* 加深阴影增加悬浮感 */
+            padding: 16px; /*稍微减小内边距以节省空间*/
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
             display: flex;
             flex-direction: column;
             position: relative;
-            transition: transform 0.2s;
+            transition: transform 0.1s;
         }
+        
+        /* 点击时的微反馈 */
+        .player-card:active { transform: scale(0.99); }
 
         .card-top {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 16px;
+            align-items: center;
+            margin-bottom: 12px;
         }
 
         .name-group {
@@ -145,52 +138,34 @@
             align-items: center;
         }
 
-        /* 序号样式 */
+        /* 序号 */
         .rank-badge {
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
             background-color: #F2F2F7;
             color: #8E8E93;
-            border-radius: 8px;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
-            margin-right: 10px;
-            font-variant-numeric: tabular-nums;
+            margin-right: 8px;
         }
 
         .player-name {
-            font-size: 19px;
+            font-size: 17px;
             font-weight: 600;
             color: #1c1c1e;
-            margin-right: 6px;
+            margin-right: 4px;
         }
 
-        .edit-icon { opacity: 0.3; width: 14px; margin-top: 2px;}
-
-        .player-badges {
-            margin-top: 4px;
-            display: flex;
-            gap: 4px;
-            margin-left: 34px;
-        }
-
-        .badge {
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            background: #F2F2F7;
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
+        .edit-icon { opacity: 0.3; width: 12px; }
 
         .score-display {
-            font-size: 40px;
+            font-size: 36px; /* 分数稍微调小一点点适配 */
             font-weight: 800;
             font-variant-numeric: tabular-nums;
-            letter-spacing: -1.5px;
             line-height: 1;
         }
 
@@ -198,17 +173,17 @@
         .score-negative { color: #FF3B30; }
         .score-zero { color: #1C1C1E; }
 
-        /* Grid Actions */
+        /* Actions Grid */
         .grid-actions {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            row-gap: 12px;
+            gap: 8px; /* 减小间距 */
+            row-gap: 8px;
         }
 
         .action-btn {
             border: none;
-            padding: 12px 4px;
+            padding: 10px 0;
             border-radius: var(--radius-m);
             display: flex;
             flex-direction: column;
@@ -216,16 +191,14 @@
             justify-content: center;
             cursor: pointer;
             position: relative;
-            overflow: hidden;
-            transition: transform 0.1s;
         }
 
-        .action-btn:active { transform: scale(0.95); opacity: 0.8; }
+        .action-btn:active { opacity: 0.6; }
 
-        .btn-label { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
-        .btn-val { font-size: 11px; font-weight: 500; opacity: 0.7; }
+        .btn-label { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+        .btn-val { font-size: 10px; font-weight: 500; opacity: 0.7; transform: scale(0.9); }
 
-        /* Button Variants */
+        /* Button Colors */
         .btn-normal { background: #E1F0FF; color: var(--color-win); }
         .btn-small-gold { background: #FFF3DC; color: var(--color-gold-s); }
         .btn-big-gold { background: #F3E5F5; color: var(--color-gold-b); }
@@ -233,61 +206,53 @@
         .btn-foul { background: #FFEEEE; color: var(--color-foul); }
         .btn-let { background: #FFF0F5; color: var(--color-let); }
 
-        /* Floating Undo Button */
+        /* 3. 底部撤销按钮 (Flex Item) */
         .undo-container {
-            position: fixed;
-            bottom: max(20px, var(--safe-bottom));
-            left: 0;
-            right: 0;
+            flex-shrink: 0;
+            width: 100%;
             display: flex;
             justify-content: center;
-            pointer-events: none; 
-            z-index: 100;
+            padding-top: 5px;
         }
 
         .undo-btn {
-            pointer-events: auto;
-            background: rgba(28, 28, 30, 0.85);
-            color: white;
-            padding: 12px 32px;
+            background: #FFFFFF;
+            color: var(--text-secondary);
+            padding: 10px 24px;
             border-radius: 100px;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 600;
-            border: none;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            border: 1px solid #E5E5EA;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
+        
+        .undo-btn:active { background: #F2F2F7; }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
     </style>
 </head>
 <body>
 
-<header>
-    <div class="header-title">桌球追分</div>
-    <div class="toggle-container">
-        <button class="toggle-btn" id="mode2" onclick="switchMode(2)">2人</button>
-        <button class="toggle-btn active" id="mode3" onclick="switchMode(3)">3人</button>
+    <header>
+        <div class="header-title">桌球追分</div>
+        <div class="toggle-container">
+            <button class="toggle-btn" id="mode2" onclick="switchMode(2)">2人</button>
+            <button class="toggle-btn active" id="mode3" onclick="switchMode(3)">3人</button>
+        </div>
+        <button class="reset-btn" onclick="resetGame()">重置</button>
+    </header>
+
+    <main id="game-board">
+        </main>
+
+    <div class="undo-container">
+        <button class="undo-btn" onclick="undo()">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            撤销上一步
+        </button>
     </div>
-    <button class="reset-btn" onclick="resetGame()">重置</button>
-</header>
-
-<main id="game-board">
-    </main>
-
-<div class="undo-container">
-    <button class="undo-btn" onclick="undo()">
-        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        撤销上一步
-    </button>
-</div>
 
 <script>
     let state = {
@@ -308,33 +273,26 @@
 
     function handleAction(actorIndex, type) {
         saveHistory();
-
         const total = state.mode;
         const { prev, next } = getRelations(actorIndex, total);
         let players = state.players;
 
         switch (type) {
-            case 'normal': // 普胜: 4分（上家-4）
+            case 'normal': // 普胜
                 players[actorIndex].score += 4;
                 players[prev].score -= 4;
                 break;
-
-            case 'smallGold': // 小金: 7分（上家-7）
+            case 'smallGold': // 小金
                 players[actorIndex].score += 7;
                 players[prev].score -= 7;
                 break;
-
-            case 'bigGold': // 大金: 上下家各-10，本人+20
+            case 'bigGold': // 大金
                 players[actorIndex].score += 20;
                 players[prev].score -= 10;
-                if (total === 2) {
-                    players[next].score -= 10; 
-                } else {
-                    players[next].score -= 10;
-                }
+                if (total === 2) players[next].score -= 10; 
+                else players[next].score -= 10;
                 break;
-
-            case 'gold9': // 黄金9: 上下家各输4分 (本人+8)
+            case 'gold9': // 黄金9
                 players[prev].score -= 4;
                 if (total === 2) {
                     players[next].score -= 4; 
@@ -344,18 +302,15 @@
                     players[actorIndex].score += 8;
                 }
                 break;
-
-            case 'foul': // 普通犯规: 本人-1，上家+1
+            case 'foul': // 普通犯规
                 players[actorIndex].score -= 1;
                 players[prev].score += 1;
                 break;
-
-            case 'letFoul': // 让杆犯规: 本人-1，下家+1
+            case 'letFoul': // 让杆犯规
                 players[actorIndex].score -= 1;
                 players[next].score += 1;
                 break;
         }
-
         render();
         vibrate();
     }
@@ -374,15 +329,10 @@
             div.className = 'player-card';
             div.innerHTML = `
                 <div class="card-top">
-                    <div class="player-info" onclick="editName(${index})">
-                        <div class="name-group">
-                            <div class="rank-badge">${index + 1}</div>
-                            <span class="player-name">${p.name}</span>
-                            <svg class="edit-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                        </div>
-                        <div class="player-badges">
-                            ${state.mode === 3 ? `<span class="badge">上家: ${state.players[getRelations(index, 3).prev].name}</span>` : ''}
-                        </div>
+                    <div class="name-group" onclick="editName(${index})">
+                        <div class="rank-badge">${index + 1}</div>
+                        <span class="player-name">${p.name}</span>
+                        <svg class="edit-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                     </div>
                     <div class="score-display ${scoreClass}">${sign}${p.score}</div>
                 </div>
@@ -398,19 +348,19 @@
                     </button>
                     <button class="action-btn btn-big-gold" onclick="handleAction(${index}, 'bigGold')">
                         <span class="btn-label">大金</span>
-                        <span class="btn-val">通吃 20分</span>
+                        <span class="btn-val">通吃 20</span>
                     </button>
                     <button class="action-btn btn-gold-9" onclick="handleAction(${index}, 'gold9')">
                         <span class="btn-label">黄金9</span>
-                        <span class="btn-val">通吃 8分</span>
+                        <span class="btn-val">通吃 8</span>
                     </button>
                     <button class="action-btn btn-foul" onclick="handleAction(${index}, 'foul')">
                         <span class="btn-label">犯规</span>
-                        <span class="btn-val">给上家 1分</span>
+                        <span class="btn-val">给上家 1</span>
                     </button>
                     <button class="action-btn btn-let" onclick="handleAction(${index}, 'letFoul')">
                         <span class="btn-label">让杆犯规</span>
-                        <span class="btn-val">给下家 1分</span>
+                        <span class="btn-val">给下家 1</span>
                     </button>
                 </div>
             `;
@@ -421,16 +371,13 @@
     function switchMode(n) {
         if (state.mode === n) return;
         if (!confirm('切换人数会重置比分，确定吗？')) return;
-        
         state.mode = n;
         document.getElementById('mode2').className = n === 2 ? 'toggle-btn active' : 'toggle-btn';
         document.getElementById('mode3').className = n === 3 ? 'toggle-btn active' : 'toggle-btn';
-        
         state.history = [];
         state.players = [];
         const defaultNames = ['玩家 A', '玩家 B', '玩家 C'];
         for(let i=0; i<n; i++) state.players.push({ id: i, name: defaultNames[i], score: 0 });
-        
         render();
     }
 
@@ -468,6 +415,7 @@
         if (navigator.vibrate) navigator.vibrate(10);
     }
 
+    // 初始化
     render();
 </script>
 </body>
