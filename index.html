@@ -6,6 +6,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#F2F2F7">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>桌球追分 (单机版)</title>
     <style>
         :root {
@@ -19,7 +22,7 @@
             background-color: var(--bg-body); margin: 0; padding: 0;
             height: 100dvh; overflow: hidden; display: flex; flex-direction: column;
             padding-top: max(10px, var(--safe-top)); padding-bottom: max(10px, var(--safe-bottom));
-            box-sizing: border-box; -webkit-user-select: none;
+            box-sizing: border-box; user-select: none; -webkit-user-select: none;
         }
         /* Header */
         header {
@@ -174,7 +177,7 @@
         <button class="footer-btn btn-undo" onclick="undo()">
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>撤销
         </button>
-        <button class="footer-btn btn-save" onclick="settleGame()">
+        <button class="footer-btn btn-save" onclick="handleSettleNow(); return false;">
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>结算战绩
         </button>
     </footer>
@@ -324,10 +327,9 @@
         });
     }
 
-    // 核心修改：点击直接弹出结算
-    function settleGame() {
-        showSummary();
-    }
+    // 核心修改：点击直接弹出结算（新函数名避免缓存旧逻辑）
+    function handleSettleNow() { showSummary(); }
+    function settleGame() { showSummary(); }
 
     function showSummary() {
         document.getElementById('summaryTitle').innerText = `战局结算 (共 ${state.round} 回合)`;
