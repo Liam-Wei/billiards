@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#F2F2F7">
-    <title>桌球追分 (完美版)</title>
+    <title>桌球追分 (联机版)</title>
     <style>
+        /* 样式保持不变，为了节省篇幅，这里省略了未修改的CSS */
         :root {
             --bg-body: #F2F2F7; --bg-card: #FFFFFF;
             --c-primary: #007AFF; --c-gold-s: #FF9500; --c-gold-b: #AF52DE; --c-gold-9: #FFD60A; 
@@ -21,7 +21,6 @@
             padding-top: max(10px, var(--safe-top)); padding-bottom: max(10px, var(--safe-bottom));
             box-sizing: border-box; user-select: none; -webkit-user-select: none;
         }
-        /* Header */
         header {
             flex-shrink: 0; height: 44px; display: flex; align-items: center; justify-content: space-between;
             padding: 0 16px; position: relative;
@@ -31,11 +30,12 @@
             background: none; border: none; padding: 6px; color: var(--c-primary); 
             display: flex; align-items: center; cursor: pointer; border-radius: 50%;
         }
-        .icon-btn:active { background: rgba(0,0,0,0.05); }
-        
         .header-center {
             position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
             display: flex; flex-direction: column; align-items: center; z-index: 1; pointer-events: none;
+        }
+        .room-id-display {
+            font-size: 10px; color: #8E8E93; margin-top: 2px; font-family: monospace;
         }
         .toggle-box {
             background: #E5E5EA; border-radius: 100px; padding: 2px; display: flex; pointer-events: auto;
@@ -49,13 +49,10 @@
             border: none; background: none; color: var(--c-foul); font-size: 15px; font-weight: 600; 
             cursor: pointer; z-index: 2;
         }
-
         .round-indicator-bar {
             text-align: center; font-size: 13px; font-weight: 600; color: #8E8E93;
             padding: 6px 0;
         }
-
-        /* Main */
         main {
             flex: 1; display: flex; flex-direction: column; justify-content: space-evenly;
             padding: 0 16px; gap: 10px; overflow: hidden; padding-bottom: 8px;
@@ -79,7 +76,6 @@
         .p-name { font-size: 17px; font-weight: 600; color: #333; }
         .p-score { font-size: 32px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
         .score-p { color: #34C759; } .score-n { color: #FF3B30; } .score-z { color: #1C1C1E; }
-
         .btn-grid {
             display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr);
             gap: 5px; flex: 1; min-height: 0; 
@@ -91,7 +87,6 @@
         .act-btn:active { opacity: 0.6; transform: scale(0.96); }
         .btn-t { font-size: 13px; font-weight: 600; margin-bottom: 1px; white-space: nowrap; }
         .btn-s { font-size: 9px; opacity: 0.75; font-weight: 500; letter-spacing: -0.3px; white-space: nowrap; }
-        
         .b-norm { background: #E1F0FF; color: var(--c-primary); }
         .b-sgold { background: #FFF3DC; color: var(--c-gold-s); }
         .b-bgold { background: #F3E5F5; color: var(--c-gold-b); }
@@ -99,7 +94,6 @@
         .b-black { background: #3A3A3C; color: #FFF; }
         .b-foul { background: #FFEEEE; color: var(--c-foul); }
         .b-let { background: #FFF0F5; color: var(--c-let); }
-
         footer {
             flex-shrink: 0; display: flex; justify-content: space-between;
             padding: 0 16px; gap: 12px; height: 42px;
@@ -110,8 +104,6 @@
         }
         .btn-undo { background: #FFF; color: #555; border: 1px solid #E5E5EA; }
         .btn-save { background: #1C1C1E; color: #FFF; }
-
-        /* Modals */
         .modal-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px);
             z-index: 100; display: none; opacity: 0; transition: opacity 0.25s;
@@ -124,20 +116,16 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-height: 80vh; overflow-y: auto;
         }
         .modal-overlay.show .center-box { transform: scale(1); }
-        
         .modal-input {
             width: 100%; box-sizing: border-box;
             padding: 12px; background: #F2F2F7; border: none; border-radius: 12px; 
             margin: 16px 0; text-align: center; font-size: 16px;
         }
-
         .setting-opt {
             background: #F2F2F7; padding: 10px; border-radius: 10px; margin-bottom: 8px;
             display: flex; justify-content: space-between; align-items: center; cursor: pointer;
         }
         .setting-opt.selected { background: #E1F0FF; border: 1px solid var(--c-primary); }
-
-        /* Stats Grid */
         .res-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 4px; }
         .stat-badge {
             display: flex; align-items: center; justify-content: center;
@@ -148,19 +136,27 @@
         .sb-small { background: #FFF3DC; color: var(--c-gold-s); }
         .sb-g9 { background: #FFFDE7; color: #9A7D0A; }
         .sb-win { background: #E1F0FF; color: var(--c-primary); }
-
         .result-row { display: flex; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid #F2F2F7; }
         .res-rank { font-size: 24px; width: 36px; padding-top: 0px; text-align: center;}
         .res-name { flex: 1; text-align: left; font-weight: 700; font-size: 16px; margin-bottom: 4px;}
         .res-score { font-weight: 800; font-size: 18px; }
+        
+        /* 离线/连接状态提示 */
+        #status-bar {
+            position: absolute; top: 0; left:0; right:0; height: 4px; background: #ccc; z-index: 10;
+        }
     </style>
 </head>
 <body>
+    <div id="status-bar"></div>
 
     <header>
         <div class="header-left">
             <button class="icon-btn" onclick="openSettings()">
                 <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="icon-btn" onclick="copyLink()">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
         </div>
 
@@ -169,12 +165,13 @@
                 <button class="toggle-btn" id="mode2" onclick="switchMode(2)">2人</button>
                 <button class="toggle-btn active" id="mode3" onclick="switchMode(3)">3人</button>
             </div>
+            <div class="room-id-display" id="roomIdDisp">房间: ...</div>
         </div>
 
         <button class="reset-btn" onclick="resetGame()">重置</button>
     </header>
     
-    <div id="roundDisplay" class="round-indicator-bar">第 0 回合</div>
+    <div id="roundDisplay" class="round-indicator-bar">连接中...</div>
 
     <main id="container"></main>
 
@@ -183,7 +180,7 @@
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>撤销
         </button>
         <button class="footer-btn btn-save" onclick="handleSettleNow(); return false;">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>结算战绩
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>结算
         </button>
     </footer>
 
@@ -225,275 +222,343 @@
         </div>
     </div>
 
-<script>
-    const emptyStats = () => ({ bigGold: 0, smallGold: 0, gold9: 0, normal: 0 });
+    <script type="module">
+        // 1. 引入 Firebase 库
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    let state = {
-        mode: 3,
-        round: 0, 
-        scoreMode: 'transfer', 
-        players: [
-            { id: 0, name: '玩家 A', score: 0, stats: emptyStats() },
-            { id: 1, name: '玩家 B', score: 0, stats: emptyStats() },
-            { id: 2, name: '玩家 C', score: 0, stats: emptyStats() }
-        ],
-        history: []
-    };
-    let currentEditIndex = -1;
+        // --------------------------------------------------------
+        // 🔥 在这里填入你的 Firebase 配置 (从控制台复制) 🔥
+        // --------------------------------------------------------
+        const firebaseConfig = {
+            apiKey: "AIzaSyADNOZ3t-TrqLBU2rLf2QAUv77-b-vzSR0",
+              authDomain: "billiards-score.firebaseapp.com",
+              databaseURL: "https://billiards-score-default-rtdb.firebaseio.com",
+              projectId: "billiards-score",
+              storageBucket: "billiards-score.firebasestorage.app",
+              messagingSenderId: "708415656794",
+              appId: "1:708415656794:web:ba7775bb8b33924c6c1963",
+              measurementId: "G-1523P4CF20"
+        };
+        // --------------------------------------------------------
 
-    function getRelations(curr, total) {
-        return { prev: (curr - 1 + total) % total, next: (curr + 1) % total };
-    }
+        // 初始化 Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-    // 核心修改：顺序轮换逻辑
-    function rotateWinner(winnerIdx) {
-        if (state.mode === 3) {
-            // 如果是3人局
-            if (winnerIdx === 0) {
-                // 1. 如果庄家(0)赢了，庄家不动，但两家闲家互换位置 (让第3家上来攻擂)
-                [state.players[1], state.players[2]] = [state.players[2], state.players[1]];
+        // 获取或生成房间号
+        const urlParams = new URLSearchParams(window.location.search);
+        let roomId = urlParams.get('room');
+        if (!roomId) {
+            roomId = Math.random().toString(36).substring(2, 8); // 生成随机房间号
+            const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?room=' + roomId;
+            window.history.pushState({path:newUrl},'',newUrl);
+        }
+        document.getElementById('roomIdDisp').innerText = `房号: ${roomId}`;
+
+        // 全局状态 (本地副本)
+        const emptyStats = () => ({ bigGold: 0, smallGold: 0, gold9: 0, normal: 0 });
+        // 默认状态
+        let state = {
+            mode: 3,
+            round: 0, 
+            scoreMode: 'transfer', 
+            players: [
+                { id: 0, name: '玩家 A', score: 0, stats: emptyStats() },
+                { id: 1, name: '玩家 B', score: 0, stats: emptyStats() },
+                { id: 2, name: '玩家 C', score: 0, stats: emptyStats() }
+            ],
+            history: [] // 历史记录存在数据库里太复杂，这里简化：每次变动都存整个快照，撤销时回滚
+        };
+        
+        let currentEditIndex = -1;
+
+        // --- 核心网络逻辑 ---
+
+        const roomRef = ref(db, 'rooms/' + roomId);
+        const statusEl = document.getElementById('status-bar');
+
+        // 1. 监听数据库变化 (所有人都会收到)
+        onValue(roomRef, (snapshot) => {
+            const data = snapshot.val();
+            statusEl.style.backgroundColor = '#34C759'; // 绿色表示连接成功
+            if (data) {
+                // 如果数据库里有数据，同步到本地
+                state = data;
+                // 确保 history 也是数组
+                if (!state.history) state.history = [];
             } else {
-                // 2. 如果闲家(1或2)赢了，闲家成为新庄家(0)，原庄家退位
-                [state.players[0], state.players[winnerIdx]] = [state.players[winnerIdx], state.players[0]];
+                // 如果数据库是空的（新房间），把默认数据推上去
+                pushStateToCloud();
             }
-        } else if (state.mode === 2) {
-            // 2人局简单互换(赢家去0位)
-            if (winnerIdx !== 0) {
-                 [state.players[0], state.players[1]] = [state.players[1], state.players[0]];
-            }
-        }
-    }
-
-    function handleAction(idx, type) {
-        saveState(); 
-        state.round++;
-        document.getElementById('roundDisplay').innerText = `第 ${state.round} 回合`;
-
-        const total = state.mode;
-        // 注意：这里的prev/next是基于当前的数组顺序计算的
-        const { prev, next } = getRelations(idx, total);
-        let ps = state.players;
-        const scores = { normal: 4, smallGold: 7, bigGold: 20, gold9: 8 };
-
-        if (!ps[idx].stats) ps[idx].stats = emptyStats();
-        
-        // 标记是否属于赢分操作（需要换位）
-        let isWin = false;
-
-        // 统计更新
-        if (['normal','smallGold','bigGold','gold9'].includes(type)) isWin = true;
-        if (type === 'normal') ps[idx].stats.normal++;
-        else if (type === 'smallGold') ps[idx].stats.smallGold++;
-        else if (type === 'bigGold') ps[idx].stats.bigGold++;
-        else if (type === 'gold9') ps[idx].stats.gold9++;
-
-        if (total === 3) {
-            switch (type) {
-                case 'normal': ps[idx].score += 4; ps[prev].score -= 4; break;
-                case 'smallGold': ps[idx].score += 7; ps[prev].score -= 7; break;
-                case 'bigGold': ps[idx].score += 20; ps[prev].score -= 10; ps[next].score -= 10; break;
-                case 'gold9': ps[idx].score += 8; ps[prev].score -= 4; ps[next].score -= 4; break;
-                
-                // 犯规类
-                case 'foul': ps[idx].score -= 1; ps[prev].score += 1; break; // 给上家
-                case 'letFoul': ps[idx].score -= 1; ps[next].score += 1; break; // 让杆犯规：给下家
-                case 'openFoul': ps[idx].score -= 1; ps[next].score += 1; break; // 开球犯规：给下家
-                
-                // 黑金 (自-5，给上家1，给下家4)
-                case 'blackGold': ps[idx].score -= 5; ps[prev].score += 1; ps[next].score += 4; break;
-            }
-        } else if (total === 2) {
-            const isRace = state.scoreMode === 'race'; 
-            const opponentIdx = next;
-            switch (type) {
-                case 'normal': 
-                    ps[idx].score += scores.normal; if (!isRace) ps[opponentIdx].score -= scores.normal; 
-                    break;
-                case 'smallGold': 
-                    ps[idx].score += scores.smallGold; if (!isRace) ps[opponentIdx].score -= scores.smallGold; 
-                    break;
-                case 'bigGold': 
-                    ps[idx].score += 10; if (!isRace) ps[opponentIdx].score -= 10; 
-                    break;
-                case 'gold9': 
-                    ps[idx].score += 4; if (!isRace) ps[opponentIdx].score -= 4; 
-                    break;
-                
-                case 'foul': ps[idx].score -= 1; if (!isRace) ps[opponentIdx].score += 1; break;
-                case 'letFoul': ps[idx].score -= 1; if (!isRace) ps[opponentIdx].score += 1; break;
-                case 'openFoul': ps[idx].score -= 1; if (!isRace) ps[opponentIdx].score += 1; break;
-                
-                // 2人局黑金，通常是输5分给对方
-                case 'blackGold': ps[idx].score -= 5; if (!isRace) ps[opponentIdx].score += 5; break;
-            }
-        }
-
-        // 核心修改：如果是赢分操作，执行换位
-        if (isWin) {
-            rotateWinner(idx);
-        }
-
-        render();
-        if(navigator.vibrate) navigator.vibrate(15);
-    }
-
-    function render() {
-        const box = document.getElementById('container');
-        box.innerHTML = '';
-        
-        let txtBig = '通吃 20'; let txtG9 = '通吃 8'; let txtBlack = '上+1 下+4';
-        if (state.mode === 2) {
-            if (state.scoreMode === 'transfer') { 
-                txtBig = '自+10 他-10'; txtG9 = '自+4 他-4'; txtBlack = '自-5 他+5';
-            } else { 
-                txtBig = '自+10'; txtG9 = '自+4'; txtBlack = '自-5';
-            }
-        }
-
-        state.players.forEach((p, i) => {
-            let sc = p.score > 0 ? 'score-p' : (p.score < 0 ? 'score-n' : 'score-z');
-            let sig = p.score > 0 ? '+' : '';
-            const el = document.createElement('div');
-            el.className = 'player-card';
-            // 添加索引便于回调，但在UI中i始终是当前的渲染顺序（0是上家，1是中，2是下）
-            // 在追分规则里，排在第一个的是“上家/擂主”
-            el.innerHTML = `
-                <div class="card-header-row">
-                    <div class="left-info" onclick="openNameModal(${i})">
-                        <div class="rank-num">${i + 1}</div>
-                        <div class="p-name">${p.name}</div>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#CCC"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
-                    </div>
-                    <div class="p-score ${sc}">${sig}${p.score}</div>
-                </div>
-                <div class="btn-grid">
-                    <button class="act-btn b-bgold" onclick="handleAction(${i}, 'bigGold')"><span class="btn-t">大金</span><span class="btn-s">${txtBig}</span></button>
-                    <button class="act-btn b-sgold" onclick="handleAction(${i}, 'smallGold')"><span class="btn-t">小金</span><span class="btn-s">自+7 上-7</span></button>
-                    <button class="act-btn b-gold9" onclick="handleAction(${i}, 'gold9')"><span class="btn-t">黄金9</span><span class="btn-s">${txtG9}</span></button>
-                    <button class="act-btn b-black" onclick="handleAction(${i}, 'blackGold')"><span class="btn-t">黑金</span><span class="btn-s">${txtBlack}</span></button>
-                    
-                    <button class="act-btn b-norm" onclick="handleAction(${i}, 'normal')"><span class="btn-t">普胜</span><span class="btn-s">自+4 上-4</span></button>
-                    <button class="act-btn b-foul" onclick="handleAction(${i}, 'foul')"><span class="btn-t">犯规</span><span class="btn-s">给上家 1</span></button>
-                    <button class="act-btn b-let" onclick="handleAction(${i}, 'letFoul')"><span class="btn-t">让杆犯规</span><span class="btn-s">给下家 1</span></button>
-                    <button class="act-btn b-foul" style="background:#FFEAEA" onclick="handleAction(${i}, 'openFoul')"><span class="btn-t">开球犯规</span><span class="btn-s">给下家 1</span></button>
-                </div>
-            `;
-            box.appendChild(el);
+            updateUI(); // 渲染界面
+        }, (error) => {
+            statusEl.style.backgroundColor = '#FF3B30'; // 红色表示出错
+            console.error(error);
         });
-    }
 
-    function handleSettleNow() { showSummary(); }
+        // 2. 将本地状态推送到云端
+        function pushStateToCloud() {
+            set(roomRef, state);
+        }
 
-    function showSummary() {
-        document.getElementById('summaryTitle').innerText = `战局结算 (共 ${state.round} 回合)`;
-        
-        const sortedPlayers = [...state.players].sort((a, b) => b.score - a.score);
-        const medals = ['🥇', '🥈', '🥉'];
-        
-        let html = '';
-        sortedPlayers.forEach((p, idx) => {
-            const medal = medals[idx] || (idx + 1);
-            const color = p.score > 0 ? '#34C759' : (p.score < 0 ? '#FF3B30' : '#000');
-            const sign = p.score > 0 ? '+' : '';
-            const st = p.stats || emptyStats();
+        // --- 游戏逻辑 (修改为只操作数据，最后调用 pushStateToCloud) ---
+
+        function getRelations(curr, total) {
+            return { prev: (curr - 1 + total) % total, next: (curr + 1) % total };
+        }
+
+        function rotateWinner(winnerIdx) {
+            if (state.mode === 3) {
+                if (winnerIdx === 0) {
+                    [state.players[1], state.players[2]] = [state.players[2], state.players[1]];
+                } else {
+                    [state.players[0], state.players[winnerIdx]] = [state.players[winnerIdx], state.players[0]];
+                }
+            } else if (state.mode === 2) {
+                if (winnerIdx !== 0) {
+                     [state.players[0], state.players[1]] = [state.players[1], state.players[0]];
+                }
+            }
+        }
+
+        // 绑定到 window 以便 HTML onclick 调用
+        window.handleAction = function(idx, type) {
+            // 记录历史用于撤销 (最多存20步)
+            if (state.history.length > 20) state.history.shift();
+            // 深拷贝当前数据到历史，但不包括 history 字段本身避免递归
+            const stateSnapshot = JSON.parse(JSON.stringify({
+                mode: state.mode,
+                round: state.round,
+                scoreMode: state.scoreMode,
+                players: state.players
+            }));
+            state.history.push(stateSnapshot);
+
+            // 修改状态
+            state.round++;
+            const total = state.mode;
+            const { prev, next } = getRelations(idx, total);
+            let ps = state.players;
+            const scores = { normal: 4, smallGold: 7, bigGold: 20, gold9: 8 };
+
+            if (!ps[idx].stats) ps[idx].stats = emptyStats();
+            let isWin = false;
+
+            if (['normal','smallGold','bigGold','gold9'].includes(type)) isWin = true;
+            if (type === 'normal') ps[idx].stats.normal++;
+            else if (type === 'smallGold') ps[idx].stats.smallGold++;
+            else if (type === 'bigGold') ps[idx].stats.bigGold++;
+            else if (type === 'gold9') ps[idx].stats.gold9++;
+
+            if (total === 3) {
+                switch (type) {
+                    case 'normal': ps[idx].score += 4; ps[prev].score -= 4; break;
+                    case 'smallGold': ps[idx].score += 7; ps[prev].score -= 7; break;
+                    case 'bigGold': ps[idx].score += 20; ps[prev].score -= 10; ps[next].score -= 10; break;
+                    case 'gold9': ps[idx].score += 8; ps[prev].score -= 4; ps[next].score -= 4; break;
+                    case 'foul': ps[idx].score -= 1; ps[prev].score += 1; break;
+                    case 'letFoul': ps[idx].score -= 1; ps[next].score += 1; break;
+                    case 'openFoul': ps[idx].score -= 1; ps[next].score += 1; break;
+                    case 'blackGold': ps[idx].score -= 5; ps[prev].score += 1; ps[next].score += 4; break;
+                }
+            } else if (total === 2) {
+                const isRace = state.scoreMode === 'race'; 
+                const opponentIdx = next;
+                switch (type) {
+                    case 'normal': ps[idx].score += scores.normal; if (!isRace) ps[opponentIdx].score -= scores.normal; break;
+                    case 'smallGold': ps[idx].score += scores.smallGold; if (!isRace) ps[opponentIdx].score -= scores.smallGold; break;
+                    case 'bigGold': ps[idx].score += 10; if (!isRace) ps[opponentIdx].score -= 10; break;
+                    case 'gold9': ps[idx].score += 4; if (!isRace) ps[opponentIdx].score -= 4; break;
+                    case 'foul': ps[idx].score -= 1; if (!isRace) ps[opponentIdx].score += 1; break;
+                    case 'letFoul': ps[idx].score -= 1; if (!isRace) ps[opponentIdx].score += 1; break;
+                    case 'openFoul': ps[idx].score -= 1; if (!isRace) ps[opponentIdx].score += 1; break;
+                    case 'blackGold': ps[idx].score -= 5; if (!isRace) ps[opponentIdx].score += 5; break;
+                }
+            }
+
+            if (isWin) rotateWinner(idx);
+
+            // 🔥 推送到云端
+            pushStateToCloud();
+            if(navigator.vibrate) navigator.vibrate(15);
+        };
+
+        window.undo = function() {
+            if (!state.history || state.history.length === 0) return alert("没有操作可撤销");
+            const previous = state.history.pop();
             
-            html += `
-                <div class="result-row">
-                    <div class="res-rank">${medal}</div>
-                    <div style="flex:1;">
-                        <div style="display:flex; justify-content:space-between;">
-                            <span class="res-name">${p.name}</span>
-                            <span class="res-score" style="color:${color}">${sign}${p.score}</span>
+            // 恢复状态
+            state.mode = previous.mode;
+            state.round = previous.round;
+            state.scoreMode = previous.scoreMode;
+            state.players = previous.players;
+            
+            // 🔥 推送到云端
+            pushStateToCloud();
+        };
+
+        window.resetGame = function() {
+            if (confirm("确定重置?")) {
+                state.round = 0;
+                state.history = []; 
+                state.players.forEach(p => { p.score = 0; p.stats = emptyStats(); }); 
+                // 🔥 推送到云端
+                pushStateToCloud();
+            }
+        };
+
+        window.switchMode = function(n) {
+            if (state.mode === n) return;
+            if (!confirm('切换人数会重置比分')) return;
+            state.mode = n;
+            state.round = 0; 
+            state.history = []; state.players = [];
+            const defs = ['玩家 A', '玩家 B', '玩家 C'];
+            for(let i=0; i<n; i++) state.players.push({ id: i, name: defs[i], score: 0, stats: emptyStats() });
+            pushStateToCloud();
+        };
+
+        window.saveName = function() { 
+            const val = document.getElementById('nameInput').value.trim(); 
+            if(val) { 
+                state.players[currentEditIndex].name = val; 
+                pushStateToCloud(); 
+            } 
+            closeNameModal(); 
+        };
+
+        window.setScoreMode = function(mode) { 
+            state.scoreMode = mode; 
+            // 这里的 openSettings 是 UI 动作，不需要推送，但修改了 mode 需要推送吗？
+            // 规则修改通常也需要同步，所以推送：
+            pushStateToCloud();
+            openSettings(); 
+        };
+
+        // --- UI 渲染 (逻辑不变) ---
+
+        function updateUI() {
+            // 更新回合
+            document.getElementById('roundDisplay').innerText = `第 ${state.round} 回合`;
+            
+            // 更新按钮状态
+            document.getElementById('mode2').className = state.mode === 2 ? 'toggle-btn active' : 'toggle-btn';
+            document.getElementById('mode3').className = state.mode === 3 ? 'toggle-btn active' : 'toggle-btn';
+
+            // 更新设置弹窗状态
+            const optTransfer = document.getElementById('optTransfer');
+            const optRace = document.getElementById('optRace');
+            if (state.scoreMode === 'transfer') {
+                optTransfer.classList.add('selected'); optTransfer.querySelector('div:last-child').style.display = 'block';
+                optRace.classList.remove('selected'); optRace.querySelector('div:last-child').style.display = 'none';
+            } else {
+                optRace.classList.add('selected'); optRace.querySelector('div:last-child').style.display = 'block';
+                optTransfer.classList.remove('selected'); optTransfer.querySelector('div:last-child').style.display = 'none';
+            }
+
+            // 渲染玩家卡片
+            const box = document.getElementById('container');
+            box.innerHTML = '';
+            
+            let txtBig = '通吃 20'; let txtG9 = '通吃 8'; let txtBlack = '上+1 下+4';
+            if (state.mode === 2) {
+                if (state.scoreMode === 'transfer') { 
+                    txtBig = '自+10 他-10'; txtG9 = '自+4 他-4'; txtBlack = '自-5 他+5';
+                } else { 
+                    txtBig = '自+10'; txtG9 = '自+4'; txtBlack = '自-5';
+                }
+            }
+
+            state.players.forEach((p, i) => {
+                let sc = p.score > 0 ? 'score-p' : (p.score < 0 ? 'score-n' : 'score-z');
+                let sig = p.score > 0 ? '+' : '';
+                const el = document.createElement('div');
+                el.className = 'player-card';
+                el.innerHTML = `
+                    <div class="card-header-row">
+                        <div class="left-info" onclick="openNameModal(${i})">
+                            <div class="rank-num">${i + 1}</div>
+                            <div class="p-name">${p.name}</div>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="#CCC"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
                         </div>
-                        <div class="res-stats">
-                            <span class="stat-badge sb-gold">大金:${st.bigGold}</span>
-                            <span class="stat-badge sb-small">小金:${st.smallGold}</span>
-                            <span class="stat-badge sb-g9">黄金9:${st.gold9}</span>
-                            <span class="stat-badge sb-win">普胜:${st.normal}</span>
+                        <div class="p-score ${sc}">${sig}${p.score}</div>
+                    </div>
+                    <div class="btn-grid">
+                        <button class="act-btn b-bgold" onclick="handleAction(${i}, 'bigGold')"><span class="btn-t">大金</span><span class="btn-s">${txtBig}</span></button>
+                        <button class="act-btn b-sgold" onclick="handleAction(${i}, 'smallGold')"><span class="btn-t">小金</span><span class="btn-s">自+7 上-7</span></button>
+                        <button class="act-btn b-gold9" onclick="handleAction(${i}, 'gold9')"><span class="btn-t">黄金9</span><span class="btn-s">${txtG9}</span></button>
+                        <button class="act-btn b-black" onclick="handleAction(${i}, 'blackGold')"><span class="btn-t">黑金</span><span class="btn-s">${txtBlack}</span></button>
+                        <button class="act-btn b-norm" onclick="handleAction(${i}, 'normal')"><span class="btn-t">普胜</span><span class="btn-s">自+4 上-4</span></button>
+                        <button class="act-btn b-foul" onclick="handleAction(${i}, 'foul')"><span class="btn-t">犯规</span><span class="btn-s">给上家 1</span></button>
+                        <button class="act-btn b-let" onclick="handleAction(${i}, 'letFoul')"><span class="btn-t">让杆犯规</span><span class="btn-s">给下家 1</span></button>
+                        <button class="act-btn b-foul" style="background:#FFEAEA" onclick="handleAction(${i}, 'openFoul')"><span class="btn-t">开球犯规</span><span class="btn-s">给下家 1</span></button>
+                    </div>
+                `;
+                box.appendChild(el);
+            });
+        }
+
+        // --- 纯 UI 辅助函数 (弹窗开关等，不需要联网) ---
+        window.openSettings = function() { 
+            document.getElementById('settingsModal').style.display = 'flex'; 
+            setTimeout(() => document.getElementById('settingsModal').classList.add('show'), 10); 
+        };
+        window.closeSettings = function() { 
+            document.getElementById('settingsModal').classList.remove('show'); 
+            setTimeout(() => document.getElementById('settingsModal').style.display = 'none', 200); 
+        };
+        window.openNameModal = function(i) { currentEditIndex = i; document.getElementById('nameInput').value = ''; document.getElementById('nameModal').style.display = 'flex'; setTimeout(() => document.getElementById('nameModal').classList.add('show'), 10); setTimeout(() => document.getElementById('nameInput').focus(), 50); };
+        window.closeNameModal = function() { document.getElementById('nameModal').classList.remove('show'); setTimeout(() => { document.getElementById('nameModal').style.display = 'none'; document.getElementById('nameInput').blur(); }, 200); };
+        window.handleSettleNow = function() { showSummary(); };
+        window.closeSummary = function() { document.getElementById('summaryModal').classList.remove('show'); setTimeout(() => document.getElementById('summaryModal').style.display = 'none', 300); };
+
+        function showSummary() {
+            document.getElementById('summaryTitle').innerText = `战局结算 (共 ${state.round} 回合)`;
+            const sortedPlayers = [...state.players].sort((a, b) => b.score - a.score);
+            const medals = ['🥇', '🥈', '🥉'];
+            let html = '';
+            sortedPlayers.forEach((p, idx) => {
+                const medal = medals[idx] || (idx + 1);
+                const color = p.score > 0 ? '#34C759' : (p.score < 0 ? '#FF3B30' : '#000');
+                const sign = p.score > 0 ? '+' : '';
+                const st = p.stats || emptyStats();
+                html += `
+                    <div class="result-row">
+                        <div class="res-rank">${medal}</div>
+                        <div style="flex:1;">
+                            <div style="display:flex; justify-content:space-between;">
+                                <span class="res-name">${p.name}</span>
+                                <span class="res-score" style="color:${color}">${sign}${p.score}</span>
+                            </div>
+                            <div class="res-stats">
+                                <span class="stat-badge sb-gold">大金:${st.bigGold}</span>
+                                <span class="stat-badge sb-small">小金:${st.smallGold}</span>
+                                <span class="stat-badge sb-g9">黄金9:${st.gold9}</span>
+                                <span class="stat-badge sb-win">普胜:${st.normal}</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
-        });
-        
-        document.getElementById('summaryContent').innerHTML = html;
-        const modal = document.getElementById('summaryModal');
-        modal.style.display = 'flex';
-        setTimeout(() => modal.classList.add('show'), 10);
-    }
-    
-    function closeSummary() {
-        const modal = document.getElementById('summaryModal');
-        modal.classList.remove('show');
-        setTimeout(() => modal.style.display = 'none', 300);
-    }
-
-    function undo() {
-        if (state.history.length === 0) return alert("没有操作可撤销");
-        const previousState = state.history.pop();
-        state.players = JSON.parse(JSON.stringify(previousState.players));
-        state.round = Math.max(0, state.round - 1); 
-        document.getElementById('roundDisplay').innerText = `第 ${state.round} 回合`;
-        render();
-    }
-    
-    function saveState() {
-        if (state.history.length > 20) state.history.shift();
-        state.history.push({
-            players: JSON.parse(JSON.stringify(state.players))
-        });
-    }
-
-    function resetGame() {
-        if (confirm("确定重置?")) {
-            state.round = 0;
-            document.getElementById('roundDisplay').innerText = `第 0 回合`;
-            state.history = []; 
-            state.players.forEach(p => { p.score = 0; p.stats = emptyStats(); }); 
-            render();
+                `;
+            });
+            document.getElementById('summaryContent').innerHTML = html;
+            const modal = document.getElementById('summaryModal');
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('show'), 10);
         }
-    }
 
-    function switchMode(n) {
-        if (state.mode === n) return;
-        if (!confirm('切换人数会重置比分')) return;
-        state.mode = n;
-        state.round = 0; 
-        document.getElementById('roundDisplay').innerText = `第 0 回合`;
-        document.getElementById('mode2').className = n === 2 ? 'toggle-btn active' : 'toggle-btn';
-        document.getElementById('mode3').className = n === 3 ? 'toggle-btn active' : 'toggle-btn';
-        state.history = []; state.players = [];
-        const defs = ['玩家 A', '玩家 B', '玩家 C'];
-        for(let i=0; i<n; i++) state.players.push({ id: i, name: defs[i], score: 0, stats: emptyStats() });
-        render();
-    }
-    
-    const settingsModal = document.getElementById('settingsModal');
-    const optTransfer = document.getElementById('optTransfer');
-    const optRace = document.getElementById('optRace');
+        window.copyLink = function() {
+            const url = window.location.href;
+            if (navigator.share) {
+                navigator.share({ title: '桌球追分', url: url }).catch(console.error);
+            } else {
+                navigator.clipboard.writeText(url).then(() => alert('链接已复制，发给好友即可联机'));
+            }
+        };
 
-    function openSettings() {
-        if (state.scoreMode === 'transfer') {
-            optTransfer.classList.add('selected'); optTransfer.querySelector('div:last-child').style.display = 'block';
-            optRace.classList.remove('selected'); optRace.querySelector('div:last-child').style.display = 'none';
-        } else {
-            optRace.classList.add('selected'); optRace.querySelector('div:last-child').style.display = 'block';
-            optTransfer.classList.remove('selected'); optTransfer.querySelector('div:last-child').style.display = 'none';
-        }
-        settingsModal.style.display = 'flex'; setTimeout(() => settingsModal.classList.add('show'), 10);
-    }
-    function closeSettings() { settingsModal.classList.remove('show'); setTimeout(() => settingsModal.style.display = 'none', 200); render(); }
-    function setScoreMode(mode) { state.scoreMode = mode; openSettings(); }
-    
-    const nModal = document.getElementById('nameModal');
-    const nInput = document.getElementById('nameInput');
-    function openNameModal(i) { currentEditIndex = i; nInput.value = ''; nModal.style.display = 'flex'; setTimeout(() => nModal.classList.add('show'), 10); setTimeout(() => nInput.focus(), 50); }
-    function closeNameModal() { nModal.classList.remove('show'); setTimeout(() => { nModal.style.display = 'none'; nInput.blur(); }, 200); }
-    function saveName() { const val = nInput.value.trim(); if(val) { state.players[currentEditIndex].name = val; render(); } closeNameModal(); }
-    nInput.addEventListener('keypress', (e) => { if(e.key==='Enter') saveName(); });
+        // 初始运行一次 UI 渲染 (显示连接中状态)
+        updateUI();
 
-    // 初始化
-    render();
-</script>
+    </script>
 </body>
 </html>
