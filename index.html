@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#F2F2F7">
-    <title>桌球追分 (App体验版)</title>
+    <title>桌球追分 (最终完美版)</title>
     <style>
         :root {
             --bg-body: #F2F2F7; --bg-card: #FFFFFF;
@@ -19,11 +19,11 @@
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
             background-color: var(--bg-body); margin: 0; padding: 0;
             height: 100dvh; width: 100vw;
-            overflow: hidden; /* 核心：禁止滚动 */
+            overflow: hidden; 
             display: flex; flex-direction: column;
             padding-top: max(10px, var(--safe-top)); padding-bottom: max(10px, var(--safe-bottom));
             box-sizing: border-box; user-select: none; -webkit-user-select: none;
-            touch-action: none; /* 禁止由于手势触发的默认滚动 */
+            touch-action: none; 
         }
 
         /* --- Header --- */
@@ -56,19 +56,21 @@
             cursor: pointer; z-index: 2;
         }
 
-        /* --- 顶部信息栏 (Grid布局: 左日志 | 中回合 | 右占位) --- */
+        /* --- 顶部信息栏 --- */
         .info-bar {
             flex-shrink: 0; height: 50px; 
             margin: 0 16px;
             display: grid; 
-            grid-template-columns: 1.5fr 1fr 1.5fr; /* 左中右比例 */
+            grid-template-columns: 1.5fr 1fr 1.5fr; 
             align-items: center;
         }
 
-        /* 左边：日志 */
+        /* 左边：日志 (已加大字体) */
         .logs-area {
             display: flex; flex-direction: column; justify-content: center;
-            font-size: 11px; line-height: 14px; color: #8E8E93;
+            font-size: 13px; /* 从11px加大到13px */
+            line-height: 16px; /* 增加行高 */
+            color: #8E8E93;
             text-align: left;
         }
         .log-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -83,26 +85,25 @@
 
         /* --- 主区域 --- */
         main {
-            flex: 1; /* 占满剩余空间 */
+            flex: 1; 
             display: flex; flex-direction: column; 
-            justify-content: space-evenly; /* 关键：卡片均匀分布 */
+            justify-content: space-evenly; 
             padding: 0 16px; 
             overflow: hidden;
             gap: 2px;
         }
 
-        /* --- 玩家卡片 (恢复原版大字体/大间距) --- */
+        /* --- 玩家卡片 --- */
         .player-card {
             background: var(--bg-card); border-radius: 18px; 
-            padding: 12px 16px; /* 恢复舒适的内边距 */
+            padding: 12px 16px; 
             box-shadow: 0 4px 12px rgba(0,0,0,0.04);
             display: flex; flex-direction: column; justify-content: center;
-            /* 不再强制 flex:1，而是允许它根据内容撑开，靠 main 的 space-evenly 分布 */
         }
         
         .card-header-row {
             display: flex; justify-content: space-between; align-items: center; 
-            margin-bottom: 8px; /* 恢复间距 */
+            margin-bottom: 8px; 
         }
         .left-info { display: flex; align-items: center; gap: 10px; cursor: pointer; }
         .rank-num {
@@ -121,8 +122,8 @@
         }
         .act-btn {
             border: none; border-radius: 10px; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; cursor: pointer; padding: 6px 0; /* 恢复按钮高度 */
-            background: #F2F2F7; /* 默认底色兜底 */
+            align-items: center; justify-content: center; cursor: pointer; padding: 6px 0;
+            background: #F2F2F7; 
         }
         .act-btn:active { opacity: 0.6; transform: scale(0.98); }
         .btn-t { font-size: 13px; font-weight: 600; margin-bottom: 2px; white-space: nowrap;}
