@@ -5,30 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#F2F2F7">
-    <title>桌球追分 (最终优化版)</title>
+    <title>桌球追分 (完美布局版)</title>
     <style>
         :root {
             --bg-body: #F2F2F7; --bg-card: #FFFFFF;
             --c-primary: #007AFF; --c-gold-s: #FF9500; --c-gold-b: #AF52DE; --c-gold-9: #FFD60A; 
-            --c-black: #2C2C2E; --c-foul: #FF3B30; --c-let: #FF2D55;      
+            --c-foul: #FF3B30; --c-let: #FF2D55;      
             --safe-top: env(safe-area-inset-top); --safe-bottom: env(safe-area-inset-bottom);
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
             background-color: var(--bg-body); margin: 0; padding: 0;
+            /* 关键：强制一屏，禁止滚动 */
             height: 100dvh; overflow: hidden; display: flex; flex-direction: column;
             padding-top: max(10px, var(--safe-top)); padding-bottom: max(10px, var(--safe-bottom));
             box-sizing: border-box; user-select: none; -webkit-user-select: none;
         }
-        
-        /* --- Header --- */
+
+        /* --- 顶部导航 --- */
         header {
-            flex-shrink: 0; height: 40px; display: flex; align-items: center; justify-content: space-between;
-            padding: 0 16px; position: relative; z-index: 5;
+            flex-shrink: 0; height: 44px; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 16px; position: relative; z-index: 10;
         }
-        .header-left { display: flex; gap: 4px; z-index: 2; }
+        .header-left { display: flex; gap: 8px; z-index: 2; }
         .icon-btn {
-            background: none; border: none; padding: 8px; color: var(--c-primary); 
+            background: none; border: none; padding: 6px; color: var(--c-primary); 
             display: flex; align-items: center; cursor: pointer; border-radius: 50%;
         }
         .header-center {
@@ -42,75 +43,88 @@
             background: #E5E5EA; border-radius: 100px; padding: 2px; display: flex; pointer-events: auto;
         }
         .toggle-btn {
-            border: none; background: none; padding: 2px 10px; border-radius: 100px;
-            font-size: 12px; font-weight: 600; color: #8E8E93; transition: all 0.2s;
+            border: none; background: none; padding: 2px 12px; border-radius: 100px;
+            font-size: 13px; font-weight: 600; color: #8E8E93; transition: all 0.2s;
         }
         .toggle-btn.active { background: #FFF; color: #000; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .reset-btn { 
-            border: none; background: none; color: var(--c-foul); font-size: 14px; font-weight: 600; 
-            cursor: pointer; z-index: 2; padding: 8px;
+            border: none; background: none; color: var(--c-foul); font-size: 15px; font-weight: 600; 
+            cursor: pointer; z-index: 2;
         }
 
-        /* --- Recent Logs Bar (新功能) --- */
-        .top-info-area {
-            flex-shrink: 0; padding: 0 16px 8px 16px;
-            display: flex; flex-direction: column; gap: 4px;
+        /* --- 新增：信息看板 (替代原来的Round Display) --- */
+        /* 固定高度，不让它挤占太多空间 */
+        .dashboard-bar {
+            flex-shrink: 0; height: 50px; 
+            margin: 0 16px 6px 16px;
+            display: flex; align-items: center; justify-content: space-between;
         }
-        .round-indicator {
-            text-align: center; font-size: 12px; font-weight: 600; color: #8E8E93;
+        /* 左侧：大大的回合数 */
+        .dash-round {
+            font-size: 20px; font-weight: 800; color: #333; letter-spacing: -0.5px;
         }
-        .mini-log-card {
-            background: #FFF; border-radius: 12px; padding: 8px 12px;
-            min-height: 50px; display: flex; flex-direction: column; justify-content: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        .dash-round small { font-size: 12px; color: #8E8E93; font-weight: 500; margin-left: 2px; }
+        
+        /* 右侧：3条日志，紧凑排列 */
+        .dash-logs {
+            display: flex; flex-direction: column; align-items: flex-end; justify-content: center;
+            font-size: 10px; line-height: 14px; color: #8E8E93;
         }
-        .mini-log-item {
-            font-size: 11px; display: flex; align-items: center; gap: 6px; margin-bottom: 2px;
-        }
-        .mini-log-item:last-child { margin-bottom: 0; }
-        .ml-time { color: #BBB; font-family: monospace; }
-        .ml-text { color: #333; font-weight: 500; }
-        .ml-latest .ml-text { color: var(--c-primary); font-weight: 700; }
-        .ml-latest .ml-time { color: var(--c-primary); opacity: 0.6; }
-        .ml-empty { text-align: center; color: #DDD; font-size: 11px; }
-
-        /* --- Main Cards --- */
+        .dash-log-item { display: flex; gap: 6px; }
+        .dash-log-item.latest { color: var(--c-primary); font-weight: 600; }
+        
+        /* --- 主区域 (自动弹性伸缩) --- */
         main {
-            flex: 1; display: flex; flex-direction: column; justify-content: flex-start;
-            padding: 0 16px; gap: 8px; overflow-y: auto; padding-bottom: 8px;
+            /* 关键：flex: 1 占满剩余空间，min-height: 0 允许内容压缩 */
+            flex: 1; min-height: 0; 
+            display: flex; flex-direction: column; 
+            padding: 0 16px; gap: 8px; 
+            overflow: hidden; /* 禁止滚动 */
         }
+
+        /* --- 玩家卡片 (恢复原有大字体，利用 flex:1 自动适配高度) --- */
         .player-card {
-            background: var(--bg-card); border-radius: 16px; padding: 8px 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-            display: flex; flex-direction: column; justify-content: center;
-            flex-shrink: 0; /* 防止被挤压 */
+            background: var(--bg-card); border-radius: 18px; padding: 0 16px; /* 上下padding设为0，靠flex居中 */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            display: flex; flex-direction: column; justify-content: center; 
+            /* 关键：让三个卡片平分高度 */
+            flex: 1; 
+            min-height: 0; /* 允许压缩 */
         }
+        
+        /* 内部布局微调，确保不重叠 */
         .card-header-row {
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 4px; flex-shrink: 0;
         }
-        .left-info { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+        .left-info { display: flex; align-items: center; gap: 10px; cursor: pointer; }
         .rank-num {
-            width: 20px; height: 20px; background: var(--c-primary); color: white; 
-            font-size: 12px; font-weight: 700; border-radius: 5px; 
+            width: 24px; height: 24px; background: var(--c-primary); color: white; 
+            font-size: 14px; font-weight: 700; border-radius: 6px; 
             display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 122, 255, 0.3);
         }
-        .p-name { font-size: 15px; font-weight: 600; color: #333; }
-        .p-score { font-size: 28px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -1px; }
+        /* 恢复大字体 */
+        .p-name { font-size: 17px; font-weight: 600; color: #333; }
+        .p-score { font-size: 34px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
         .score-p { color: #34C759; } .score-n { color: #FF3B30; } .score-z { color: #1C1C1E; }
 
         .btn-grid {
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+            display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr);
+            gap: 6px; /* 恢复原来的间距 */
+            /* 按钮区域也自适应，但有最大高度限制防止太丑 */
+            flex: 1; max-height: 90px; min-height: 0;
         }
         .act-btn {
-            border: none; border-radius: 8px; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; cursor: pointer; padding: 6px 0;
-            height: 38px;
+            border: none; border-radius: 10px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; cursor: pointer; padding: 0;
+            height: 100%; /* 撑满网格 */
         }
         .act-btn:active { opacity: 0.6; transform: scale(0.98); }
-        .btn-t { font-size: 12px; font-weight: 600; line-height: 1.1; }
-        .btn-s { font-size: 9px; opacity: 0.6; transform: scale(0.9); white-space: nowrap; margin-top: 1px;}
-        
-        /* Colors */
+        .btn-t { font-size: 13px; font-weight: 600; margin-bottom: 2px; white-space: nowrap;}
+        .btn-s { font-size: 9px; opacity: 0.7; font-weight: 500; letter-spacing: -0.2px; white-space: nowrap; }
+
+        /* 颜色恢复 */
         .b-norm { background: #E1F0FF; color: var(--c-primary); }
         .b-sgold { background: #FFF3DC; color: var(--c-gold-s); }
         .b-bgold { background: #F3E5F5; color: var(--c-gold-b); }
@@ -119,21 +133,19 @@
         .b-foul { background: #FFEEEE; color: var(--c-foul); }
         .b-let { background: #FFF0F5; color: var(--c-let); }
 
-        /* --- Footer --- */
+        /* --- 底部 --- */
         footer {
             flex-shrink: 0; display: flex; justify-content: space-between;
-            padding: 8px 16px max(8px, var(--safe-bottom)); 
-            gap: 12px; background: var(--bg-body);
+            padding: 8px 16px; gap: 12px; height: 42px; /* 稍微给点padding */
         }
         .footer-btn {
-            flex: 1; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 6px;
-            font-size: 14px; font-weight: 600; border: none; cursor: pointer; height: 44px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            flex: 1; border-radius: 21px; display: flex; align-items: center; justify-content: center; gap: 6px;
+            font-size: 14px; font-weight: 600; border: none; cursor: pointer;
         }
-        .btn-undo { background: #FFF; color: #555; }
+        .btn-undo { background: #FFF; color: #555; border: 1px solid #E5E5EA; }
         .btn-save { background: #1C1C1E; color: #FFF; }
 
-        /* --- Modals (Keep existing styles) --- */
+        /* Modals (保持不变) */
         .modal-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px);
             z-index: 100; display: none; opacity: 0; transition: opacity 0.25s;
@@ -156,6 +168,7 @@
             display: flex; justify-content: space-between; align-items: center; cursor: pointer;
         }
         .setting-opt.selected { background: #E1F0FF; border: 1px solid var(--c-primary); }
+        
         .res-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 4px; }
         .stat-badge {
             display: flex; align-items: center; justify-content: center;
@@ -171,7 +184,6 @@
         .res-name { flex: 1; text-align: left; font-weight: 700; font-size: 16px; margin-bottom: 4px;}
         .res-score { font-weight: 800; font-size: 18px; }
 
-        /* Log Modal Specific */
         .log-item { text-align: left; padding: 10px 0; border-bottom: 1px solid #f2f2f7; font-size: 13px; color: #333; }
         .log-round { font-weight: bold; color: var(--c-primary); margin-right: 6px; }
         .log-detail { margin-top: 4px; color: #666; font-size: 11px; }
@@ -206,10 +218,10 @@
         <button class="reset-btn" onclick="resetGame()">重置</button>
     </header>
 
-    <div class="top-info-area">
-        <div id="roundDisplay" class="round-indicator">请先加入房间</div>
-        <div id="miniLogCard" class="mini-log-card">
-            <div class="ml-empty">等待操作...</div>
+    <div class="dashboard-bar">
+        <div class="dash-round" id="roundBigDisplay">0<small>回合</small></div>
+        <div class="dash-logs" id="dashLogs">
+            <div style="opacity:0.3">等待开局...</div>
         </div>
     </div>
 
@@ -298,7 +310,7 @@
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         // --------------------------------------------------------
-        // 🔥 请重新填入你的 Firebase 配置 🔥
+        // 🔥 请务必再次填入你的 Firebase 配置 🔥
         // --------------------------------------------------------
         const firebaseConfig = {
             apiKey: "AIzaSyADNOZ3t-TrqLBU2rLf2QAUv77-b-vzSR0",
@@ -359,7 +371,6 @@
         function connectToFirebase() {
             roomRef = ref(db, 'rooms/' + roomId);
             const statusEl = document.getElementById('status-bar');
-            document.getElementById('roundDisplay').innerText = "连接中...";
 
             onValue(roomRef, (snapshot) => {
                 const data = snapshot.val();
@@ -580,22 +591,21 @@
         window.setScoreMode = function(mode) { state.scoreMode = mode; pushStateToCloud(); openSettings(); };
 
         function updateUI() {
-            document.getElementById('roundDisplay').innerText = `第 ${state.round} 回合`;
+            document.getElementById('roundBigDisplay').innerHTML = `${state.round}<small>回合</small>`;
             
-            // --- 渲染顶部 Mini Log ---
-            const logBox = document.getElementById('miniLogCard');
+            // --- 渲染新的 Mini Log Bar ---
+            const logBox = document.getElementById('dashLogs');
             const recentLogs = state.logs ? state.logs.slice(0, 3) : [];
             if (recentLogs.length === 0) {
-                logBox.innerHTML = '<div class="ml-empty">等待操作...</div>';
+                logBox.innerHTML = '<div style="opacity:0.3">等待开局...</div>';
             } else {
                 logBox.innerHTML = recentLogs.map((l, idx) => `
-                    <div class="mini-log-item ${idx === 0 ? 'ml-latest' : ''}" style="opacity:${1 - idx*0.3}">
-                        <span class="ml-time">${l.time}</span>
-                        <span class="ml-text">${l.text}</span>
+                    <div class="dash-log-item ${idx === 0 ? 'latest' : ''}" style="opacity:${1 - idx*0.3}">
+                        <span>${l.time}</span>
+                        <span>${l.text}</span>
                     </div>
                 `).join('');
             }
-            // ------------------------
 
             document.getElementById('mode2').className = state.mode === 2 ? 'toggle-btn active' : 'toggle-btn';
             document.getElementById('mode3').className = state.mode === 3 ? 'toggle-btn active' : 'toggle-btn';
