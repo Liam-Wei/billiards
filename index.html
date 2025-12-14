@@ -6,15 +6,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#F2F2F7">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>桌球追分 (单机版)</title>
+    <title>桌球追分 (完美版)</title>
     <style>
         :root {
             --bg-body: #F2F2F7; --bg-card: #FFFFFF;
             --c-primary: #007AFF; --c-gold-s: #FF9500; --c-gold-b: #AF52DE; --c-gold-9: #FFD60A; 
-            --c-foul: #FF3B30; --c-let: #FF2D55;    
+            --c-black: #2C2C2E; --c-foul: #FF3B30; --c-let: #FF2D55;      
             --safe-top: env(safe-area-inset-top); --safe-bottom: env(safe-area-inset-bottom);
         }
         body {
@@ -64,39 +61,42 @@
             padding: 0 16px; gap: 10px; overflow: hidden; padding-bottom: 8px;
         }
         .player-card {
-            background: var(--bg-card); border-radius: 18px; padding: 10px 16px;
+            background: var(--bg-card); border-radius: 18px; padding: 10px 14px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.04);
             display: flex; flex-direction: column; justify-content: center; flex: 1; min-height: 0; 
+            transition: transform 0.3s ease;
         }
         .card-header-row {
             display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-shrink: 0;
         }
-        .left-info { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .left-info { display: flex; align-items: center; gap: 8px; cursor: pointer; }
         .rank-num {
-            width: 24px; height: 24px; background: var(--c-primary); color: white; 
-            font-size: 14px; font-weight: 700; border-radius: 6px; 
+            width: 22px; height: 22px; background: var(--c-primary); color: white; 
+            font-size: 13px; font-weight: 700; border-radius: 6px; 
             display: flex; align-items: center; justify-content: center;
             box-shadow: 0 2px 4px rgba(0, 122, 255, 0.3);
         }
         .p-name { font-size: 17px; font-weight: 600; color: #333; }
-        .p-score { font-size: 34px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+        .p-score { font-size: 32px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
         .score-p { color: #34C759; } .score-n { color: #FF3B30; } .score-z { color: #1C1C1E; }
 
         .btn-grid {
-            display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr);
-            gap: 6px; flex: 1; min-height: 0; 
+            display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr);
+            gap: 5px; flex: 1; min-height: 0; 
         }
         .act-btn {
             border: none; border-radius: 10px; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; cursor: pointer; padding: 0;
+            align-items: center; justify-content: center; cursor: pointer; padding: 2px 0;
         }
-        .act-btn:active { opacity: 0.6; transform: scale(0.98); }
-        .btn-t { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
-        .btn-s { font-size: 9px; opacity: 0.7; font-weight: 500; letter-spacing: -0.2px; }
+        .act-btn:active { opacity: 0.6; transform: scale(0.96); }
+        .btn-t { font-size: 13px; font-weight: 600; margin-bottom: 1px; white-space: nowrap; }
+        .btn-s { font-size: 9px; opacity: 0.75; font-weight: 500; letter-spacing: -0.3px; white-space: nowrap; }
+        
         .b-norm { background: #E1F0FF; color: var(--c-primary); }
         .b-sgold { background: #FFF3DC; color: var(--c-gold-s); }
         .b-bgold { background: #F3E5F5; color: var(--c-gold-b); }
         .b-gold9 { background: #FFFDE7; color: #9A7D0A; } 
+        .b-black { background: #3A3A3C; color: #FFF; }
         .b-foul { background: #FFEEEE; color: var(--c-foul); }
         .b-let { background: #FFF0F5; color: var(--c-let); }
 
@@ -124,16 +124,21 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-height: 80vh; overflow-y: auto;
         }
         .modal-overlay.show .center-box { transform: scale(1); }
+        
+        .modal-input {
+            width: 100%; box-sizing: border-box;
+            padding: 12px; background: #F2F2F7; border: none; border-radius: 12px; 
+            margin: 16px 0; text-align: center; font-size: 16px;
+        }
+
         .setting-opt {
             background: #F2F2F7; padding: 10px; border-radius: 10px; margin-bottom: 8px;
             display: flex; justify-content: space-between; align-items: center; cursor: pointer;
         }
         .setting-opt.selected { background: #E1F0FF; border: 1px solid var(--c-primary); }
 
-        /* Stats Grid & Badges */
-        .res-stats { 
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 4px; 
-        }
+        /* Stats Grid */
+        .res-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 4px; }
         .stat-badge {
             display: flex; align-items: center; justify-content: center;
             font-size: 10px; padding: 4px 2px; border-radius: 4px; 
@@ -195,7 +200,7 @@
                 <div style="color:var(--c-primary); font-weight:bold; display:none;">✓</div>
             </div>
             <div class="modal-btns" style="margin-top:16px;">
-                <button class="m-btn" style="background:var(--c-primary); color:#FFF; flex:1; padding:10px; border:none; border-radius:12px; font-size:15px; font-weight:600;" onclick="closeSettings()">完成</button>
+                <button class="m-btn" style="background:var(--c-primary); color:#FFF; flex:1; padding:10px; border:none; border-radius:12px; font-size:15px; font-weight:600; width:100%" onclick="closeSettings()">完成</button>
             </div>
         </div>
     </div>
@@ -203,7 +208,7 @@
     <div class="modal-overlay" id="nameModal">
         <div class="center-box">
             <div style="font-size:16px; font-weight:700;">修改名字</div>
-            <input type="text" class="modal-input" id="nameInput" placeholder="输入新名字" maxlength="8" style="width:100%; padding:12px; background:#F2F2F7; border:none; border-radius:12px; margin:16px 0; text-align:center;">
+            <input type="text" class="modal-input" id="nameInput" placeholder="输入新名字" maxlength="8">
             <div style="display:flex; gap:10px;">
                 <button style="flex:1; padding:10px; border:none; border-radius:12px; background:#F2F2F7; color:#8E8E93; font-weight:600;" onclick="closeNameModal()">取消</button>
                 <button style="flex:1; padding:10px; border:none; border-radius:12px; background:var(--c-primary); color:#FFF; font-weight:600;" onclick="saveName()">确定</button>
@@ -232,12 +237,31 @@
             { id: 1, name: '玩家 B', score: 0, stats: emptyStats() },
             { id: 2, name: '玩家 C', score: 0, stats: emptyStats() }
         ],
-        history: [] // 仅用于撤销
+        history: []
     };
     let currentEditIndex = -1;
 
     function getRelations(curr, total) {
         return { prev: (curr - 1 + total) % total, next: (curr + 1) % total };
+    }
+
+    // 核心修改：顺序轮换逻辑
+    function rotateWinner(winnerIdx) {
+        if (state.mode === 3) {
+            // 如果是3人局
+            if (winnerIdx === 0) {
+                // 1. 如果庄家(0)赢了，庄家不动，但两家闲家互换位置 (让第3家上来攻擂)
+                [state.players[1], state.players[2]] = [state.players[2], state.players[1]];
+            } else {
+                // 2. 如果闲家(1或2)赢了，闲家成为新庄家(0)，原庄家退位
+                [state.players[0], state.players[winnerIdx]] = [state.players[winnerIdx], state.players[0]];
+            }
+        } else if (state.mode === 2) {
+            // 2人局简单互换(赢家去0位)
+            if (winnerIdx !== 0) {
+                 [state.players[0], state.players[1]] = [state.players[1], state.players[0]];
+            }
+        }
     }
 
     function handleAction(idx, type) {
@@ -246,12 +270,18 @@
         document.getElementById('roundDisplay').innerText = `第 ${state.round} 回合`;
 
         const total = state.mode;
+        // 注意：这里的prev/next是基于当前的数组顺序计算的
         const { prev, next } = getRelations(idx, total);
         let ps = state.players;
-        const scores = { normal: 4, smallGold: 7, bigGold: 20, gold9: 8, foul: 1 };
+        const scores = { normal: 4, smallGold: 7, bigGold: 20, gold9: 8 };
 
         if (!ps[idx].stats) ps[idx].stats = emptyStats();
         
+        // 标记是否属于赢分操作（需要换位）
+        let isWin = false;
+
+        // 统计更新
+        if (['normal','smallGold','bigGold','gold9'].includes(type)) isWin = true;
         if (type === 'normal') ps[idx].stats.normal++;
         else if (type === 'smallGold') ps[idx].stats.smallGold++;
         else if (type === 'bigGold') ps[idx].stats.bigGold++;
@@ -262,9 +292,15 @@
                 case 'normal': ps[idx].score += 4; ps[prev].score -= 4; break;
                 case 'smallGold': ps[idx].score += 7; ps[prev].score -= 7; break;
                 case 'bigGold': ps[idx].score += 20; ps[prev].score -= 10; ps[next].score -= 10; break;
-                case 'gold9': ps[prev].score -= 4; ps[next].score -= 4; ps[idx].score += 8; break;
-                case 'foul': ps[idx].score -= 1; ps[prev].score += 1; break;
-                case 'letFoul': ps[idx].score -= 1; ps[next].score += 1; break;
+                case 'gold9': ps[idx].score += 8; ps[prev].score -= 4; ps[next].score -= 4; break;
+                
+                // 犯规类
+                case 'foul': ps[idx].score -= 1; ps[prev].score += 1; break; // 给上家
+                case 'letFoul': ps[idx].score -= 1; ps[next].score += 1; break; // 让杆犯规：给下家
+                case 'openFoul': ps[idx].score -= 1; ps[next].score += 1; break; // 开球犯规：给下家
+                
+                // 黑金 (自-5，给上家1，给下家4)
+                case 'blackGold': ps[idx].score -= 5; ps[prev].score += 1; ps[next].score += 4; break;
             }
         } else if (total === 2) {
             const isRace = state.scoreMode === 'race'; 
@@ -282,10 +318,21 @@
                 case 'gold9': 
                     ps[idx].score += 4; if (!isRace) ps[opponentIdx].score -= 4; 
                     break;
+                
                 case 'foul': ps[idx].score -= 1; if (!isRace) ps[opponentIdx].score += 1; break;
                 case 'letFoul': ps[idx].score -= 1; if (!isRace) ps[opponentIdx].score += 1; break;
+                case 'openFoul': ps[idx].score -= 1; if (!isRace) ps[opponentIdx].score += 1; break;
+                
+                // 2人局黑金，通常是输5分给对方
+                case 'blackGold': ps[idx].score -= 5; if (!isRace) ps[opponentIdx].score += 5; break;
             }
         }
+
+        // 核心修改：如果是赢分操作，执行换位
+        if (isWin) {
+            rotateWinner(idx);
+        }
+
         render();
         if(navigator.vibrate) navigator.vibrate(15);
     }
@@ -294,10 +341,13 @@
         const box = document.getElementById('container');
         box.innerHTML = '';
         
-        let txtBig = '通吃 20'; let txtG9 = '通吃 8';
+        let txtBig = '通吃 20'; let txtG9 = '通吃 8'; let txtBlack = '上+1 下+4';
         if (state.mode === 2) {
-            if (state.scoreMode === 'transfer') { txtBig = '自+10 他-10'; txtG9 = '自+4 他-4'; } 
-            else { txtBig = '自+10'; txtG9 = '自+4'; }
+            if (state.scoreMode === 'transfer') { 
+                txtBig = '自+10 他-10'; txtG9 = '自+4 他-4'; txtBlack = '自-5 他+5';
+            } else { 
+                txtBig = '自+10'; txtG9 = '自+4'; txtBlack = '自-5';
+            }
         }
 
         state.players.forEach((p, i) => {
@@ -305,6 +355,8 @@
             let sig = p.score > 0 ? '+' : '';
             const el = document.createElement('div');
             el.className = 'player-card';
+            // 添加索引便于回调，但在UI中i始终是当前的渲染顺序（0是上家，1是中，2是下）
+            // 在追分规则里，排在第一个的是“上家/擂主”
             el.innerHTML = `
                 <div class="card-header-row">
                     <div class="left-info" onclick="openNameModal(${i})">
@@ -318,18 +370,19 @@
                     <button class="act-btn b-bgold" onclick="handleAction(${i}, 'bigGold')"><span class="btn-t">大金</span><span class="btn-s">${txtBig}</span></button>
                     <button class="act-btn b-sgold" onclick="handleAction(${i}, 'smallGold')"><span class="btn-t">小金</span><span class="btn-s">自+7 上-7</span></button>
                     <button class="act-btn b-gold9" onclick="handleAction(${i}, 'gold9')"><span class="btn-t">黄金9</span><span class="btn-s">${txtG9}</span></button>
-                    <button class="act-btn b-foul" onclick="handleAction(${i}, 'foul')"><span class="btn-t">犯规</span><span class="btn-s">给上家 1</span></button>
+                    <button class="act-btn b-black" onclick="handleAction(${i}, 'blackGold')"><span class="btn-t">黑金</span><span class="btn-s">${txtBlack}</span></button>
+                    
                     <button class="act-btn b-norm" onclick="handleAction(${i}, 'normal')"><span class="btn-t">普胜</span><span class="btn-s">自+4 上-4</span></button>
+                    <button class="act-btn b-foul" onclick="handleAction(${i}, 'foul')"><span class="btn-t">犯规</span><span class="btn-s">给上家 1</span></button>
                     <button class="act-btn b-let" onclick="handleAction(${i}, 'letFoul')"><span class="btn-t">让杆犯规</span><span class="btn-s">给下家 1</span></button>
+                    <button class="act-btn b-foul" style="background:#FFEAEA" onclick="handleAction(${i}, 'openFoul')"><span class="btn-t">开球犯规</span><span class="btn-s">给下家 1</span></button>
                 </div>
             `;
             box.appendChild(el);
         });
     }
 
-    // 核心修改：点击直接弹出结算（新函数名避免缓存旧逻辑）
     function handleSettleNow() { showSummary(); }
-    function settleGame() { showSummary(); }
 
     function showSummary() {
         document.getElementById('summaryTitle').innerText = `战局结算 (共 ${state.round} 回合)`;
