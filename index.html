@@ -36,7 +36,7 @@
             display: flex; align-items: center; cursor: pointer; border-radius: 50%;
         }
         
-        /* 计时器样式优化 */
+        /* 计时器样式 */
         .timer-container {
             display: flex; justify-content: center; align-items: center; gap: 8px;
         }
@@ -57,12 +57,12 @@
             cursor: pointer;
         }
 
-        /* --- 顶部信息栏 (调整布局) --- */
+        /* --- 顶部信息栏 --- */
         .info-bar {
-            flex-shrink: 0; height: 85px; /* 增加高度容纳更多日志 */
+            flex-shrink: 0; height: 85px; 
             margin: 4px 12px;
             display: grid; 
-            grid-template-columns: 1.2fr 0.6fr 1.2fr; /* 调整比例 */
+            grid-template-columns: 1.2fr 0.6fr 1.2fr;
             align-items: center;
             background: white;
             border-radius: 12px;
@@ -86,7 +86,6 @@
         }
         .round-area small { font-size: 10px; font-weight: 500; color: #8E8E93; margin-top: 2px; }
 
-        /* 排行榜优化 */
         .leaderboard-area {
             display: flex; flex-direction: column; justify-content: center;
             font-size: 12px; color: #333; gap: 3px;
@@ -96,20 +95,30 @@
         .lb-name { font-weight: 600; font-size: 13px; max-width: 50px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #333; }
         .lb-score { font-family: monospace; font-weight: 800; font-size: 14px; margin-left: auto; color: #000; }
 
-        /* --- 主区域 (紧凑模式) --- */
+        /* --- 主区域 --- */
         main {
             flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; 
-            padding: 2px 12px; overflow: hidden; gap: 6px; /* 减小Gap */
+            padding: 2px 12px; overflow: hidden; gap: 6px;
         }
 
         .player-card {
             background: var(--bg-card); border-radius: 16px; 
-            padding: 8px 14px; /* 减小内边距 */
+            padding: 8px 14px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.04);
             display: flex; flex-direction: column; justify-content: center; transition: all 0.3s;
         }
-        /* 庄家高亮边框 */
-        .player-card.is-dealer { border: 1.5px solid rgba(0,0,0,0.1); background: #FFFCF5; }
+        
+        /* 1. 庄家 (第一张卡片) 样式 */
+        .player-card.is-dealer { 
+            border: 1.5px solid rgba(255, 149, 0, 0.15); 
+            background: #FFFCF5; /* 暖色背景 */
+        }
+        
+        /* 2. 输家/闲家 (第二张卡片) 样式 */
+        .player-card.is-loser { 
+            border: 1.5px solid rgba(142, 142, 147, 0.15); 
+            background: #F7F9FC; /* 冷灰蓝背景 */
+        }
         
         .card-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
         .left-info { display: flex; align-items: center; gap: 8px; cursor: pointer; }
@@ -118,8 +127,9 @@
             font-size: 12px; font-weight: 700; border-radius: 5px; 
             display: flex; align-items: center; justify-content: center;
         }
-        /* 庄家图标 */
-        .dealer-icon { font-size: 16px; animation: popIn 0.3s; }
+        
+        /* 状态图标动画 */
+        .status-icon { font-size: 16px; margin-left: 4px; animation: popIn 0.3s; display: inline-block; }
         @keyframes popIn { 0%{transform:scale(0);} 80%{transform:scale(1.2);} 100%{transform:scale(1);} }
 
         .p-name { font-size: 16px; font-weight: 600; color: #333; }
@@ -185,7 +195,6 @@
         }
         .setting-opt.selected { background: #E1F0FF; border: 1px solid var(--c-primary); }
 
-        /* Confirm Button Cooldown Style */
         .btn-confirm { flex:1; padding:12px; border:none; border-radius:12px; background:var(--c-primary); color:#FFF; font-weight:600; transition: all 0.2s; }
         .btn-confirm:disabled { background: #CCC; cursor: not-allowed; opacity: 0.7; }
 
@@ -372,7 +381,7 @@
         let state = {
             mode: 3,
             round: 0, 
-            timerSeconds: 0, // 改为记录总秒数
+            timerSeconds: 0,
             timerRunning: false,
             scoreMode: 'transfer', 
             players: [
@@ -390,7 +399,6 @@
             if (saved) {
                 try {
                     const parsed = JSON.parse(saved);
-                    // 兼容旧数据结构
                     if (parsed.startTime !== undefined && parsed.timerSeconds === undefined) {
                          parsed.timerSeconds = 0; parsed.timerRunning = false;
                     }
@@ -398,7 +406,6 @@
                 } catch(e) { console.error('Resetting data due to error'); }
             }
             
-            // 恢复计时器状态
             updateTimerDisplay();
             if(state.timerRunning) startTimerInterval();
             else updateTimerBtnUI(false);
@@ -419,7 +426,7 @@
             setTimeout(() => t.style.opacity = 0, 2000);
         }
 
-        // --- 计时器逻辑优化 ---
+        // --- 计时器逻辑 ---
         function toggleTimer() {
             SoundFX.click();
             state.timerRunning = !state.timerRunning;
@@ -438,7 +445,6 @@
             timerInterval = setInterval(() => {
                 state.timerSeconds++;
                 updateTimerDisplay();
-                // 每10秒保存一次以防意外关闭
                 if(state.timerSeconds % 10 === 0) saveData(); 
             }, 1000);
         }
@@ -447,11 +453,11 @@
             const btn = document.getElementById('timerControlBtn');
             const display = document.getElementById('gameTimer');
             if (isRunning) {
-                btn.innerHTML = '<svg width="24" height="24" fill="#FF3B30" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>'; // Pause icon
+                btn.innerHTML = '<svg width="24" height="24" fill="#FF3B30" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>'; // Pause
                 display.classList.remove('timer-paused');
                 display.style.background = '#E5E5EA';
             } else {
-                btn.innerHTML = '<svg width="24" height="24" fill="#34C759" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>'; // Play icon
+                btn.innerHTML = '<svg width="24" height="24" fill="#34C759" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>'; // Play
                 display.classList.add('timer-paused');
             }
         }
@@ -557,7 +563,6 @@
             else SoundFX.win();
 
             if (state.history.length > 20) state.history.shift();
-            // 深拷贝 history
             state.history.push(JSON.parse(JSON.stringify({
                 mode: state.mode, round: state.round, scoreMode: state.scoreMode, 
                 players: state.players, logs: state.logs, timerSeconds: state.timerSeconds
@@ -566,7 +571,6 @@
             const isGameEnd = ['normal','smallGold','bigGold','gold9','blackGold'].includes(type);
             if (isGameEnd) state.round++;
 
-            // 如果计时器未开始，自动开始
             if(!state.timerRunning) toggleTimer();
 
             const total = state.mode;
@@ -583,7 +587,6 @@
             else if (type === 'blackGold') ps[idx].stats.blackGold++;
             else if (['foul', 'letFoul', 'openFoul'].includes(type)) ps[idx].stats.fouls++;
 
-            // 分数计算
             if (total === 3) {
                 switch (type) {
                     case 'normal': ps[idx].score += 4; ps[prev].score -= 4; break;
@@ -680,10 +683,6 @@
             state.scoreMode = previous.scoreMode;
             state.players = previous.players;
             state.logs = previous.logs || [];
-            
-            // 撤销不应该重置计时器累计时间，但可以回滚到当时的时间？
-            // 通常撤销操作不应该撤销“时间流逝”，所以这里不回滚timerSeconds
-            
             saveData();
             updateUI();
             showToast("↺ 已撤销一步"); 
@@ -723,7 +722,6 @@
             const defs = ['玩家 A', '玩家 B', '玩家 C'];
             for(let i=0; i<n; i++) state.players.push({ id: i, name: defs[i], score: 0, stats: emptyStats() });
             
-            // 更新按钮UI
             document.getElementById('mode2').className = n===2 ? 'toggle-btn active' : 'toggle-btn';
             document.getElementById('mode2').style.background = n===2 ? '#FFF' : 'transparent';
             document.getElementById('mode3').className = n===3 ? 'toggle-btn active' : 'toggle-btn';
@@ -744,7 +742,6 @@
             document.getElementById('roundBigDisplay').innerHTML = `${state.round}<small>回合</small>`;
             
             const logBox = document.getElementById('logsArea');
-            // 增加到显示5条日志
             const recentLogs = state.logs ? state.logs.slice(0, 5) : [];
             if (recentLogs.length === 0) {
                 logBox.innerHTML = '<div style="opacity:0.3; text-align:center; margin-top:10px;">等待开局...</div>';
@@ -761,7 +758,6 @@
             const medals = ['🥇','🥈','🥉'];
             lbBox.innerHTML = sortedP.map((p, i) => {
                 if(i > 2) return '';
-                // 加粗加大了分数显示
                 return `
                 <div class="lb-row">
                     <div class="lb-rank">${medals[i]||(i+1)}</div>
@@ -781,16 +777,28 @@
             state.players.forEach((p, i) => {
                 let sc = p.score > 0 ? 'score-p' : (p.score < 0 ? 'score-n' : 'score-z');
                 let sig = p.score > 0 ? '+' : '';
-                const isDealer = (i === 0); 
-                const dealerMark = isDealer ? '<span class="dealer-icon" style="margin-left:4px;">🎱</span>' : '';
+                
+                const isDealer = (i === 0);
+                const isLoser = (i === 1);
+                
+                let cardClass = 'player-card';
+                let statusIcon = '';
+                
+                if (isDealer) {
+                    cardClass += ' is-dealer';
+                    statusIcon = '<span class="status-icon">🎱</span>';
+                } else if (isLoser) {
+                    cardClass += ' is-loser';
+                    statusIcon = '<span class="status-icon">⚪</span>'; // 使用白球作为输家/摆球方的标志
+                }
                 
                 const el = document.createElement('div');
-                el.className = `player-card ${isDealer ? 'is-dealer' : ''}`;
+                el.className = cardClass;
                 el.innerHTML = `
                     <div class="card-header-row">
                         <div class="left-info" onclick="openNameModal(${i})">
                             <div class="rank-num">${i + 1}</div>
-                            <div class="p-name">${p.name} ${dealerMark}</div>
+                            <div class="p-name">${p.name} ${statusIcon}</div>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="#CCC"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
                         </div>
                         <div class="p-score ${sc}">${sig}${p.score}</div>
@@ -856,14 +864,12 @@
             setTimeout(() => modal.classList.add('show'), 10);
         }
 
-        // --- 战报复制功能修复 ---
         window.copyReport = function() {
             SoundFX.click();
             const time = document.getElementById('gameTimer').innerText;
             let text = `🎱 桌球追分战报\n⏱️ 时长: ${time} | 回合: ${state.round}\n------------------\n`;
             
             const sortedPlayers = [...state.players].sort((a, b) => b.score - a.score);
-            // 排名部分
             sortedPlayers.forEach((p, i) => {
                 const sign = p.score > 0 ? '+' : '';
                 const rank = i===0?'🥇':(i===1?'🥈':'🥉');
@@ -871,7 +877,6 @@
             });
             text += `------------------\n`;
             
-            // 详情部分 (循环输出所有统计数据)
             text += `📊 详细数据:\n`;
             sortedPlayers.forEach(p => {
                 const st = p.stats || emptyStats();
@@ -879,7 +884,6 @@
                 
                 text += `👤 ${p.name}\n`;
                 text += `   胜局: ${totalWins} | 犯规: ${st.fouls||0}\n`;
-                // 只显示 > 0 的特殊牌型，避免太长，或者全部显示
                 const specials = [];
                 if(st.bigGold > 0) specials.push(`大金x${st.bigGold}`);
                 if(st.smallGold > 0) specials.push(`小金x${st.smallGold}`);
