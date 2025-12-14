@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#F2F2F7">
-    <title>桌球追分 (完美布局版)</title>
+    <title>桌球追分 (App体验版)</title>
     <style>
         :root {
             --bg-body: #F2F2F7; --bg-card: #FFFFFF;
@@ -13,16 +13,20 @@
             --c-foul: #FF3B30; --c-let: #FF2D55;      
             --safe-top: env(safe-area-inset-top); --safe-bottom: env(safe-area-inset-bottom);
         }
+        
+        /* 全局锁死，禁止滚动 */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
             background-color: var(--bg-body); margin: 0; padding: 0;
-            /* 关键：强制一屏，禁止滚动 */
-            height: 100dvh; overflow: hidden; display: flex; flex-direction: column;
+            height: 100dvh; width: 100vw;
+            overflow: hidden; /* 核心：禁止滚动 */
+            display: flex; flex-direction: column;
             padding-top: max(10px, var(--safe-top)); padding-bottom: max(10px, var(--safe-bottom));
             box-sizing: border-box; user-select: none; -webkit-user-select: none;
+            touch-action: none; /* 禁止由于手势触发的默认滚动 */
         }
 
-        /* --- 顶部导航 --- */
+        /* --- Header --- */
         header {
             flex-shrink: 0; height: 44px; display: flex; align-items: center; justify-content: space-between;
             padding: 0 16px; position: relative; z-index: 10;
@@ -52,50 +56,53 @@
             cursor: pointer; z-index: 2;
         }
 
-        /* --- 新增：信息看板 (替代原来的Round Display) --- */
-        /* 固定高度，不让它挤占太多空间 */
-        .dashboard-bar {
+        /* --- 顶部信息栏 (Grid布局: 左日志 | 中回合 | 右占位) --- */
+        .info-bar {
             flex-shrink: 0; height: 50px; 
-            margin: 0 16px 6px 16px;
-            display: flex; align-items: center; justify-content: space-between;
-        }
-        /* 左侧：大大的回合数 */
-        .dash-round {
-            font-size: 20px; font-weight: 800; color: #333; letter-spacing: -0.5px;
-        }
-        .dash-round small { font-size: 12px; color: #8E8E93; font-weight: 500; margin-left: 2px; }
-        
-        /* 右侧：3条日志，紧凑排列 */
-        .dash-logs {
-            display: flex; flex-direction: column; align-items: flex-end; justify-content: center;
-            font-size: 10px; line-height: 14px; color: #8E8E93;
-        }
-        .dash-log-item { display: flex; gap: 6px; }
-        .dash-log-item.latest { color: var(--c-primary); font-weight: 600; }
-        
-        /* --- 主区域 (自动弹性伸缩) --- */
-        main {
-            /* 关键：flex: 1 占满剩余空间，min-height: 0 允许内容压缩 */
-            flex: 1; min-height: 0; 
-            display: flex; flex-direction: column; 
-            padding: 0 16px; gap: 8px; 
-            overflow: hidden; /* 禁止滚动 */
+            margin: 0 16px;
+            display: grid; 
+            grid-template-columns: 1.5fr 1fr 1.5fr; /* 左中右比例 */
+            align-items: center;
         }
 
-        /* --- 玩家卡片 (恢复原有大字体，利用 flex:1 自动适配高度) --- */
+        /* 左边：日志 */
+        .logs-area {
+            display: flex; flex-direction: column; justify-content: center;
+            font-size: 11px; line-height: 14px; color: #8E8E93;
+            text-align: left;
+        }
+        .log-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .log-line.latest { color: var(--c-primary); font-weight: 600; }
+
+        /* 中间：回合数 */
+        .round-area {
+            text-align: center; font-size: 22px; font-weight: 800; color: #333;
+            letter-spacing: -0.5px;
+        }
+        .round-area small { font-size: 12px; font-weight: 500; margin-left: 2px; color: #8E8E93; }
+
+        /* --- 主区域 --- */
+        main {
+            flex: 1; /* 占满剩余空间 */
+            display: flex; flex-direction: column; 
+            justify-content: space-evenly; /* 关键：卡片均匀分布 */
+            padding: 0 16px; 
+            overflow: hidden;
+            gap: 2px;
+        }
+
+        /* --- 玩家卡片 (恢复原版大字体/大间距) --- */
         .player-card {
-            background: var(--bg-card); border-radius: 18px; padding: 0 16px; /* 上下padding设为0，靠flex居中 */
+            background: var(--bg-card); border-radius: 18px; 
+            padding: 12px 16px; /* 恢复舒适的内边距 */
             box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-            display: flex; flex-direction: column; justify-content: center; 
-            /* 关键：让三个卡片平分高度 */
-            flex: 1; 
-            min-height: 0; /* 允许压缩 */
+            display: flex; flex-direction: column; justify-content: center;
+            /* 不再强制 flex:1，而是允许它根据内容撑开，靠 main 的 space-evenly 分布 */
         }
         
-        /* 内部布局微调，确保不重叠 */
         .card-header-row {
             display: flex; justify-content: space-between; align-items: center; 
-            margin-bottom: 4px; flex-shrink: 0;
+            margin-bottom: 8px; /* 恢复间距 */
         }
         .left-info { display: flex; align-items: center; gap: 10px; cursor: pointer; }
         .rank-num {
@@ -104,27 +111,24 @@
             display: flex; align-items: center; justify-content: center;
             box-shadow: 0 2px 4px rgba(0, 122, 255, 0.3);
         }
-        /* 恢复大字体 */
         .p-name { font-size: 17px; font-weight: 600; color: #333; }
         .p-score { font-size: 34px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
         .score-p { color: #34C759; } .score-n { color: #FF3B30; } .score-z { color: #1C1C1E; }
 
         .btn-grid {
             display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr);
-            gap: 6px; /* 恢复原来的间距 */
-            /* 按钮区域也自适应，但有最大高度限制防止太丑 */
-            flex: 1; max-height: 90px; min-height: 0;
+            gap: 6px; 
         }
         .act-btn {
             border: none; border-radius: 10px; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; cursor: pointer; padding: 0;
-            height: 100%; /* 撑满网格 */
+            align-items: center; justify-content: center; cursor: pointer; padding: 6px 0; /* 恢复按钮高度 */
+            background: #F2F2F7; /* 默认底色兜底 */
         }
         .act-btn:active { opacity: 0.6; transform: scale(0.98); }
         .btn-t { font-size: 13px; font-weight: 600; margin-bottom: 2px; white-space: nowrap;}
         .btn-s { font-size: 9px; opacity: 0.7; font-weight: 500; letter-spacing: -0.2px; white-space: nowrap; }
 
-        /* 颜色恢复 */
+        /* 颜色 */
         .b-norm { background: #E1F0FF; color: var(--c-primary); }
         .b-sgold { background: #FFF3DC; color: var(--c-gold-s); }
         .b-bgold { background: #F3E5F5; color: var(--c-gold-b); }
@@ -133,10 +137,10 @@
         .b-foul { background: #FFEEEE; color: var(--c-foul); }
         .b-let { background: #FFF0F5; color: var(--c-let); }
 
-        /* --- 底部 --- */
+        /* --- Footer --- */
         footer {
             flex-shrink: 0; display: flex; justify-content: space-between;
-            padding: 8px 16px; gap: 12px; height: 42px; /* 稍微给点padding */
+            padding: 8px 16px; gap: 12px; height: 44px;
         }
         .footer-btn {
             flex: 1; border-radius: 21px; display: flex; align-items: center; justify-content: center; gap: 6px;
@@ -145,7 +149,7 @@
         .btn-undo { background: #FFF; color: #555; border: 1px solid #E5E5EA; }
         .btn-save { background: #1C1C1E; color: #FFF; }
 
-        /* Modals (保持不变) */
+        /* Modals */
         .modal-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px);
             z-index: 100; display: none; opacity: 0; transition: opacity 0.25s;
@@ -169,6 +173,7 @@
         }
         .setting-opt.selected { background: #E1F0FF; border: 1px solid var(--c-primary); }
         
+        /* Stats & Logs */
         .res-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 4px; }
         .stat-badge {
             display: flex; align-items: center; justify-content: center;
@@ -218,12 +223,12 @@
         <button class="reset-btn" onclick="resetGame()">重置</button>
     </header>
 
-    <div class="dashboard-bar">
-        <div class="dash-round" id="roundBigDisplay">0<small>回合</small></div>
-        <div class="dash-logs" id="dashLogs">
+    <div class="info-bar">
+        <div class="logs-area" id="logsArea">
             <div style="opacity:0.3">等待开局...</div>
         </div>
-    </div>
+        <div class="round-area" id="roundBigDisplay">0<small>回合</small></div>
+        <div></div> </div>
 
     <main id="container"></main>
 
@@ -593,16 +598,14 @@
         function updateUI() {
             document.getElementById('roundBigDisplay').innerHTML = `${state.round}<small>回合</small>`;
             
-            // --- 渲染新的 Mini Log Bar ---
-            const logBox = document.getElementById('dashLogs');
+            const logBox = document.getElementById('logsArea');
             const recentLogs = state.logs ? state.logs.slice(0, 3) : [];
             if (recentLogs.length === 0) {
                 logBox.innerHTML = '<div style="opacity:0.3">等待开局...</div>';
             } else {
                 logBox.innerHTML = recentLogs.map((l, idx) => `
-                    <div class="dash-log-item ${idx === 0 ? 'latest' : ''}" style="opacity:${1 - idx*0.3}">
-                        <span>${l.time}</span>
-                        <span>${l.text}</span>
+                    <div class="log-line ${idx === 0 ? 'latest' : ''}" style="opacity:${1 - idx*0.3}">
+                        ${l.time} ${l.text}
                     </div>
                 `).join('');
             }
