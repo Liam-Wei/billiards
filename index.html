@@ -523,7 +523,8 @@
                     case 'foul': changes = [{i:idx, v:-1}, {i:prev, v:1}]; break;
                     case 'letFoul': changes = [{i:idx, v:-1}, {i:next, v:1}]; break;
                     case 'openFoul': changes = [{i:idx, v:-1}, {i:next, v:1}]; break;
-                    case 'blackGold': changes = [{i:idx, v:-5}, {i:prev, v:1}, {i:next, v:4}]; break;
+                    // 修改：3人局黑金逻辑 (自-5, 下+4, 上+1)
+                    case 'blackGold': changes = [{i:idx, v:-5}, {i:next, v:4}, {i:prev, v:1}]; break;
                 }
             } else {
                 const isRace = state.scoreMode === 'race';
@@ -596,7 +597,8 @@
                     case 'foul': ps[idx].score -= 1; ps[prev].score += 1; break;
                     case 'letFoul': ps[idx].score -= 1; ps[next].score += 1; break;
                     case 'openFoul': ps[idx].score -= 1; ps[next].score += 1; break;
-                    case 'blackGold': ps[idx].score -= 5; ps[prev].score += 1; ps[next].score += 4; break;
+                    // 修改：3人局黑金计分 (自-5, 下+4, 上+1)
+                    case 'blackGold': ps[idx].score -= 5; ps[next].score += 4; ps[prev].score += 1; break;
                 }
             } else if (total === 2) {
                 const isRace = state.scoreMode === 'race'; 
@@ -630,12 +632,17 @@
         function rotateWinner(winnerIdx, type) {
             if (state.mode === 3) {
                 if (type === 'blackGold') {
+                    // 修改：3人局黑金特殊换位
+                    // 规则：黑金者(Current)成为输家(位置1)，下家(Next)成为赢家/庄(位置0)，上家(Prev)成为末家(位置2)
+                    // 顺序变成：[Next, Current, Prev]
                     const total = 3;
                     const p = state.players;
+                    
                     const current = p[winnerIdx]; 
-                    const next = p[(winnerIdx + 1) % total]; 
-                    const prev = p[(winnerIdx - 1 + total) % total]; 
-                    state.players = [next, prev, current]; 
+                    const next = p[(winnerIdx + 1) % total];
+                    const prev = p[(winnerIdx - 1 + total) % total];
+                    
+                    state.players = [next, current, prev];
                 } else {
                     if (winnerIdx !== 0) {
                         const p = state.players;
@@ -748,7 +755,7 @@
             } else {
                 logBox.innerHTML = recentLogs.map((l, idx) => `
                     <div class="log-line ${idx === 0 ? 'latest' : ''}" style="opacity:${1 - idx*0.15}">
-                       <span style="font-family:monospace; margin-right:2px; font-size:10px;">${l.time}</span> ${l.text}
+                        <span style="font-family:monospace; margin-right:2px; font-size:10px;">${l.time}</span> ${l.text}
                     </div>
                 `).join('');
             }
@@ -768,7 +775,9 @@
 
             const box = document.getElementById('container');
             box.innerHTML = '';
-            let txtBig = '通吃 20'; let txtG9 = '通吃 8'; let txtBlack = '上+1 下+4';
+            let txtBig = '通吃 20'; let txtG9 = '通吃 8'; 
+            // 修改：3人局黑金按钮文字提示
+            let txtBlack = '下+4 上+1'; 
             if (state.mode === 2) {
                 if (state.scoreMode === 'transfer') { txtBig = '自+10 他-10'; txtG9 = '自+4 他-4'; txtBlack = '自-5 他+5'; } 
                 else { txtBig = '自+10'; txtG9 = '自+4'; txtBlack = '自-5'; }
@@ -789,7 +798,7 @@
                     statusIcon = '<span class="status-icon">🎱</span>';
                 } else if (isLoser) {
                     cardClass += ' is-loser';
-                    statusIcon = '<span class="status-icon">😭</span>'; // 使用白球作为输家/摆球方的标志
+                    statusIcon = '<span class="status-icon">😭</span>'; 
                 }
                 
                 const el = document.createElement('div');
