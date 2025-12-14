@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#F2F2F7">
-    <title>桌球追分 (联机版)</title>
+    <title>桌球追分 (联机完整版)</title>
     <style>
-        /* 样式保持不变，为了节省篇幅，这里省略了未修改的CSS */
         :root {
             --bg-body: #F2F2F7; --bg-card: #FFFFFF;
             --c-primary: #007AFF; --c-gold-s: #FF9500; --c-gold-b: #AF52DE; --c-gold-9: #FFD60A; 
@@ -104,6 +103,8 @@
         }
         .btn-undo { background: #FFF; color: #555; border: 1px solid #E5E5EA; }
         .btn-save { background: #1C1C1E; color: #FFF; }
+        
+        /* 通用 Modal 样式 */
         .modal-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px);
             z-index: 100; display: none; opacity: 0; transition: opacity 0.25s;
@@ -126,6 +127,8 @@
             display: flex; justify-content: space-between; align-items: center; cursor: pointer;
         }
         .setting-opt.selected { background: #E1F0FF; border: 1px solid var(--c-primary); }
+        
+        /* 统计与日志样式 */
         .res-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 4px; }
         .stat-badge {
             display: flex; align-items: center; justify-content: center;
@@ -140,8 +143,14 @@
         .res-rank { font-size: 24px; width: 36px; padding-top: 0px; text-align: center;}
         .res-name { flex: 1; text-align: left; font-weight: 700; font-size: 16px; margin-bottom: 4px;}
         .res-score { font-weight: 800; font-size: 18px; }
-        
-        /* 离线/连接状态提示 */
+
+        /* 日志特定样式 */
+        .log-item { 
+            text-align: left; padding: 10px 0; border-bottom: 1px solid #f2f2f7; font-size: 13px; color: #333; 
+        }
+        .log-round { font-weight: bold; color: var(--c-primary); margin-right: 6px; }
+        .log-detail { margin-top: 4px; color: #666; font-size: 11px; }
+
         #status-bar {
             position: absolute; top: 0; left:0; right:0; height: 4px; background: #ccc; z-index: 10;
         }
@@ -158,6 +167,9 @@
             <button class="icon-btn" onclick="copyLink()">
                 <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
+            <button class="icon-btn" onclick="openLogModal()">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
         </div>
 
         <div class="header-center">
@@ -165,13 +177,13 @@
                 <button class="toggle-btn" id="mode2" onclick="switchMode(2)">2人</button>
                 <button class="toggle-btn active" id="mode3" onclick="switchMode(3)">3人</button>
             </div>
-            <div class="room-id-display" id="roomIdDisp">房间: ...</div>
+            <div class="room-id-display" id="roomIdDisp">未连接</div>
         </div>
 
         <button class="reset-btn" onclick="resetGame()">重置</button>
     </header>
     
-    <div id="roundDisplay" class="round-indicator-bar">连接中...</div>
+    <div id="roundDisplay" class="round-indicator-bar">请先加入房间</div>
 
     <main id="container"></main>
 
@@ -183,6 +195,37 @@
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>结算
         </button>
     </footer>
+
+    <div class="modal-overlay show" id="roomModal" style="display: flex; z-index: 200;">
+        <div class="center-box">
+            <div style="font-size:18px; font-weight:800; margin-bottom:4px;">欢迎使用</div>
+            <div style="font-size:14px; color:#8E8E93; margin-bottom:16px;">请输入房间号与好友联机</div>
+            <input type="text" class="modal-input" id="roomInput" placeholder="例如: 888" maxlength="10">
+            <button style="width:100%; padding:12px; background:var(--c-primary); color:#FFF; border:none; border-radius:12px; font-weight:600;" onclick="joinRoomFromInput()">进入房间</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="confirmModal" style="z-index: 150;">
+        <div class="center-box">
+            <div id="confirmTitle" style="font-size:18px; font-weight:800; margin-bottom:12px;">操作确认</div>
+            <div id="confirmDesc" style="font-size:15px; color:#333; margin-bottom:8px; font-weight:600;"></div>
+            <div id="confirmDetail" style="font-size:13px; color:#666; margin-bottom:20px; background:#F2F2F7; padding:10px; border-radius:8px;"></div>
+            <div style="display:flex; gap:10px;">
+                <button style="flex:1; padding:12px; border:none; border-radius:12px; background:#F2F2F7; color:#8E8E93; font-weight:600;" onclick="closeConfirmModal()">取消</button>
+                <button style="flex:1; padding:12px; border:none; border-radius:12px; background:var(--c-primary); color:#FFF; font-weight:600;" onclick="confirmPendingAction()">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="logModal">
+        <div class="center-box" style="width:320px;">
+            <div style="font-size:18px; font-weight:800; margin-bottom:12px;">操作日志</div>
+            <div id="logContent" style="max-height: 300px; overflow-y: auto; margin-bottom:16px;">
+                <div style="color:#ccc; font-size:13px;">暂无记录</div>
+            </div>
+            <button style="width:100%; padding:12px; background:#F2F2F7; color:#333; border:none; border-radius:12px; font-weight:600;" onclick="closeLogModal()">关闭</button>
+        </div>
+    </div>
 
     <div class="modal-overlay" id="settingsModal">
         <div class="center-box">
@@ -223,42 +266,33 @@
     </div>
 
     <script type="module">
-        // 1. 引入 Firebase 库
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         // --------------------------------------------------------
-        // 🔥 在这里填入你的 Firebase 配置 (从控制台复制) 🔥
+        // 🔥 请重新填入你的 Firebase 配置 🔥
         // --------------------------------------------------------
         const firebaseConfig = {
             apiKey: "AIzaSyADNOZ3t-TrqLBU2rLf2QAUv77-b-vzSR0",
-              authDomain: "billiards-score.firebaseapp.com",
-              databaseURL: "https://billiards-score-default-rtdb.firebaseio.com",
-              projectId: "billiards-score",
-              storageBucket: "billiards-score.firebasestorage.app",
-              messagingSenderId: "708415656794",
-              appId: "1:708415656794:web:ba7775bb8b33924c6c1963",
-              measurementId: "G-1523P4CF20"
+            authDomain: "billiards-score.firebaseapp.com",
+            databaseURL: "https://billiards-score-default-rtdb.firebaseio.com",
+            projectId: "billiards-score",
+            storageBucket: "billiards-score.firebasestorage.app",
+            messagingSenderId: "708415656794",
+            appId: "1:708415656794:web:ba7775bb8b33924c6c1963",
+            measurementId: "G-1523P4CF20"
         };
         // --------------------------------------------------------
 
-        // 初始化 Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        
+        // 全局变量
+        let roomId = null;
+        let roomRef = null;
+        let pendingAction = null; // 存储待确认的操作
 
-        // 获取或生成房间号
-        const urlParams = new URLSearchParams(window.location.search);
-        let roomId = urlParams.get('room');
-        if (!roomId) {
-            roomId = Math.random().toString(36).substring(2, 8); // 生成随机房间号
-            const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?room=' + roomId;
-            window.history.pushState({path:newUrl},'',newUrl);
-        }
-        document.getElementById('roomIdDisp').innerText = `房号: ${roomId}`;
-
-        // 全局状态 (本地副本)
         const emptyStats = () => ({ bigGold: 0, smallGold: 0, gold9: 0, normal: 0 });
-        // 默认状态
         let state = {
             mode: 3,
             round: 0, 
@@ -268,89 +302,184 @@
                 { id: 1, name: '玩家 B', score: 0, stats: emptyStats() },
                 { id: 2, name: '玩家 C', score: 0, stats: emptyStats() }
             ],
-            history: [] // 历史记录存在数据库里太复杂，这里简化：每次变动都存整个快照，撤销时回滚
+            history: [],
+            logs: [] // 新增日志数组
         };
         
         let currentEditIndex = -1;
 
-        // --- 核心网络逻辑 ---
-
-        const roomRef = ref(db, 'rooms/' + roomId);
-        const statusEl = document.getElementById('status-bar');
-
-        // 1. 监听数据库变化 (所有人都会收到)
-        onValue(roomRef, (snapshot) => {
-            const data = snapshot.val();
-            statusEl.style.backgroundColor = '#34C759'; // 绿色表示连接成功
-            if (data) {
-                // 如果数据库里有数据，同步到本地
-                state = data;
-                // 确保 history 也是数组
-                if (!state.history) state.history = [];
-            } else {
-                // 如果数据库是空的（新房间），把默认数据推上去
-                pushStateToCloud();
+        // --- 1. 房间号逻辑修改 ---
+        
+        // 页面加载时检查 URL，如果有 room 参数，直接填充到输入框，但还是显示弹窗确认
+        window.onload = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlRoom = urlParams.get('room');
+            if (urlRoom) {
+                document.getElementById('roomInput').value = urlRoom;
             }
-            updateUI(); // 渲染界面
-        }, (error) => {
-            statusEl.style.backgroundColor = '#FF3B30'; // 红色表示出错
-            console.error(error);
-        });
+            // 默认显示 roomModal (已在 HTML class 设置 show)
+            document.getElementById('roomInput').focus();
+        };
 
-        // 2. 将本地状态推送到云端
-        function pushStateToCloud() {
-            set(roomRef, state);
-        }
+        window.joinRoomFromInput = function() {
+            const inputVal = document.getElementById('roomInput').value.trim();
+            if (!inputVal) return alert("请输入房间号");
+            
+            roomId = inputVal;
+            document.getElementById('roomIdDisp').innerText = `房号: ${roomId}`;
+            
+            // 更新 URL，方便刷新后记得
+            const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?room=' + roomId;
+            window.history.pushState({path:newUrl},'',newUrl);
+            
+            // 隐藏弹窗
+            document.getElementById('roomModal').classList.remove('show');
+            setTimeout(() => document.getElementById('roomModal').style.display = 'none', 200);
 
-        // --- 游戏逻辑 (修改为只操作数据，最后调用 pushStateToCloud) ---
+            // 连接 Firebase
+            connectToFirebase();
+        };
 
-        function getRelations(curr, total) {
-            return { prev: (curr - 1 + total) % total, next: (curr + 1) % total };
-        }
+        function connectToFirebase() {
+            roomRef = ref(db, 'rooms/' + roomId);
+            const statusEl = document.getElementById('status-bar');
+            document.getElementById('roundDisplay').innerText = "连接中...";
 
-        function rotateWinner(winnerIdx) {
-            if (state.mode === 3) {
-                if (winnerIdx === 0) {
-                    [state.players[1], state.players[2]] = [state.players[2], state.players[1]];
+            onValue(roomRef, (snapshot) => {
+                const data = snapshot.val();
+                statusEl.style.backgroundColor = '#34C759';
+                if (data) {
+                    state = data;
+                    if (!state.history) state.history = [];
+                    if (!state.logs) state.logs = []; // 兼容旧数据
                 } else {
-                    [state.players[0], state.players[winnerIdx]] = [state.players[winnerIdx], state.players[0]];
+                    pushStateToCloud(); // 初始化新房间
                 }
-            } else if (state.mode === 2) {
-                if (winnerIdx !== 0) {
-                     [state.players[0], state.players[1]] = [state.players[1], state.players[0]];
-                }
-            }
+                updateUI();
+            }, (error) => {
+                statusEl.style.backgroundColor = '#FF3B30';
+                console.error(error);
+            });
         }
 
-        // 绑定到 window 以便 HTML onclick 调用
-        window.handleAction = function(idx, type) {
-            // 记录历史用于撤销 (最多存20步)
-            if (state.history.length > 20) state.history.shift();
-            // 深拷贝当前数据到历史，但不包括 history 字段本身避免递归
-            const stateSnapshot = JSON.parse(JSON.stringify({
-                mode: state.mode,
-                round: state.round,
-                scoreMode: state.scoreMode,
-                players: state.players
-            }));
-            state.history.push(stateSnapshot);
+        function pushStateToCloud() {
+            if (roomRef) set(roomRef, state);
+        }
 
-            // 修改状态
+        // --- 2. 确认弹窗与计算逻辑 ---
+
+        const actionNames = {
+            'normal': '普胜', 'smallGold': '小金', 'bigGold': '大金', 'gold9': '黄金9',
+            'blackGold': '黑金', 'foul': '犯规', 'letFoul': '让杆犯规', 'openFoul': '开球犯规'
+        };
+
+        // 点击按钮触发：只计算预览，不修改 state
+        window.handleAction = function(idx, type) {
+            const pName = state.players[idx].name;
+            const aName = actionNames[type];
+            
+            // 预览分数变化字符串
+            const diffText = calculateDiffText(idx, type);
+            
+            // 存储待执行操作
+            pendingAction = { idx, type, pName, aName, diffText };
+            
+            // 显示确认弹窗
+            document.getElementById('confirmDesc').innerText = `确认 ${pName} ${aName}？`;
+            document.getElementById('confirmDetail').innerText = diffText;
+            
+            const modal = document.getElementById('confirmModal');
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('show'), 10);
+            if(navigator.vibrate) navigator.vibrate(10);
+        };
+
+        // 辅助：计算分数变化文本（不改变数据）
+        function calculateDiffText(idx, type) {
+            const total = state.mode;
+            const prev = (idx - 1 + total) % total;
+            const next = (idx + 1) % total;
+            const p = state.players;
+            let changes = []; // 存 {name, score}
+
+            if (total === 3) {
+                switch (type) {
+                    case 'normal': changes = [{i:idx, v:4}, {i:prev, v:-4}]; break;
+                    case 'smallGold': changes = [{i:idx, v:7}, {i:prev, v:-7}]; break;
+                    case 'bigGold': changes = [{i:idx, v:20}, {i:prev, v:-10}, {i:next, v:-10}]; break;
+                    case 'gold9': changes = [{i:idx, v:8}, {i:prev, v:-4}, {i:next, v:-4}]; break;
+                    case 'foul': changes = [{i:idx, v:-1}, {i:prev, v:1}]; break;
+                    case 'letFoul': changes = [{i:idx, v:-1}, {i:next, v:1}]; break;
+                    case 'openFoul': changes = [{i:idx, v:-1}, {i:next, v:1}]; break;
+                    case 'blackGold': changes = [{i:idx, v:-5}, {i:prev, v:1}, {i:next, v:4}]; break;
+                }
+            } else { // 2人
+                const isRace = state.scoreMode === 'race';
+                const opp = next;
+                let vWin = 0, vLose = 0;
+                switch (type) {
+                    case 'normal': vWin=4; break;
+                    case 'smallGold': vWin=7; break;
+                    case 'bigGold': vWin=10; break;
+                    case 'gold9': vWin=4; break;
+                    case 'blackGold': vWin=-5; vLose=5; break; // 特殊
+                    default: vWin=-1; vLose=1; break; // 犯规类
+                }
+                // 修正2人局逻辑
+                if (['foul','letFoul','openFoul'].includes(type)) {
+                    changes = [{i:idx, v:-1}];
+                    if(!isRace) changes.push({i:opp, v:1});
+                } else if (type === 'blackGold') {
+                    changes = [{i:idx, v:-5}];
+                    if(!isRace) changes.push({i:opp, v:5});
+                } else {
+                    changes = [{i:idx, v:vWin}];
+                    if(!isRace) changes.push({i:opp, v:-vWin});
+                }
+            }
+            
+            return changes.map(c => {
+                const prefix = c.v > 0 ? '+' : '';
+                return `${p[c.i].name} ${prefix}${c.v}`;
+            }).join('，');
+        }
+
+        window.closeConfirmModal = function() {
+            document.getElementById('confirmModal').classList.remove('show');
+            setTimeout(() => document.getElementById('confirmModal').style.display = 'none', 200);
+            pendingAction = null;
+        };
+
+        // 用户点击“确定”：真正执行逻辑
+        window.confirmPendingAction = function() {
+            if (!pendingAction) return;
+            const { idx, type, pName, aName, diffText } = pendingAction;
+            closeConfirmModal();
+
+            // 1. 存历史快照
+            if (state.history.length > 20) state.history.shift();
+            state.history.push(JSON.parse(JSON.stringify({
+                mode: state.mode, round: state.round, scoreMode: state.scoreMode, players: state.players, logs: state.logs
+            })));
+
+            // 2. 更新数据
             state.round++;
             const total = state.mode;
-            const { prev, next } = getRelations(idx, total);
+            const prev = (idx - 1 + total) % total;
+            const next = (idx + 1) % total;
             let ps = state.players;
-            const scores = { normal: 4, smallGold: 7, bigGold: 20, gold9: 8 };
 
             if (!ps[idx].stats) ps[idx].stats = emptyStats();
             let isWin = false;
-
             if (['normal','smallGold','bigGold','gold9'].includes(type)) isWin = true;
+            
+            // 统计
             if (type === 'normal') ps[idx].stats.normal++;
             else if (type === 'smallGold') ps[idx].stats.smallGold++;
             else if (type === 'bigGold') ps[idx].stats.bigGold++;
             else if (type === 'gold9') ps[idx].stats.gold9++;
 
+            // 分数
             if (total === 3) {
                 switch (type) {
                     case 'normal': ps[idx].score += 4; ps[prev].score -= 4; break;
@@ -364,37 +493,77 @@
                 }
             } else if (total === 2) {
                 const isRace = state.scoreMode === 'race'; 
-                const opponentIdx = next;
-                switch (type) {
-                    case 'normal': ps[idx].score += scores.normal; if (!isRace) ps[opponentIdx].score -= scores.normal; break;
-                    case 'smallGold': ps[idx].score += scores.smallGold; if (!isRace) ps[opponentIdx].score -= scores.smallGold; break;
-                    case 'bigGold': ps[idx].score += 10; if (!isRace) ps[opponentIdx].score -= 10; break;
-                    case 'gold9': ps[idx].score += 4; if (!isRace) ps[opponentIdx].score -= 4; break;
-                    case 'foul': ps[idx].score -= 1; if (!isRace) ps[opponentIdx].score += 1; break;
-                    case 'letFoul': ps[idx].score -= 1; if (!isRace) ps[opponentIdx].score += 1; break;
-                    case 'openFoul': ps[idx].score -= 1; if (!isRace) ps[opponentIdx].score += 1; break;
-                    case 'blackGold': ps[idx].score -= 5; if (!isRace) ps[opponentIdx].score += 5; break;
+                const opp = next;
+                const scores = { normal: 4, smallGold: 7, bigGold: 10, gold9: 4 };
+                if (['foul','letFoul','openFoul'].includes(type)) {
+                    ps[idx].score -= 1; if(!isRace) ps[opp].score += 1;
+                } else if (type === 'blackGold') {
+                    ps[idx].score -= 5; if(!isRace) ps[opp].score += 5;
+                } else {
+                    const sc = scores[type];
+                    ps[idx].score += sc; if(!isRace) ps[opp].score -= sc;
                 }
             }
 
+            // 3. 记录日志
+            if (!state.logs) state.logs = [];
+            state.logs.unshift({
+                round: state.round,
+                text: `${pName} ${aName}`,
+                detail: diffText,
+                time: new Date().toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'})
+            });
+            if (state.logs.length > 50) state.logs.pop(); // 保留最近50条
+
+            // 4. 换位
             if (isWin) rotateWinner(idx);
 
-            // 🔥 推送到云端
+            // 5. 同步
             pushStateToCloud();
-            if(navigator.vibrate) navigator.vibrate(15);
         };
+
+        function rotateWinner(winnerIdx) {
+            if (state.mode === 3) {
+                if (winnerIdx === 0) [state.players[1], state.players[2]] = [state.players[2], state.players[1]];
+                else [state.players[0], state.players[winnerIdx]] = [state.players[winnerIdx], state.players[0]];
+            } else if (state.mode === 2) {
+                if (winnerIdx !== 0) [state.players[0], state.players[1]] = [state.players[1], state.players[0]];
+            }
+        }
+
+        // --- 3. 日志 Modal ---
+        window.openLogModal = function() {
+            const el = document.getElementById('logContent');
+            if (!state.logs || state.logs.length === 0) {
+                el.innerHTML = '<div style="color:#ccc; font-size:13px; text-align:center; padding:20px;">暂无记录</div>';
+            } else {
+                el.innerHTML = state.logs.map(l => `
+                    <div class="log-item">
+                        <div><span class="log-round">R${l.round}</span> ${l.text} <span style="float:right; color:#ccc; font-size:10px;">${l.time}</span></div>
+                        <div class="log-detail">${l.detail}</div>
+                    </div>
+                `).join('');
+            }
+            const modal = document.getElementById('logModal');
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('show'), 10);
+        };
+        window.closeLogModal = function() {
+            const modal = document.getElementById('logModal');
+            modal.classList.remove('show');
+            setTimeout(() => modal.style.display = 'none', 200);
+        };
+
+        // --- 其他功能 (Undo, Reset, Settings, Name) ---
 
         window.undo = function() {
             if (!state.history || state.history.length === 0) return alert("没有操作可撤销");
             const previous = state.history.pop();
-            
-            // 恢复状态
             state.mode = previous.mode;
             state.round = previous.round;
             state.scoreMode = previous.scoreMode;
             state.players = previous.players;
-            
-            // 🔥 推送到云端
+            state.logs = previous.logs || [];
             pushStateToCloud();
         };
 
@@ -402,8 +571,8 @@
             if (confirm("确定重置?")) {
                 state.round = 0;
                 state.history = []; 
+                state.logs = [];
                 state.players.forEach(p => { p.score = 0; p.stats = emptyStats(); }); 
-                // 🔥 推送到云端
                 pushStateToCloud();
             }
         };
@@ -413,7 +582,7 @@
             if (!confirm('切换人数会重置比分')) return;
             state.mode = n;
             state.round = 0; 
-            state.history = []; state.players = [];
+            state.history = []; state.logs = []; state.players = [];
             const defs = ['玩家 A', '玩家 B', '玩家 C'];
             for(let i=0; i<n; i++) state.players.push({ id: i, name: defs[i], score: 0, stats: emptyStats() });
             pushStateToCloud();
@@ -421,32 +590,17 @@
 
         window.saveName = function() { 
             const val = document.getElementById('nameInput').value.trim(); 
-            if(val) { 
-                state.players[currentEditIndex].name = val; 
-                pushStateToCloud(); 
-            } 
+            if(val) { state.players[currentEditIndex].name = val; pushStateToCloud(); } 
             closeNameModal(); 
         };
+        window.setScoreMode = function(mode) { state.scoreMode = mode; pushStateToCloud(); openSettings(); };
 
-        window.setScoreMode = function(mode) { 
-            state.scoreMode = mode; 
-            // 这里的 openSettings 是 UI 动作，不需要推送，但修改了 mode 需要推送吗？
-            // 规则修改通常也需要同步，所以推送：
-            pushStateToCloud();
-            openSettings(); 
-        };
-
-        // --- UI 渲染 (逻辑不变) ---
-
+        // UI 渲染
         function updateUI() {
-            // 更新回合
             document.getElementById('roundDisplay').innerText = `第 ${state.round} 回合`;
-            
-            // 更新按钮状态
             document.getElementById('mode2').className = state.mode === 2 ? 'toggle-btn active' : 'toggle-btn';
             document.getElementById('mode3').className = state.mode === 3 ? 'toggle-btn active' : 'toggle-btn';
 
-            // 更新设置弹窗状态
             const optTransfer = document.getElementById('optTransfer');
             const optRace = document.getElementById('optRace');
             if (state.scoreMode === 'transfer') {
@@ -457,17 +611,12 @@
                 optTransfer.classList.remove('selected'); optTransfer.querySelector('div:last-child').style.display = 'none';
             }
 
-            // 渲染玩家卡片
             const box = document.getElementById('container');
             box.innerHTML = '';
-            
             let txtBig = '通吃 20'; let txtG9 = '通吃 8'; let txtBlack = '上+1 下+4';
             if (state.mode === 2) {
-                if (state.scoreMode === 'transfer') { 
-                    txtBig = '自+10 他-10'; txtG9 = '自+4 他-4'; txtBlack = '自-5 他+5';
-                } else { 
-                    txtBig = '自+10'; txtG9 = '自+4'; txtBlack = '自-5';
-                }
+                if (state.scoreMode === 'transfer') { txtBig = '自+10 他-10'; txtG9 = '自+4 他-4'; txtBlack = '自-5 他+5'; } 
+                else { txtBig = '自+10'; txtG9 = '自+4'; txtBlack = '自-5'; }
             }
 
             state.players.forEach((p, i) => {
@@ -499,15 +648,9 @@
             });
         }
 
-        // --- 纯 UI 辅助函数 (弹窗开关等，不需要联网) ---
-        window.openSettings = function() { 
-            document.getElementById('settingsModal').style.display = 'flex'; 
-            setTimeout(() => document.getElementById('settingsModal').classList.add('show'), 10); 
-        };
-        window.closeSettings = function() { 
-            document.getElementById('settingsModal').classList.remove('show'); 
-            setTimeout(() => document.getElementById('settingsModal').style.display = 'none', 200); 
-        };
+        // 辅助 UI 函数
+        window.openSettings = function() { document.getElementById('settingsModal').style.display = 'flex'; setTimeout(() => document.getElementById('settingsModal').classList.add('show'), 10); };
+        window.closeSettings = function() { document.getElementById('settingsModal').classList.remove('show'); setTimeout(() => document.getElementById('settingsModal').style.display = 'none', 200); };
         window.openNameModal = function(i) { currentEditIndex = i; document.getElementById('nameInput').value = ''; document.getElementById('nameModal').style.display = 'flex'; setTimeout(() => document.getElementById('nameModal').classList.add('show'), 10); setTimeout(() => document.getElementById('nameInput').focus(), 50); };
         window.closeNameModal = function() { document.getElementById('nameModal').classList.remove('show'); setTimeout(() => { document.getElementById('nameModal').style.display = 'none'; document.getElementById('nameInput').blur(); }, 200); };
         window.handleSettleNow = function() { showSummary(); };
@@ -555,10 +698,6 @@
                 navigator.clipboard.writeText(url).then(() => alert('链接已复制，发给好友即可联机'));
             }
         };
-
-        // 初始运行一次 UI 渲染 (显示连接中状态)
-        updateUI();
-
     </script>
 </body>
 </html>
