@@ -27,7 +27,7 @@
 
         /* --- Header --- */
         header {
-            flex-shrink: 0; height: 44px; display: grid; grid-template-columns: 80px 1fr 80px; align-items: center;
+            flex-shrink: 0; height: 44px; display: grid; grid-template-columns: 1.2fr 0.6fr 1.2fr; align-items: center;
             padding: 0 16px; z-index: 10;
         }
         .header-left { display: flex; gap: 8px; justify-content: flex-start; }
@@ -90,10 +90,10 @@
             display: flex; flex-direction: column; justify-content: center;
             font-size: 12px; color: #333; gap: 3px;
         }
-        .lb-row { display: flex; align-items: center; gap: 4px; }
-        .lb-rank { width: 14px; text-align: center; font-size: 12px; }
-        .lb-name { font-weight: 600; font-size: 13px; max-width: 50px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #333; }
-        .lb-score { font-family: monospace; font-weight: 800; font-size: 14px; margin-left: auto; color: #000; }
+        .lb-row { display: grid; grid-template-columns: 18px minmax(0, 40px) 48px; align-items: center; column-gap: 1px; justify-content: end; }
+        .lb-rank { width: auto; text-align: left; font-size: 12px; }
+        .lb-name { font-weight: 700; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #333; text-align: left; }
+        .lb-score { font-family: monospace; font-weight: 900; font-size: 14px; color: #000; text-align: right; font-variant-numeric: tabular-nums; }
 
         /* --- 主区域 --- */
         main {
@@ -136,7 +136,7 @@
         .p-score { font-size: 28px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
         .score-p { color: #34C759; } .score-n { color: #FF3B30; } .score-z { color: #1C1C1E; }
 
-        .btn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 2px;}
+        .btn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 2px;}
         .act-btn {
             border: none; border-radius: 9px; display: flex; flex-direction: column;
             align-items: center; justify-content: center; cursor: pointer; padding: 7px 0;
@@ -192,8 +192,78 @@
         .setting-opt {
             background: #F2F2F7; padding: 10px; border-radius: 10px; margin-bottom: 8px;
             display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+            touch-action: manipulation;
         }
         .setting-opt.selected { background: #E1F0FF; border: 1px solid var(--c-primary); }
+
+        .player-card.tap-add { cursor: pointer; }
+        .player-card.tap-add:active { transform: scale(0.99); }
+        .cn8-card {
+            border-radius: 18px;
+            padding: 16px 16px;
+            min-height: 118px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.06);
+        }
+        .cn8-layout { position: relative; width: 100%; height: 104px; }
+        .cn8-rank { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); }
+        .cn8-name {
+            position: absolute;
+            left: 56px;
+            right: 32%;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .cn8-score {
+            position: absolute;
+            left: 75%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 68px;
+            font-weight: 950;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+        }
+        .cn8-red {
+            background: linear-gradient(135deg, #FF4D4D, #FF2D55);
+            color: #FFF;
+        }
+        .cn8-blue {
+            background: linear-gradient(135deg, #2E7BFF, #5856D6);
+            color: #FFF;
+        }
+        .cn8-card .rank-num { background: rgba(255,255,255,0.18); color: rgba(255,255,255,0.95); }
+        .cn8-card .p-name { color: #FFF; font-size: 18px; font-weight: 800; }
+        .cn8-card .p-score { color: #FFF; font-size: 44px; font-weight: 900; }
+        .vs-divider {
+            text-align: center;
+            height: 118px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 76px;
+            font-weight: 800;
+            color: #8E8E93;
+            letter-spacing: 2px;
+            margin: 6px 0;
+            font-style: italic;
+            opacity: 0.35;
+        }
+
+        #summaryModal .center-box { max-height: 86vh; }
+        #summaryModal .result-row { padding: 18px 0; }
+        #summaryModal .res-name { font-size: 18px; font-weight: 900; }
+        #summaryModal .res-score { font-size: 22px; font-weight: 950; }
+        #summaryModal .stat-badge { font-size: 12px; padding: 6px 5px; border-radius: 8px; }
 
         .btn-confirm { flex:1; padding:12px; border:none; border-radius:12px; background:var(--c-primary); color:#FFF; font-weight:600; transition: all 0.2s; }
         .btn-confirm:disabled { background: #CCC; cursor: not-allowed; opacity: 0.7; }
@@ -286,21 +356,35 @@
     <div class="modal-overlay" id="settingsModal">
         <div class="center-box">
             <div style="font-size:16px; font-weight:700; margin-bottom:12px;">设置</div>
-            
-            <div style="text-align:left; font-size:12px; color:#8E8E93; margin-bottom:6px;">人数模式</div>
-            <div style="display:flex; background:#E5E5EA; border-radius:10px; padding:2px; margin-bottom:16px;">
-                <button class="toggle-btn" id="mode2" onclick="switchMode(2)" style="flex:1; padding:8px; border:none; background:transparent; border-radius:8px; font-weight:600; color:#888;">2人</button>
-                <button class="toggle-btn active" id="mode3" onclick="switchMode(3)" style="flex:1; padding:8px; border:none; background:#FFF; border-radius:8px; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,0.1);">3人</button>
-            </div>
 
-            <div style="text-align:left; font-size:12px; color:#8E8E93; margin-bottom:6px;">2人局计分机制</div>
-            <div class="setting-opt selected" id="optTransfer" onclick="setScoreMode('transfer')">
-                <div><span style="font-weight:600;font-size:14px;">给付制</span><div style="font-size:10px;color:#888">赢+10 输-10</div></div>
+            <div style="text-align:left; font-size:12px; color:#8E8E93; margin-bottom:6px;">游戏模式</div>
+            <div class="setting-opt selected" id="optChase" onclick="setGameType('chase')">
+                <div style="text-align:left; flex:1"><span style="font-weight:700;font-size:14px;">追分模式</span></div>
                 <div style="color:var(--c-primary); font-weight:bold;">✓</div>
             </div>
-            <div class="setting-opt" id="optRace" onclick="setScoreMode('race')">
-                <div><span style="font-weight:600;font-size:14px;">抢分制</span><div style="font-size:10px;color:#888">赢+10 输0</div></div>
+            <div class="setting-opt" id="optCn8" onclick="setGameType('cn8')">
+                <div style="text-align:left; flex:1"><span style="font-weight:700;font-size:14px;">中式八球</span></div>
                 <div style="color:var(--c-primary); font-weight:bold; display:none;">✓</div>
+            </div>
+            
+            <div id="playerCountSection">
+                <div style="text-align:left; font-size:12px; color:#8E8E93; margin-bottom:6px;">人数模式</div>
+                <div style="display:flex; background:#E5E5EA; border-radius:10px; padding:2px; margin-bottom:16px;">
+                    <button class="toggle-btn" id="mode2" onclick="switchMode(2)" style="flex:1; padding:8px; border:none; background:transparent; border-radius:8px; font-weight:600; color:#888;">2人</button>
+                    <button class="toggle-btn active" id="mode3" onclick="switchMode(3)" style="flex:1; padding:8px; border:none; background:#FFF; border-radius:8px; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,0.1);">3人</button>
+                </div>
+            </div>
+
+            <div id="twoPlayerScoreModeSection">
+                <div style="text-align:left; font-size:12px; color:#8E8E93; margin-bottom:6px;">2人局计分机制</div>
+                <div class="setting-opt selected" id="optTransfer" onclick="setScoreMode('transfer')">
+                    <div><span style="font-weight:600;font-size:14px;">给付制</span><div style="font-size:10px;color:#888">赢+10 输-10</div></div>
+                    <div style="color:var(--c-primary); font-weight:bold;">✓</div>
+                </div>
+                <div class="setting-opt" id="optRace" onclick="setScoreMode('race')">
+                    <div><span style="font-weight:600;font-size:14px;">抢分制</span><div style="font-size:10px;color:#888">赢+10 输0</div></div>
+                    <div style="color:var(--c-primary); font-weight:bold; display:none;">✓</div>
+                </div>
             </div>
             <div class="modal-btns" style="margin-top:16px;">
                 <button style="background:var(--c-primary); color:#FFF; flex:1; padding:12px; border:none; border-radius:12px; font-size:15px; font-weight:600; width:100%" onclick="closeSettings()">完成</button>
@@ -325,7 +409,7 @@
                 <div id="summaryTitle" style="font-size:20px; font-weight:800;">战局结算</div>
                 <div id="summaryTime" style="font-size:12px; color:#8E8E93; margin-top:4px;"></div>
             </div>
-            <div id="summaryContent" style="max-height: 50vh; overflow-y:auto;"></div>
+            <div id="summaryContent" style="max-height: 62vh; overflow-y:auto;"></div>
             <div style="display:flex; gap:10px; margin-top:16px;">
                  <button style="flex:1; padding:12px; background:#F2F2F7; color:#333; border:none; border-radius:12px; font-weight:600;" onclick="closeSummary()">关闭</button>
                  <button style="flex:1; padding:12px; background:var(--c-primary); color:#FFF; border:none; border-radius:12px; font-weight:600;" onclick="copyReport()">复制战报</button>
@@ -379,6 +463,10 @@
         const emptyStats = () => ({ bigGold: 0, smallGold: 0, gold9: 0, normal: 0, blackGold: 0, fouls: 0 });
         
         let state = {
+            gameType: 'chase',
+            lastChaseMode: 3,
+            namePool: ['玩家 A', '玩家 B', '玩家 C'],
+            sessionStore: {},
             mode: 3,
             round: 0, 
             timerSeconds: 0,
@@ -402,9 +490,19 @@
                     if (parsed.startTime !== undefined && parsed.timerSeconds === undefined) {
                          parsed.timerSeconds = 0; parsed.timerRunning = false;
                     }
+                    if (parsed.gameType === undefined) parsed.gameType = 'chase';
+                    if (parsed.lastChaseMode === undefined) parsed.lastChaseMode = 3;
+                    if (!parsed.namePool) parsed.namePool = (parsed.players || []).map(p => p.name).concat(['玩家 C']).slice(0, 3);
+                    if (!parsed.sessionStore) parsed.sessionStore = {};
                     state = parsed;
                 } catch(e) { console.error('Resetting data due to error'); }
             }
+
+            if (!state.namePool) state.namePool = ['玩家 A', '玩家 B', '玩家 C'];
+            if (!state.sessionStore) state.sessionStore = {};
+            if (state.gameType === 'chase') state.lastChaseMode = state.mode || state.lastChaseMode || 3;
+
+            ensureCurrentSessionKey();
             
             updateTimerDisplay();
             if(state.timerRunning) startTimerInterval();
@@ -418,7 +516,10 @@
             }, {once:true});
         })();
 
-        function saveData() { localStorage.setItem(DB_KEY, JSON.stringify(state)); }
+        function saveData() {
+            try { if (typeof saveCurrentSessionToStore === 'function') saveCurrentSessionToStore(); } catch(e) {}
+            localStorage.setItem(DB_KEY, JSON.stringify(state));
+        }
 
         function showToast(msg) {
             const t = document.getElementById('toast');
@@ -472,7 +573,7 @@
 
         const actionNames = {
             'normal': '普胜', 'smallGold': '小金', 'bigGold': '大金', 'gold9': '黄金9',
-            'blackGold': '黑金', 'foul': '犯规', 'letFoul': '让杆', 'openFoul': '开球犯规'
+            'blackGold': '黑金', 'openBlackGold': '开球黑金', 'foul': '犯规', 'letFoul': '让杆', 'openFoul': '开球犯规'
         };
 
         window.handleAction = function(idx, type) {
@@ -525,6 +626,7 @@
                     case 'openFoul': changes = [{i:idx, v:-1}, {i:next, v:1}]; break;
                     // 修改：3人局黑金逻辑 (自-5, 下+4, 上+1)
                     case 'blackGold': changes = [{i:idx, v:-5}, {i:next, v:4}, {i:prev, v:1}]; break;
+                    case 'openBlackGold': changes = [{i:idx, v:-8}, {i:prev, v:4}, {i:next, v:4}]; break;
                 }
             } else {
                 const isRace = state.scoreMode === 'race';
@@ -536,12 +638,15 @@
                     case 'bigGold': vWin=10; break;
                     case 'gold9': vWin=4; break;
                     case 'blackGold': vWin=-5; break;
+                    case 'openBlackGold': vWin=-8; break;
                     default: vWin=-1; break;
                 }
                 if (['foul','letFoul','openFoul'].includes(type)) {
                     changes = [{i:idx, v:-1}]; if(!isRace) changes.push({i:opp, v:1});
                 } else if (type === 'blackGold') {
                     changes = [{i:idx, v:-5}]; if(!isRace) changes.push({i:opp, v:5});
+                } else if (type === 'openBlackGold') {
+                    changes = [{i:idx, v:-8}]; if(!isRace) changes.push({i:opp, v:8});
                 } else {
                     changes = [{i:idx, v:vWin}]; if(!isRace) changes.push({i:opp, v:-vWin});
                 }
@@ -560,7 +665,7 @@
             const { idx, type, pName, aName, diffText } = pendingAction;
             closeConfirmModal();
 
-            if(['foul','letFoul','openFoul','blackGold'].includes(type)) SoundFX.foul();
+            if(['foul','letFoul','openFoul','blackGold','openBlackGold'].includes(type)) SoundFX.foul();
             else SoundFX.win();
 
             if (state.history.length > 20) state.history.shift();
@@ -569,7 +674,7 @@
                 players: state.players, logs: state.logs, timerSeconds: state.timerSeconds
             })));
 
-            const isGameEnd = ['normal','smallGold','bigGold','gold9','blackGold'].includes(type);
+            const isGameEnd = ['normal','smallGold','bigGold','gold9','blackGold','openBlackGold'].includes(type);
             if (isGameEnd) state.round++;
 
             if(!state.timerRunning) toggleTimer();
@@ -585,7 +690,7 @@
             else if (type === 'smallGold') ps[idx].stats.smallGold++;
             else if (type === 'bigGold') ps[idx].stats.bigGold++;
             else if (type === 'gold9') ps[idx].stats.gold9++;
-            else if (type === 'blackGold') ps[idx].stats.blackGold++;
+            else if (type === 'blackGold' || type === 'openBlackGold') ps[idx].stats.blackGold++;
             else if (['foul', 'letFoul', 'openFoul'].includes(type)) ps[idx].stats.fouls++;
 
             if (total === 3) {
@@ -599,6 +704,7 @@
                     case 'openFoul': ps[idx].score -= 1; ps[next].score += 1; break;
                     // 修改：3人局黑金计分 (自-5, 下+4, 上+1)
                     case 'blackGold': ps[idx].score -= 5; ps[next].score += 4; ps[prev].score += 1; break;
+                    case 'openBlackGold': ps[idx].score -= 8; ps[next].score += 4; ps[prev].score += 4; break;
                 }
             } else if (total === 2) {
                 const isRace = state.scoreMode === 'race'; 
@@ -608,6 +714,8 @@
                     ps[idx].score -= 1; if(!isRace) ps[opp].score += 1;
                 } else if (type === 'blackGold') {
                     ps[idx].score -= 5; if(!isRace) ps[opp].score += 5;
+                } else if (type === 'openBlackGold') {
+                    ps[idx].score -= 8; if(!isRace) ps[opp].score += 8;
                 } else {
                     const sc = scores[type];
                     ps[idx].score += sc; if(!isRace) ps[opp].score -= sc;
@@ -623,7 +731,7 @@
             });
             if (state.logs.length > 50) state.logs.pop();
 
-            if (isGameEnd) rotateWinner(idx, type);
+            if (isGameEnd && type !== 'openBlackGold') rotateWinner(idx, type);
             
             saveData();
             updateUI();
@@ -708,6 +816,7 @@
                 updateTimerDisplay();
                 
                 state.players.forEach(p => { p.score = 0; p.stats = emptyStats(); }); 
+                saveCurrentSessionToStore();
                 saveData();
                 updateUI();
             }
@@ -715,38 +824,119 @@
 
         window.switchMode = function(n) {
             SoundFX.click();
+            if (state.gameType !== 'chase') return;
             if (state.mode === n) return;
-            if (!confirm('切换人数会重置比分，确定吗?')) return;
-            state.mode = n;
-            state.round = 0; 
-            state.timerSeconds = 0;
-            state.timerRunning = false;
+            saveCurrentSessionToStore();
             clearInterval(timerInterval);
-            updateTimerBtnUI(false);
-            updateTimerDisplay();
-
-            state.history = []; state.logs = []; state.players = [];
-            const defs = ['玩家 A', '玩家 B', '玩家 C'];
-            for(let i=0; i<n; i++) state.players.push({ id: i, name: defs[i], score: 0, stats: emptyStats() });
-            
-            document.getElementById('mode2').className = n===2 ? 'toggle-btn active' : 'toggle-btn';
-            document.getElementById('mode2').style.background = n===2 ? '#FFF' : 'transparent';
-            document.getElementById('mode3').className = n===3 ? 'toggle-btn active' : 'toggle-btn';
-            document.getElementById('mode3').style.background = n===3 ? '#FFF' : 'transparent';
-
+            state.lastChaseMode = n;
+            loadSessionFromStore(getSessionKey('chase', n));
+            applyTimerFromState();
             saveData();
             updateUI();
         };
 
         window.saveName = function() { 
             const val = document.getElementById('nameInput').value.trim(); 
-            if(val) { state.players[currentEditIndex].name = val; saveData(); updateUI(); } 
+            if(val) {
+                state.players[currentEditIndex].name = val;
+                if (!state.namePool) state.namePool = ['玩家 A', '玩家 B', '玩家 C'];
+                state.namePool[currentEditIndex] = val;
+                saveCurrentSessionToStore();
+                saveData();
+                updateUI();
+            } 
             closeNameModal(); 
         };
-        window.setScoreMode = function(mode) { SoundFX.click(); state.scoreMode = mode; saveData(); updateUI(); openSettings(); };
+        window.setScoreMode = function(mode) { SoundFX.click(); state.scoreMode = mode; saveData(); updateUI(); };
+
+        window.setGameType = function(type) {
+            SoundFX.click();
+            if (state.gameType === type) return;
+            clearInterval(timerInterval);
+
+            saveCurrentSessionToStore();
+            state.gameType = type;
+            if (type === 'cn8') {
+                loadSessionFromStore(getSessionKey('cn8', 2));
+            } else {
+                const n = state.lastChaseMode || 3;
+                loadSessionFromStore(getSessionKey('chase', n));
+            }
+            applyTimerFromState();
+            saveData();
+            updateUI();
+        };
+
+        function syncSettingsUI() {
+            const chaseSelected = state.gameType !== 'cn8';
+            const cn8Selected = state.gameType === 'cn8';
+            const optChase = document.getElementById('optChase');
+            const optCn8 = document.getElementById('optCn8');
+
+            optChase.classList.toggle('selected', chaseSelected);
+            optChase.lastElementChild.style.display = chaseSelected ? 'block' : 'none';
+            optCn8.classList.toggle('selected', cn8Selected);
+            optCn8.lastElementChild.style.display = cn8Selected ? 'block' : 'none';
+
+            const playerCountSection = document.getElementById('playerCountSection');
+            const twoPlayerScoreModeSection = document.getElementById('twoPlayerScoreModeSection');
+            const showChaseOptions = state.gameType === 'chase';
+            playerCountSection.style.display = showChaseOptions ? 'block' : 'none';
+
+            const showTwoPlayerScoreMode = state.gameType === 'chase' && state.mode === 2;
+            twoPlayerScoreModeSection.style.display = showTwoPlayerScoreMode ? 'block' : 'none';
+
+            const mode2Btn = document.getElementById('mode2');
+            const mode3Btn = document.getElementById('mode3');
+            if (mode2Btn && mode3Btn) {
+                mode2Btn.className = state.mode === 2 ? 'toggle-btn active' : 'toggle-btn';
+                mode2Btn.style.background = state.mode === 2 ? '#FFF' : 'transparent';
+                mode3Btn.className = state.mode === 3 ? 'toggle-btn active' : 'toggle-btn';
+                mode3Btn.style.background = state.mode === 3 ? '#FFF' : 'transparent';
+            }
+
+            const optTransfer = document.getElementById('optTransfer');
+            const optRace = document.getElementById('optRace');
+            if (optTransfer && optRace) {
+                const isTransfer = state.scoreMode === 'transfer';
+                optTransfer.classList.toggle('selected', isTransfer);
+                optTransfer.lastElementChild.style.display = isTransfer ? 'block' : 'none';
+                optRace.classList.toggle('selected', !isTransfer);
+                optRace.lastElementChild.style.display = !isTransfer ? 'block' : 'none';
+            }
+        }
+
+        window.handleCn8Point = function(idx) {
+            SoundFX.click();
+            if (state.gameType !== 'cn8') return;
+
+            if (state.history.length > 20) state.history.shift();
+            state.history.push(JSON.parse(JSON.stringify({
+                mode: state.mode, round: state.round, scoreMode: state.scoreMode,
+                players: state.players, logs: state.logs, timerSeconds: state.timerSeconds
+            })));
+
+            if(!state.timerRunning) toggleTimer();
+
+            state.round = (state.round || 0) + 1;
+            state.players[idx].score += 1;
+            if (!state.logs) state.logs = [];
+            state.logs.unshift({
+                round: '-',
+                text: `${state.players[idx].name} +1`,
+                detail: `${state.players[idx].name} +1`,
+                time: new Date().toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'})
+            });
+            if (state.logs.length > 50) state.logs.pop();
+
+            saveData();
+            updateUI();
+        };
 
         function updateUI() {
-            document.getElementById('roundBigDisplay').innerHTML = `${state.round}<small>回合</small>`;
+            const roundLabel = state.gameType === 'cn8' ? '回合' : '回合';
+            const roundValue = state.gameType === 'cn8' ? (state.round || 0) : state.round;
+            document.getElementById('roundBigDisplay').innerHTML = `${roundValue}<small>${roundLabel}</small>`;
             
             const logBox = document.getElementById('logsArea');
             const recentLogs = state.logs ? state.logs.slice(0, 5) : [];
@@ -775,68 +965,182 @@
 
             const box = document.getElementById('container');
             box.innerHTML = '';
-            let txtBig = '通吃 20'; let txtG9 = '通吃 8'; 
-            // 修改：3人局黑金按钮文字提示
-            let txtBlack = '下+4 上+1'; 
-            if (state.mode === 2) {
-                if (state.scoreMode === 'transfer') { txtBig = '自+10 他-10'; txtG9 = '自+4 他-4'; txtBlack = '自-5 他+5'; } 
-                else { txtBig = '自+10'; txtG9 = '自+4'; txtBlack = '自-5'; }
+            if (state.gameType === 'cn8') {
+                state.players.slice(0, 2).forEach((p, i) => {
+                    const el = document.createElement('div');
+                    el.className = `player-card tap-add cn8-card ${i === 0 ? 'cn8-red' : 'cn8-blue'}`;
+                    el.setAttribute('onclick', `handleCn8Point(${i})`);
+                    el.innerHTML = `
+                        <div class="cn8-layout">
+                            <div class="rank-num cn8-rank">${i + 1}</div>
+                            <div class="cn8-name" onclick="event.stopPropagation(); openNameModal(${i})">
+                                <span style="font-size:18px; font-weight:900; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p.name}</span>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(255,255,255,0.75)"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
+                            </div>
+                            <div class="cn8-score">${p.score}</div>
+                        </div>
+                    `;
+                    box.appendChild(el);
+                    if (i === 0) {
+                        const vs = document.createElement('div');
+                        vs.className = 'vs-divider';
+                        vs.innerText = 'VS';
+                        box.appendChild(vs);
+                    }
+                });
+            } else {
+                let txtBig = '通吃 20'; let txtG9 = '通吃 8';
+                let txtBlack = '下+4 上+1';
+                let txtOpenBlack = '自-8 上下+4';
+                if (state.mode === 2) {
+                    if (state.scoreMode === 'transfer') { txtBig = '自+10 他-10'; txtG9 = '自+4 他-4'; txtBlack = '自-5 他+5'; txtOpenBlack = '自-8 他+8'; }
+                    else { txtBig = '自+10'; txtG9 = '自+4'; txtBlack = '自-5'; txtOpenBlack = '自-8'; }
+                }
+
+                state.players.forEach((p, i) => {
+                    let sc = p.score > 0 ? 'score-p' : (p.score < 0 ? 'score-n' : 'score-z');
+                    let sig = p.score > 0 ? '+' : '';
+                    
+                    const isDealer = (i === 0);
+                    const isLoser = (i === 1);
+                    
+                    let cardClass = 'player-card';
+                    let statusIcon = '';
+                    
+                    if (isDealer) {
+                        cardClass += ' is-dealer';
+                        statusIcon = '<span class="status-icon">🎱</span>';
+                    } else if (isLoser) {
+                        cardClass += ' is-loser';
+                        statusIcon = '<span class="status-icon">😭</span>'; 
+                    }
+                    
+                    const el = document.createElement('div');
+                    el.className = cardClass;
+                    el.innerHTML = `
+                        <div class="card-header-row">
+                            <div class="left-info" onclick="openNameModal(${i})">
+                                <div class="rank-num">${i + 1}</div>
+                                <div class="p-name">${p.name} ${statusIcon}</div>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="#CCC"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
+                            </div>
+                            <div class="p-score ${sc}">${sig}${p.score}</div>
+                        </div>
+                        <div class="btn-grid">
+                            <button class="act-btn b-bgold" onclick="handleAction(${i}, 'bigGold')"><span class="btn-t">大金</span><span class="btn-s">${txtBig}</span></button>
+                            <button class="act-btn b-sgold" onclick="handleAction(${i}, 'smallGold')"><span class="btn-t">小金</span><span class="btn-s">自+7 上-7</span></button>
+                            <button class="act-btn b-gold9" onclick="handleAction(${i}, 'gold9')"><span class="btn-t">黄金9</span><span class="btn-s">${txtG9}</span></button>
+                            <button class="act-btn b-black" onclick="handleAction(${i}, 'blackGold')"><span class="btn-t">黑金</span><span class="btn-s">${txtBlack}</span></button>
+                            <button class="act-btn b-norm" onclick="handleAction(${i}, 'normal')"><span class="btn-t">普胜</span><span class="btn-s">自+4 上-4</span></button>
+                            <button class="act-btn b-black" style="background:#2C2C2E" onclick="handleAction(${i}, 'openBlackGold')"><span class="btn-t">开球黑金</span><span class="btn-s">${txtOpenBlack}</span></button>
+                            <button class="act-btn b-foul" onclick="handleAction(${i}, 'foul')"><span class="btn-t">犯规</span><span class="btn-s">给上家 1</span></button>
+                            <button class="act-btn b-let" onclick="handleAction(${i}, 'letFoul')"><span class="btn-t">让杆</span><span class="btn-s">给下家 1</span></button>
+                            <button class="act-btn b-foul" style="background:#FFEAEA" onclick="handleAction(${i}, 'openFoul')"><span class="btn-t">开球犯规</span><span class="btn-s">给下家 1</span></button>
+                        </div>
+                    `;
+                    box.appendChild(el);
+                });
             }
 
-            state.players.forEach((p, i) => {
-                let sc = p.score > 0 ? 'score-p' : (p.score < 0 ? 'score-n' : 'score-z');
-                let sig = p.score > 0 ? '+' : '';
-                
-                const isDealer = (i === 0);
-                const isLoser = (i === 1);
-                
-                let cardClass = 'player-card';
-                let statusIcon = '';
-                
-                if (isDealer) {
-                    cardClass += ' is-dealer';
-                    statusIcon = '<span class="status-icon">🎱</span>';
-                } else if (isLoser) {
-                    cardClass += ' is-loser';
-                    statusIcon = '<span class="status-icon">😭</span>'; 
-                }
-                
-                const el = document.createElement('div');
-                el.className = cardClass;
-                el.innerHTML = `
-                    <div class="card-header-row">
-                        <div class="left-info" onclick="openNameModal(${i})">
-                            <div class="rank-num">${i + 1}</div>
-                            <div class="p-name">${p.name} ${statusIcon}</div>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="#CCC"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
-                        </div>
-                        <div class="p-score ${sc}">${sig}${p.score}</div>
-                    </div>
-                    <div class="btn-grid">
-                        <button class="act-btn b-bgold" onclick="handleAction(${i}, 'bigGold')"><span class="btn-t">大金</span><span class="btn-s">${txtBig}</span></button>
-                        <button class="act-btn b-sgold" onclick="handleAction(${i}, 'smallGold')"><span class="btn-t">小金</span><span class="btn-s">自+7 上-7</span></button>
-                        <button class="act-btn b-gold9" onclick="handleAction(${i}, 'gold9')"><span class="btn-t">黄金9</span><span class="btn-s">${txtG9}</span></button>
-                        <button class="act-btn b-black" onclick="handleAction(${i}, 'blackGold')"><span class="btn-t">黑金</span><span class="btn-s">${txtBlack}</span></button>
-                        <button class="act-btn b-norm" onclick="handleAction(${i}, 'normal')"><span class="btn-t">普胜</span><span class="btn-s">自+4 上-4</span></button>
-                        <button class="act-btn b-foul" onclick="handleAction(${i}, 'foul')"><span class="btn-t">犯规</span><span class="btn-s">给上家 1</span></button>
-                        <button class="act-btn b-let" onclick="handleAction(${i}, 'letFoul')"><span class="btn-t">让杆</span><span class="btn-s">给下家 1</span></button>
-                        <button class="act-btn b-foul" style="background:#FFEAEA" onclick="handleAction(${i}, 'openFoul')"><span class="btn-t">开球犯规</span><span class="btn-s">给下家 1</span></button>
-                    </div>
-                `;
-                box.appendChild(el);
-            });
+            syncSettingsUI();
         }
 
-        window.openSettings = function() { SoundFX.click(); document.getElementById('settingsModal').style.display = 'flex'; setTimeout(() => document.getElementById('settingsModal').classList.add('show'), 10); };
+        window.openSettings = function() { SoundFX.click(); syncSettingsUI(); document.getElementById('settingsModal').style.display = 'flex'; setTimeout(() => document.getElementById('settingsModal').classList.add('show'), 10); };
         window.closeSettings = function() { SoundFX.click(); document.getElementById('settingsModal').classList.remove('show'); setTimeout(() => document.getElementById('settingsModal').style.display = 'none', 200); };
         window.openNameModal = function(i) { SoundFX.click(); currentEditIndex = i; document.getElementById('nameInput').value = ''; document.getElementById('nameModal').style.display = 'flex'; setTimeout(() => document.getElementById('nameModal').classList.add('show'), 10); setTimeout(() => document.getElementById('nameInput').focus(), 50); };
         window.closeNameModal = function() { document.getElementById('nameModal').classList.remove('show'); setTimeout(() => { document.getElementById('nameModal').style.display = 'none'; document.getElementById('nameInput').blur(); }, 200); };
         window.handleSettleNow = function() { SoundFX.click(); showSummary(); };
         window.closeSummary = function() { SoundFX.click(); document.getElementById('summaryModal').classList.remove('show'); setTimeout(() => document.getElementById('summaryModal').style.display = 'none', 300); };
 
+        function deepClone(v) { return JSON.parse(JSON.stringify(v)); }
+
+        function getSessionKey(gameType, mode) {
+            if (gameType === 'cn8') return 'cn8';
+            return `chase_${mode}`;
+        }
+
+        function saveCurrentSessionToStore() {
+            if (!state.sessionStore) state.sessionStore = {};
+            const key = getSessionKey(state.gameType, state.mode);
+            state.sessionStore[key] = deepClone({
+                mode: state.mode,
+                round: state.round,
+                timerSeconds: state.timerSeconds,
+                timerRunning: state.timerRunning,
+                scoreMode: state.scoreMode,
+                players: state.players,
+                history: state.history,
+                logs: state.logs
+            });
+        }
+
+        function loadSessionFromStore(key) {
+            if (!state.sessionStore) state.sessionStore = {};
+            const sess = state.sessionStore[key];
+            if (sess) {
+                state.mode = sess.mode;
+                state.round = sess.round;
+                state.timerSeconds = sess.timerSeconds;
+                state.timerRunning = sess.timerRunning;
+                state.scoreMode = sess.scoreMode;
+                state.players = sess.players;
+                state.history = sess.history || [];
+                state.logs = sess.logs || [];
+                return;
+            }
+
+            if (key === 'cn8') {
+                state.mode = 2;
+                state.round = 0;
+                state.timerSeconds = 0;
+                state.timerRunning = false;
+                state.history = [];
+                state.logs = [];
+                state.players = [
+                    { id: 0, name: state.namePool?.[0] || '玩家 A', score: 0, stats: emptyStats() },
+                    { id: 1, name: state.namePool?.[1] || '玩家 B', score: 0, stats: emptyStats() }
+                ];
+                state.scoreMode = state.scoreMode || 'transfer';
+            } else {
+                const n = key.endsWith('_2') ? 2 : 3;
+                state.mode = n;
+                state.round = 0;
+                state.timerSeconds = 0;
+                state.timerRunning = false;
+                state.history = [];
+                state.logs = [];
+                state.players = [];
+                const defs = ['玩家 A', '玩家 B', '玩家 C'];
+                for (let i = 0; i < n; i++) {
+                    state.players.push({ id: i, name: state.namePool?.[i] || defs[i], score: 0, stats: emptyStats() });
+                }
+                state.scoreMode = state.scoreMode || 'transfer';
+            }
+
+            saveCurrentSessionToStore();
+        }
+
+        function applyTimerFromState() {
+            updateTimerDisplay();
+            if (state.timerRunning) startTimerInterval();
+            else updateTimerBtnUI(false);
+        }
+
+        function ensureCurrentSessionKey() {
+            saveCurrentSessionToStore();
+        }
+
         function showSummary() {
-            document.getElementById('summaryTitle').innerText = `战局结算`;
-            document.getElementById('summaryTime').innerText = `共${state.round}回合 · 时长${document.getElementById('gameTimer').innerText}`;
+            const timeText = document.getElementById('gameTimer').innerText;
+            if (state.gameType === 'cn8') {
+                const a = state.players?.[0]?.score ?? 0;
+                const b = state.players?.[1]?.score ?? 0;
+                document.getElementById('summaryTitle').innerText = `八球比分结算`;
+                document.getElementById('summaryTime').innerText = `比分 ${a}:${b} · 时长${timeText}`;
+            } else {
+                document.getElementById('summaryTitle').innerText = `战局结算`;
+                document.getElementById('summaryTime').innerText = `共${state.round}回合 · 时长${timeText}`;
+            }
             const sortedPlayers = [...state.players].sort((a, b) => b.score - a.score);
             const medals = ['🥇', '🥈', '🥉'];
             let html = '';
@@ -847,25 +1151,39 @@
                 const st = p.stats || emptyStats();
                 const totalWins = (st.bigGold||0) + (st.smallGold||0) + (st.gold9||0) + (st.normal||0);
                 
-                html += `
-                    <div class="result-row">
-                        <div class="res-rank">${medal}</div>
-                        <div style="flex:1;">
-                            <div style="display:flex; justify-content:space-between;">
-                                <span class="res-name">${p.name}</span>
-                                <span class="res-score" style="color:${color}">${sign}${p.score}</span>
-                            </div>
-                            <div class="res-stats-grid">
-                                <span class="stat-badge sb-win">胜局:${totalWins}</span>
-                                <span class="stat-badge sb-gold">大金:${st.bigGold||0}</span>
-                                <span class="stat-badge sb-gold">小金:${st.smallGold||0}</span>
-                                <span class="stat-badge sb-gold">黄金9:${st.gold9||0}</span>
-                                <span class="stat-badge" style="background:#333;color:#fff">黑金:${st.blackGold||0}</span>
-                                <span class="stat-badge sb-foul">犯规:${st.fouls||0}</span>
+                if (state.gameType === 'cn8') {
+                    html += `
+                        <div class="result-row">
+                            <div class="res-rank">${medal}</div>
+                            <div style="flex:1;">
+                                <div style="display:flex; justify-content:space-between;">
+                                    <span class="res-name">${p.name}</span>
+                                    <span class="res-score" style="color:${color}">${sign}${p.score}</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                } else {
+                    html += `
+                        <div class="result-row">
+                            <div class="res-rank">${medal}</div>
+                            <div style="flex:1;">
+                                <div style="display:flex; justify-content:space-between;">
+                                    <span class="res-name">${p.name}</span>
+                                    <span class="res-score" style="color:${color}">${sign}${p.score}</span>
+                                </div>
+                                <div class="res-stats-grid">
+                                    <span class="stat-badge sb-win">胜局:${totalWins}</span>
+                                    <span class="stat-badge sb-gold">大金:${st.bigGold||0}</span>
+                                    <span class="stat-badge sb-gold">小金:${st.smallGold||0}</span>
+                                    <span class="stat-badge sb-gold">黄金9:${st.gold9||0}</span>
+                                    <span class="stat-badge" style="background:#333;color:#fff">黑金:${st.blackGold||0}</span>
+                                    <span class="stat-badge sb-foul">犯规:${st.fouls||0}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
             });
             document.getElementById('summaryContent').innerHTML = html;
             const modal = document.getElementById('summaryModal');
@@ -876,7 +1194,14 @@
         window.copyReport = function() {
             SoundFX.click();
             const time = document.getElementById('gameTimer').innerText;
-            let text = `🎱 桌球追分战报\n⏱️ 时长: ${time} | 回合: ${state.round}\n------------------\n`;
+            let text = '';
+            if (state.gameType === 'cn8') {
+                const a = state.players?.[0]?.score ?? 0;
+                const b = state.players?.[1]?.score ?? 0;
+                text = `🎱 中式八球战报\n⏱️ 时长: ${time} | 比分: ${a}:${b}\n------------------\n`;
+            } else {
+                text = `🎱 桌球追分战报\n⏱️ 时长: ${time} | 回合: ${state.round}\n------------------\n`;
+            }
             
             const sortedPlayers = [...state.players].sort((a, b) => b.score - a.score);
             sortedPlayers.forEach((p, i) => {
@@ -886,24 +1211,26 @@
             });
             text += `------------------\n`;
             
-            text += `📊 详细数据:\n`;
-            sortedPlayers.forEach(p => {
-                const st = p.stats || emptyStats();
-                const totalWins = (st.bigGold||0) + (st.smallGold||0) + (st.gold9||0) + (st.normal||0);
-                
-                text += `👤 ${p.name}\n`;
-                text += `   胜局: ${totalWins} | 犯规: ${st.fouls||0}\n`;
-                const specials = [];
-                if(st.bigGold > 0) specials.push(`大金x${st.bigGold}`);
-                if(st.smallGold > 0) specials.push(`小金x${st.smallGold}`);
-                if(st.gold9 > 0) specials.push(`黄金9x${st.gold9}`);
-                if(st.blackGold > 0) specials.push(`黑金x${st.blackGold}`);
-                
-                if(specials.length > 0) {
-                    text += `   ${specials.join(' ')}\n`;
-                }
-                text += `\n`;
-            });
+            if (state.gameType !== 'cn8') {
+                text += `📊 详细数据:\n`;
+                sortedPlayers.forEach(p => {
+                    const st = p.stats || emptyStats();
+                    const totalWins = (st.bigGold||0) + (st.smallGold||0) + (st.gold9||0) + (st.normal||0);
+                    
+                    text += `👤 ${p.name}\n`;
+                    text += `   胜局: ${totalWins} | 犯规: ${st.fouls||0}\n`;
+                    const specials = [];
+                    if(st.bigGold > 0) specials.push(`大金x${st.bigGold}`);
+                    if(st.smallGold > 0) specials.push(`小金x${st.smallGold}`);
+                    if(st.gold9 > 0) specials.push(`黄金9x${st.gold9}`);
+                    if(st.blackGold > 0) specials.push(`黑金x${st.blackGold}`);
+                    
+                    if(specials.length > 0) {
+                        text += `   ${specials.join(' ')}\n`;
+                    }
+                    text += `\n`;
+                });
+            }
             
             navigator.clipboard.writeText(text).then(() => showToast("已复制到剪贴板"));
         };
