@@ -288,6 +288,48 @@
             font-size: 15px; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity 0.3s;
             z-index: 999; text-align: center; line-height: 1.4; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
+
+        .role-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 18px;
+            min-width: 18px;
+            padding: 0 6px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: -0.2px;
+            line-height: 1;
+        }
+        .rb-dealer { background: rgba(255,149,0,0.18); color: #B25E00; border: 1px solid rgba(255,149,0,0.22); }
+        .rb-pos { background: rgba(142,142,147,0.15); color: #555; border: 1px solid rgba(142,142,147,0.18); }
+        .rb-lead { background: rgba(52,199,89,0.16); color: #0E7A2E; border: 1px solid rgba(52,199,89,0.2); }
+        .rb-low { background: rgba(255,59,48,0.12); color: #A60000; border: 1px solid rgba(255,59,48,0.18); }
+
+        #nameQuickList {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 0 0 14px;
+            justify-content: center;
+        }
+        .name-chip {
+            border: none;
+            background: #F2F2F7;
+            color: #333;
+            padding: 8px 10px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 650;
+            cursor: pointer;
+            max-width: 100%;
+        }
+        .name-chip:active { transform: scale(0.98); }
+
+        #posterModal .center-box { width: 340px; max-height: 86vh; }
+        #posterImg { width: 100%; border-radius: 14px; display: block; background: #F2F2F7; }
+        .poster-btn-row { display:flex; gap:10px; margin-top:14px; }
     </style>
 </head>
 <body>
@@ -311,7 +353,7 @@
         </div>
 
         <div class="header-right">
-            <button class="reset-btn" onclick="resetGame()">重置</button>
+            <button class="reset-btn" onclick="openResetModal()">重置</button>
         </div>
     </header>
 
@@ -342,6 +384,18 @@
             <div style="display:flex; gap:10px;">
                 <button style="flex:1; padding:12px; border:none; border-radius:12px; background:#F2F2F7; color:#8E8E93; font-weight:600;" onclick="closeConfirmModal()">取消</button>
                 <button id="realConfirmBtn" class="btn-confirm" onclick="confirmPendingAction()" disabled>确定 (0.5s)</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="resetModal" style="z-index: 160;">
+        <div class="center-box">
+            <div style="font-size:18px; font-weight:800; margin-bottom:10px;">重置</div>
+            <div id="resetDesc" style="font-size:13px; color:#666; margin-bottom:16px; background:#F2F2F7; padding:10px; border-radius:10px;"></div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <button style="width:100%; padding:12px; border:none; border-radius:12px; background:#1C1C1E; color:#FFF; font-weight:700;" onclick="resetCurrentSession()">新开一局（仅当前模式）</button>
+                <button style="width:100%; padding:12px; border:none; border-radius:12px; background:#FFEEEE; color:var(--c-foul); font-weight:800;" onclick="clearAllData()">彻底清空（所有模式）</button>
+                <button style="width:100%; padding:12px; border:none; border-radius:12px; background:#F2F2F7; color:#333; font-weight:650;" onclick="closeResetModal()">取消</button>
             </div>
         </div>
     </div>
@@ -397,6 +451,7 @@
         <div class="center-box">
             <div style="font-size:16px; font-weight:700;">修改名字</div>
             <input type="text" class="modal-input" id="nameInput" placeholder="输入新名字" maxlength="8">
+            <div id="nameQuickList"></div>
             <div style="display:flex; gap:10px;">
                 <button style="flex:1; padding:10px; border:none; border-radius:12px; background:#F2F2F7; color:#8E8E93; font-weight:600;" onclick="closeNameModal()">取消</button>
                 <button style="flex:1; padding:10px; border:none; border-radius:12px; background:var(--c-primary); color:#FFF; font-weight:600;" onclick="saveName()">确定</button>
@@ -413,11 +468,25 @@
             <div id="summaryContent" style="max-height: 62vh; overflow-y:auto;"></div>
             <div style="display:flex; gap:10px; margin-top:16px;">
                  <button style="flex:1; padding:12px; background:#F2F2F7; color:#333; border:none; border-radius:12px; font-weight:600;" onclick="closeSummary()">关闭</button>
-                 <button style="flex:1; padding:12px; background:var(--c-primary); color:#FFF; border:none; border-radius:12px; font-weight:600;" onclick="copyReport()">复制战报</button>
+                 <button style="flex:1; padding:12px; background:var(--c-primary); color:#FFF; border:none; border-radius:12px; font-weight:700;" onclick="copyReport()">复制战报</button>
+                 <button style="flex:1; padding:12px; background:#1C1C1E; color:#FFF; border:none; border-radius:12px; font-weight:700;" onclick="generatePoster()">生成图片</button>
             </div>
         </div>
     </div>
 
+    <div class="modal-overlay" id="posterModal">
+        <div class="center-box">
+            <div style="font-size:16px; font-weight:800; margin-bottom:10px;">图片战报</div>
+            <img id="posterImg" alt="poster" />
+            <div class="poster-btn-row">
+                <button style="flex:1; padding:12px; background:#F2F2F7; color:#333; border:none; border-radius:12px; font-weight:650;" onclick="closePosterModal()">关闭</button>
+                <button style="flex:1; padding:12px; background:var(--c-primary); color:#FFF; border:none; border-radius:12px; font-weight:750;" onclick="savePosterImage()">保存图片</button>
+                <button style="flex:1; padding:12px; background:#1C1C1E; color:#FFF; border:none; border-radius:12px; font-weight:750;" onclick="sharePosterImage()">分享</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script>
         // --- 音效合成引擎 ---
         const SoundFX = {
@@ -460,6 +529,8 @@
         let pendingAction = null;
         let currentEditIndex = -1;
         let timerInterval = null;
+        let posterBlob = null;
+        let posterObjectUrl = null;
 
         const emptyStats = () => ({ bigGold: 0, smallGold: 0, gold9: 0, normal: 0, blackGold: 0, fouls: 0 });
         
@@ -467,6 +538,7 @@
             gameType: 'chase',
             lastChaseMode: 3,
             namePool: ['玩家 A', '玩家 B', '玩家 C'],
+            recentNames: [],
             sessionStore: {},
             mode: 3,
             round: 0, 
@@ -494,12 +566,14 @@
                     if (parsed.gameType === undefined) parsed.gameType = 'chase';
                     if (parsed.lastChaseMode === undefined) parsed.lastChaseMode = 3;
                     if (!parsed.namePool) parsed.namePool = (parsed.players || []).map(p => p.name).concat(['玩家 C']).slice(0, 3);
+                    if (!parsed.recentNames) parsed.recentNames = [];
                     if (!parsed.sessionStore) parsed.sessionStore = {};
                     state = parsed;
                 } catch(e) { console.error('Resetting data due to error'); }
             }
 
             if (!state.namePool) state.namePool = ['玩家 A', '玩家 B', '玩家 C'];
+            if (!state.recentNames) state.recentNames = [];
             if (!state.sessionStore) state.sessionStore = {};
             if (state.gameType === 'chase') state.lastChaseMode = state.mode || state.lastChaseMode || 3;
 
@@ -735,7 +809,7 @@
             });
             if (state.logs.length > 50) state.logs.pop();
 
-            if (['normal','smallGold','blackGold'].includes(type)) rotateWinner(idx, type);
+            if (['normal','smallGold','blackGold','openBlackGold'].includes(type)) rotateWinner(idx, type);
             
             saveData();
             updateUI();
@@ -743,7 +817,7 @@
 
         function rotateWinner(winnerIdx, type) {
             if (state.mode === 3) {
-                if (type === 'blackGold') {
+                if (type === 'blackGold' || type === 'openBlackGold') {
                     // 修改：3人局黑金特殊换位
                     // 规则：黑金者(Current)成为输家(位置1)，下家(Next)成为赢家/庄(位置0)，上家(Prev)成为末家(位置2)
                     // 顺序变成：[Next, Current, Prev]
@@ -764,7 +838,11 @@
                     state.players = [winner, prev, next];
                 }
             } else if (state.mode === 2) {
-                if (winnerIdx !== 0) [state.players[0], state.players[1]] = [state.players[1], state.players[0]];
+                if (type === 'blackGold' || type === 'openBlackGold') {
+                    if (winnerIdx === 0) [state.players[0], state.players[1]] = [state.players[1], state.players[0]];
+                } else {
+                    if (winnerIdx !== 0) [state.players[0], state.players[1]] = [state.players[1], state.players[0]];
+                }
             }
         }
 
@@ -806,23 +884,48 @@
             showToast("↺ 已撤销一步"); 
         };
 
-        window.resetGame = function() {
+        window.openResetModal = function() {
             SoundFX.click();
-            if (confirm("重置比赛？所有数据将清空。")) {
-                state.round = 0;
-                state.history = []; 
-                state.logs = [];
-                state.timerSeconds = 0;
-                state.timerRunning = false;
-                clearInterval(timerInterval);
-                updateTimerBtnUI(false);
-                updateTimerDisplay();
-                
-                state.players.forEach(p => { p.score = 0; p.stats = emptyStats(); }); 
-                saveCurrentSessionToStore();
-                saveData();
-                updateUI();
+            const desc = document.getElementById('resetDesc');
+            if (desc) {
+                const key = getSessionKey(state.gameType, state.mode);
+                const modeText = state.gameType === 'cn8' ? '中式八球' : `追分 ${state.mode}人`;
+                desc.innerHTML = `当前：${modeText}<br>仅当前模式：<span style="font-family:monospace;">${key}</span>`;
             }
+            const modal = document.getElementById('resetModal');
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('show'), 10);
+        };
+
+        window.closeResetModal = function() {
+            const modal = document.getElementById('resetModal');
+            modal.classList.remove('show');
+            setTimeout(() => modal.style.display = 'none', 200);
+        };
+
+        window.resetCurrentSession = function() {
+            SoundFX.click();
+            closeResetModal();
+            state.round = 0;
+            state.history = [];
+            state.logs = [];
+            state.timerSeconds = 0;
+            state.timerRunning = false;
+            clearInterval(timerInterval);
+            updateTimerBtnUI(false);
+            updateTimerDisplay();
+            (state.players || []).forEach(p => { p.score = 0; p.stats = emptyStats(); });
+            saveCurrentSessionToStore();
+            saveData();
+            updateUI();
+            showToast('已新开一局');
+        };
+
+        window.clearAllData = function() {
+            SoundFX.click();
+            closeResetModal();
+            localStorage.removeItem(DB_KEY);
+            location.reload();
         };
 
         window.switchMode = function(n) {
@@ -844,6 +947,8 @@
                 state.players[currentEditIndex].name = val;
                 if (!state.namePool) state.namePool = ['玩家 A', '玩家 B', '玩家 C'];
                 state.namePool[currentEditIndex] = val;
+                if (!state.recentNames) state.recentNames = [];
+                state.recentNames = uniqueNames([val].concat(state.recentNames)).slice(0, 10);
                 saveCurrentSessionToStore();
                 saveData();
                 updateUI();
@@ -1000,23 +1105,38 @@
                     else { txtBig = '自+10'; txtG9 = '自+4'; txtBlack = '自-5'; txtOpenBlack = '自-8'; }
                 }
 
+                const scoresAll = (state.players || []).map(x => x.score || 0);
+                const maxScore = scoresAll.length ? Math.max(...scoresAll) : 0;
+                const minScore = scoresAll.length ? Math.min(...scoresAll) : 0;
+                const maxCount = scoresAll.filter(v => v === maxScore).length;
+                const minCount = scoresAll.filter(v => v === minScore).length;
+
                 state.players.forEach((p, i) => {
                     let sc = p.score > 0 ? 'score-p' : (p.score < 0 ? 'score-n' : 'score-z');
                     let sig = p.score > 0 ? '+' : '';
                     
                     const isDealer = (i === 0);
-                    const isLoser = (i === 1);
+                    const isSecond = (i === 1);
                     
                     let cardClass = 'player-card';
-                    let statusIcon = '';
+                    let roleBadges = '';
                     
                     if (isDealer) {
                         cardClass += ' is-dealer';
-                        statusIcon = '<span class="status-icon">🎱</span>';
-                    } else if (isLoser) {
+                        roleBadges += '<span class="role-badge rb-dealer">庄</span>';
+                    } else if (isSecond) {
                         cardClass += ' is-loser';
-                        statusIcon = '<span class="status-icon">😭</span>'; 
                     }
+
+                    if (state.mode === 3) {
+                        if (i === 1) roleBadges += '<span class="role-badge rb-pos">下</span>';
+                        if (i === 2) roleBadges += '<span class="role-badge rb-pos">上</span>';
+                    } else if (state.mode === 2) {
+                        if (i === 1) roleBadges += '<span class="role-badge rb-pos">客</span>';
+                    }
+
+                    if (maxCount === 1 && p.score === maxScore) roleBadges += '<span class="role-badge rb-lead">领先</span>';
+                    if (minCount === 1 && p.score === minScore) roleBadges += '<span class="role-badge rb-low">暂负</span>';
 
                     const dealerOnlyDisabled = isDealer ? '' : 'disabled';
                     
@@ -1026,7 +1146,7 @@
                         <div class="card-header-row">
                             <div class="left-info" onclick="openNameModal(${i})">
                                 <div class="rank-num">${i + 1}</div>
-                                <div class="p-name">${p.name} ${statusIcon}</div>
+                                <div class="p-name">${p.name} <span style="margin-left:6px; display:inline-flex; gap:6px; vertical-align:middle;">${roleBadges}</span></div>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="#CCC"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
                             </div>
                             <div class="p-score ${sc}">${sig}${p.score}</div>
@@ -1052,12 +1172,54 @@
 
         window.openSettings = function() { SoundFX.click(); syncSettingsUI(); document.getElementById('settingsModal').style.display = 'flex'; setTimeout(() => document.getElementById('settingsModal').classList.add('show'), 10); };
         window.closeSettings = function() { SoundFX.click(); document.getElementById('settingsModal').classList.remove('show'); setTimeout(() => document.getElementById('settingsModal').style.display = 'none', 200); };
-        window.openNameModal = function(i) { SoundFX.click(); currentEditIndex = i; document.getElementById('nameInput').value = ''; document.getElementById('nameModal').style.display = 'flex'; setTimeout(() => document.getElementById('nameModal').classList.add('show'), 10); setTimeout(() => document.getElementById('nameInput').focus(), 50); };
+        window.openNameModal = function(i) { SoundFX.click(); currentEditIndex = i; document.getElementById('nameInput').value = ''; renderNameQuickList(); document.getElementById('nameModal').style.display = 'flex'; setTimeout(() => document.getElementById('nameModal').classList.add('show'), 10); setTimeout(() => document.getElementById('nameInput').focus(), 50); };
         window.closeNameModal = function() { document.getElementById('nameModal').classList.remove('show'); setTimeout(() => { document.getElementById('nameModal').style.display = 'none'; document.getElementById('nameInput').blur(); }, 200); };
         window.handleSettleNow = function() { SoundFX.click(); showSummary(); };
         window.closeSummary = function() { SoundFX.click(); document.getElementById('summaryModal').classList.remove('show'); setTimeout(() => document.getElementById('summaryModal').style.display = 'none', 300); };
 
         function deepClone(v) { return JSON.parse(JSON.stringify(v)); }
+
+        function uniqueNames(arr) {
+            const out = [];
+            const seen = new Set();
+            (arr || []).forEach(v => {
+                const s = (v || '').trim();
+                if (!s) return;
+                if (seen.has(s)) return;
+                seen.add(s);
+                out.push(s);
+            });
+            return out;
+        }
+
+        function escapeAttr(s) {
+            return String(s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function renderNameQuickList() {
+            const box = document.getElementById('nameQuickList');
+            if (!box) return;
+            const base = (state.namePool || []).concat((state.recentNames || []));
+            const now = state.players?.[currentEditIndex]?.name ? [state.players[currentEditIndex].name] : [];
+            const list = uniqueNames(now.concat(base)).slice(0, 10);
+            if (list.length === 0) { box.innerHTML = ''; return; }
+            box.innerHTML = list.map(n => {
+                const safe = escapeAttr(n);
+                return `<button class="name-chip" data-name="${safe}" onclick="pickNameChip(this.dataset.name)">${safe}</button>`;
+            }).join('');
+        }
+
+        window.pickNameChip = function(n) {
+            SoundFX.click();
+            const ipt = document.getElementById('nameInput');
+            if (ipt) ipt.value = (n || '').trim();
+            if (ipt) ipt.focus();
+        };
 
         function getSessionKey(gameType, mode) {
             if (gameType === 'cn8') return 'cn8';
@@ -1155,6 +1317,11 @@
                 const sign = p.score > 0 ? '+' : '';
                 const st = p.stats || emptyStats();
                 const totalWins = (st.bigGold||0) + (st.smallGold||0) + (st.gold9||0) + (st.normal||0);
+                const blackCount = (st.blackGold||0);
+                const foulCount = (st.fouls||0);
+                const actionCount = totalWins + blackCount + foulCount;
+                const foulRate = actionCount > 0 ? Math.round((foulCount / actionCount) * 100) : 0;
+                const avgPerRound = (state.round > 0) ? (p.score / state.round) : 0;
                 
                 if (state.gameType === 'cn8') {
                     html += `
@@ -1184,6 +1351,9 @@
                                     <span class="stat-badge sb-gold">黄金9:${st.gold9||0}</span>
                                     <span class="stat-badge" style="background:#333;color:#fff">黑金:${st.blackGold||0}</span>
                                     <span class="stat-badge sb-foul">犯规:${st.fouls||0}</span>
+                                    <span class="stat-badge" style="background:#E5E5EA;color:#333">操作:${actionCount}</span>
+                                    <span class="stat-badge" style="background:#E8FFF0;color:#0E7A2E">均分:${avgPerRound.toFixed(1)}</span>
+                                    <span class="stat-badge" style="background:#FFF0F0;color:#A60000">犯规率:${foulRate}%</span>
                                 </div>
                             </div>
                         </div>
@@ -1195,6 +1365,273 @@
             modal.style.display = 'flex';
             setTimeout(() => modal.classList.add('show'), 10);
         }
+
+        function buildReportModel() {
+            const time = document.getElementById('gameTimer').innerText;
+            const now = new Date();
+            const stamp = now.toLocaleString('zh-CN', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+            const playersSorted = [...(state.players || [])].sort((a, b) => (b.score || 0) - (a.score || 0));
+            if (state.gameType === 'cn8') {
+                const a = state.players?.[0]?.score ?? 0;
+                const b = state.players?.[1]?.score ?? 0;
+                return {
+                    title: '中式八球战报',
+                    subtitle: `时长 ${time}  ·  比分 ${a}:${b}`,
+                    stamp,
+                    players: playersSorted.map(p => ({ name: p.name, score: p.score }))
+                };
+            }
+            return {
+                title: '桌球追分战报',
+                subtitle: `回合 ${state.round}  ·  时长 ${time}`,
+                stamp,
+                players: playersSorted.map(p => {
+                    const st = p.stats || emptyStats();
+                    const totalWins = (st.bigGold||0) + (st.smallGold||0) + (st.gold9||0) + (st.normal||0);
+                    const blackCount = (st.blackGold||0);
+                    const foulCount = (st.fouls||0);
+                    const actionCount = totalWins + blackCount + foulCount;
+                    const foulRate = actionCount > 0 ? Math.round((foulCount / actionCount) * 100) : 0;
+                    const avgPerRound = (state.round > 0) ? (p.score / state.round) : 0;
+                    return {
+                        name: p.name,
+                        score: p.score,
+                        totalWins,
+                        bigGold: st.bigGold || 0,
+                        smallGold: st.smallGold || 0,
+                        gold9: st.gold9 || 0,
+                        blackGold: st.blackGold || 0,
+                        fouls: foulCount,
+                        actionCount,
+                        foulRate,
+                        avgPerRound
+                    };
+                })
+            };
+        }
+
+        window.generatePoster = async function() {
+            SoundFX.click();
+            try {
+                if (window.html2canvas) {
+                    await generatePosterFromSummary();
+                    return;
+                }
+            } catch (e) {}
+            await generatePosterFallback();
+        };
+
+        async function generatePosterFromSummary() {
+            const header = document.querySelector('#summaryModal .receipt-header');
+            const content = document.getElementById('summaryContent');
+            if (!header || !content) {
+                await generatePosterFallback();
+                return;
+            }
+
+            const outer = document.createElement('div');
+            outer.style.position = 'fixed';
+            outer.style.left = '-10000px';
+            outer.style.top = '0';
+            outer.style.width = '420px';
+            outer.style.padding = '22px';
+            outer.style.background = '#F2F2F7';
+            outer.style.boxSizing = 'border-box';
+
+            const card = document.createElement('div');
+            card.className = 'center-box';
+            card.style.width = '376px';
+            card.style.maxWidth = '376px';
+            card.style.margin = '0';
+            card.style.transform = 'none';
+            card.style.boxShadow = 'none';
+
+            const headerClone = header.cloneNode(true);
+            const contentClone = content.cloneNode(true);
+            contentClone.style.maxHeight = 'none';
+            contentClone.style.overflow = 'visible';
+            card.appendChild(headerClone);
+            card.appendChild(contentClone);
+
+            const foot = document.createElement('div');
+            foot.style.marginTop = '14px';
+            foot.style.fontSize = '11px';
+            foot.style.color = '#8E8E93';
+            foot.style.textAlign = 'center';
+            foot.innerText = '桌球追分 (Pro Max)';
+            card.appendChild(foot);
+
+            outer.appendChild(card);
+            document.body.appendChild(outer);
+
+            const capCanvas = await window.html2canvas(outer, { scale: 3, backgroundColor: '#F2F2F7' });
+            outer.remove();
+
+            const targetW = 1080;
+            const scale = targetW / capCanvas.width;
+            const targetH = Math.max(1, Math.round(capCanvas.height * scale));
+            const outCanvas = document.createElement('canvas');
+            outCanvas.width = targetW;
+            outCanvas.height = targetH;
+            const outCtx = outCanvas.getContext('2d');
+            outCtx.fillStyle = '#F2F2F7';
+            outCtx.fillRect(0, 0, targetW, targetH);
+            outCtx.drawImage(capCanvas, 0, 0, targetW, targetH);
+
+            const blob = await new Promise(res => outCanvas.toBlob(res, 'image/png', 1));
+            if (!blob) {
+                showToast('图片生成失败');
+                return;
+            }
+            posterBlob = blob;
+            if (posterObjectUrl) URL.revokeObjectURL(posterObjectUrl);
+            posterObjectUrl = URL.createObjectURL(blob);
+            const img = document.getElementById('posterImg');
+            if (img) img.src = posterObjectUrl;
+            const modal = document.getElementById('posterModal');
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('show'), 10);
+        }
+
+        async function generatePosterFallback() {
+            const m = buildReportModel();
+            const dpr = Math.max(2, Math.min(3, window.devicePixelRatio || 2));
+            const w = 1080;
+            const headerH = 260;
+            const rowH = state.gameType === 'cn8' ? 170 : 240;
+            const h = Math.min(1920, headerH + (m.players.length * rowH) + 220);
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.floor(w * dpr);
+            canvas.height = Math.floor(h * dpr);
+            canvas.style.width = w + 'px';
+            canvas.style.height = h + 'px';
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+
+            ctx.fillStyle = '#F2F2F7';
+            ctx.fillRect(0, 0, w, h);
+
+            const cardX = 54;
+            const cardY = 54;
+            const cardW = w - 108;
+            const cardH = h - 108;
+            const r = 42;
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.moveTo(cardX + r, cardY);
+            ctx.lineTo(cardX + cardW - r, cardY);
+            ctx.quadraticCurveTo(cardX + cardW, cardY, cardX + cardW, cardY + r);
+            ctx.lineTo(cardX + cardW, cardY + cardH - r);
+            ctx.quadraticCurveTo(cardX + cardW, cardY + cardH, cardX + cardW - r, cardY + cardH);
+            ctx.lineTo(cardX + r, cardY + cardH);
+            ctx.quadraticCurveTo(cardX, cardY + cardH, cardX, cardY + cardH - r);
+            ctx.lineTo(cardX, cardY + r);
+            ctx.quadraticCurveTo(cardX, cardY, cardX + r, cardY);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = '#1C1C1E';
+            ctx.font = '900 62px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+            ctx.fillText(m.title, cardX + 52, cardY + 98);
+
+            ctx.fillStyle = '#8E8E93';
+            ctx.font = '650 34px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+            ctx.fillText(m.subtitle, cardX + 52, cardY + 150);
+
+            ctx.fillStyle = '#C7C7CC';
+            ctx.font = '600 28px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+            ctx.fillText(m.stamp, cardX + 52, cardY + 196);
+
+            let y = cardY + 230;
+            const medals = ['🥇', '🥈', '🥉'];
+            m.players.forEach((p, i) => {
+                const rowY = y + (i * rowH);
+                ctx.fillStyle = '#F2F2F7';
+                ctx.fillRect(cardX + 32, rowY, cardW - 64, rowH - 26);
+
+                ctx.fillStyle = '#1C1C1E';
+                ctx.font = '900 44px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+                const rank = medals[i] || String(i + 1);
+                ctx.fillText(rank, cardX + 52, rowY + 74);
+
+                ctx.fillStyle = '#1C1C1E';
+                ctx.font = '800 44px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+                ctx.fillText(p.name, cardX + 150, rowY + 74);
+
+                const score = (p.score > 0 ? '+' : '') + String(p.score || 0);
+                ctx.textAlign = 'right';
+                ctx.fillStyle = (p.score > 0 ? '#34C759' : (p.score < 0 ? '#FF3B30' : '#1C1C1E'));
+                ctx.font = '950 56px "SF Mono", ui-monospace, Menlo, monospace';
+                ctx.fillText(score, cardX + cardW - 52, rowY + 78);
+                ctx.textAlign = 'left';
+
+                if (state.gameType !== 'cn8') {
+                    ctx.fillStyle = '#8E8E93';
+                    ctx.font = '650 30px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+                    const line1 = `胜局 ${p.totalWins}  ·  犯规 ${p.fouls}  ·  操作 ${p.actionCount}`;
+                    const line2 = `均分 ${Number(p.avgPerRound || 0).toFixed(1)}  ·  犯规率 ${p.foulRate}%  ·  黑金 ${p.blackGold}`;
+                    ctx.fillText(line1, cardX + 150, rowY + 124);
+                    ctx.fillText(line2, cardX + 150, rowY + 166);
+                }
+            });
+
+            ctx.fillStyle = '#8E8E93';
+            ctx.font = '650 28px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+            ctx.fillText('桌球追分 (Pro Max)', cardX + 52, cardY + cardH - 52);
+            ctx.textAlign = 'right';
+            ctx.fillText('复制/分享来自本地计分器', cardX + cardW - 52, cardY + cardH - 52);
+            ctx.textAlign = 'left';
+
+            const blob = await new Promise(res => canvas.toBlob(res, 'image/png', 1));
+            if (!blob) {
+                showToast('图片生成失败');
+                return;
+            }
+            posterBlob = blob;
+            if (posterObjectUrl) URL.revokeObjectURL(posterObjectUrl);
+            posterObjectUrl = URL.createObjectURL(blob);
+            const img = document.getElementById('posterImg');
+            if (img) img.src = posterObjectUrl;
+            const modal = document.getElementById('posterModal');
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('show'), 10);
+        }
+
+        window.closePosterModal = function() {
+            SoundFX.click();
+            const modal = document.getElementById('posterModal');
+            modal.classList.remove('show');
+            setTimeout(() => modal.style.display = 'none', 200);
+        };
+
+        window.savePosterImage = function() {
+            SoundFX.click();
+            if (!posterBlob) return showToast('请先生成图片');
+            const a = document.createElement('a');
+            const url = posterObjectUrl || URL.createObjectURL(posterBlob);
+            a.href = url;
+            a.download = `桌球战报_${Date.now()}.png`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            showToast('已触发保存/下载');
+        };
+
+        window.sharePosterImage = async function() {
+            SoundFX.click();
+            if (!posterBlob) return showToast('请先生成图片');
+            try {
+                const file = new File([posterBlob], `桌球战报_${Date.now()}.png`, { type: 'image/png' });
+                if (navigator.canShare && navigator.share && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: '图片战报' });
+                    showToast('已打开分享');
+                } else {
+                    savePosterImage();
+                }
+            } catch (e) {
+                savePosterImage();
+            }
+        };
 
         window.copyReport = function() {
             SoundFX.click();
@@ -1221,9 +1658,15 @@
                 sortedPlayers.forEach(p => {
                     const st = p.stats || emptyStats();
                     const totalWins = (st.bigGold||0) + (st.smallGold||0) + (st.gold9||0) + (st.normal||0);
+                    const blackCount = (st.blackGold||0);
+                    const foulCount = (st.fouls||0);
+                    const actionCount = totalWins + blackCount + foulCount;
+                    const foulRate = actionCount > 0 ? Math.round((foulCount / actionCount) * 100) : 0;
+                    const avgPerRound = (state.round > 0) ? (p.score / state.round) : 0;
                     
                     text += `👤 ${p.name}\n`;
-                    text += `   胜局: ${totalWins} | 犯规: ${st.fouls||0}\n`;
+                    text += `   胜局: ${totalWins} | 犯规: ${foulCount} | 操作: ${actionCount}\n`;
+                    text += `   均分: ${avgPerRound.toFixed(1)} | 犯规率: ${foulRate}% | 黑金: ${blackCount}\n`;
                     const specials = [];
                     if(st.bigGold > 0) specials.push(`大金x${st.bigGold}`);
                     if(st.smallGold > 0) specials.push(`小金x${st.smallGold}`);
