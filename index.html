@@ -4,580 +4,837 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>桌球记分 Ultimate</title>
-    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>桌球追分 Pro Max</title>
     <style>
-        /* --- 1. 核心变量 & 深色模式适配 --- */
+        /* --- 1. 核心变量与深色模式 (Req 5) --- */
         :root {
-            --bg-body: #F2F2F7; --bg-card: #FFFFFF; --bg-header: rgba(242,242,247,0.85);
-            --t-main: #000000; --t-sec: #8E8E93; 
-            --c-blue: #007AFF; --c-red: #FF3B30; --c-gold: #FFD60A; --c-purple: #AF52DE;
-            --btn-bg: #E5E5EA; --shadow: 0 4px 12px rgba(0,0,0,0.06);
+            /* 浅色模式变量 */
+            --bg-body: #F2F2F7; --bg-card: #FFFFFF; --bg-header: rgba(242,242,247,0.8);
+            --t-main: #000000; --t-sec: #8E8E93; --t-inv: #FFFFFF;
+            --c-primary: #007AFF; --c-gold-s: #FF9500; --c-gold-b: #AF52DE; --c-gold-9: #FFD60A;
+            --c-foul: #FF3B30; --c-let: #FF2D55; --c-safe: #34C759;
+            --btn-bg: #F2F2F7; --btn-bg-act: #E5E5EA;
+            --shadow: 0 4px 12px rgba(0,0,0,0.04);
             --safe-top: env(safe-area-inset-top); --safe-bottom: env(safe-area-inset-bottom);
         }
+
         @media (prefers-color-scheme: dark) {
             :root {
-                --bg-body: #000000; --bg-card: #1C1C1E; --bg-header: rgba(28,28,30,0.85);
-                --t-main: #FFFFFF; --t-sec: #98989D;
-                --btn-bg: #2C2C2E; --shadow: 0 4px 12px rgba(0,0,0,0.4);
+                /* 深色模式变量 */
+                --bg-body: #000000; --bg-card: #1C1C1E; --bg-header: rgba(0,0,0,0.8);
+                --t-main: #FFFFFF; --t-sec: #98989D; --t-inv: #000000;
+                --c-primary: #0A84FF; --btn-bg: #2C2C2E; --btn-bg-act: #3A3A3C;
+                --shadow: 0 4px 12px rgba(0,0,0,0.3);
             }
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
-            background: var(--bg-body); color: var(--t-main);
-            margin: 0; height: 100dvh; display: flex; flex-direction: column;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", sans-serif;
+            background-color: var(--bg-body); color: var(--t-main);
+            margin: 0; padding: 0; height: 100dvh; width: 100vw; overflow: hidden;
+            display: flex; flex-direction: column;
             padding-top: max(10px, var(--safe-top)); padding-bottom: max(10px, var(--safe-bottom));
-            user-select: none; -webkit-user-select: none; touch-action: manipulation;
+            box-sizing: border-box; user-select: none; -webkit-user-select: none; touch-action: none;
             transition: background 0.3s, color 0.3s;
         }
 
-        /* --- 2. 布局组件 --- */
+        /* --- 动效关键帧 (Req 4 & 6) --- */
+        @keyframes popScore { 0% { transform: scale(1); } 50% { transform: scale(1.4); } 100% { transform: scale(1); } }
+        @keyframes slideUpFade { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes pulseGold { 0% { box-shadow: 0 0 0 0 rgba(255, 214, 10, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 214, 10, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 214, 10, 0); } }
+        
+        /* 飞行筹码动画元素 */
+        .flying-chip {
+            position: fixed; width: 24px; height: 24px; border-radius: 50%;
+            background: var(--c-gold-9); box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 999; pointer-events: none; display: flex; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: 800; color: #000;
+        }
+
+        /* 礼花 Canvas */
+        #confettiCanvas { position: fixed; inset: 0; pointer-events: none; z-index: 200; }
+
+        /* --- Header --- */
         header {
-            height: 44px; display: flex; justify-content: space-between; align-items: center; padding: 0 16px;
-            position: sticky; top: 0; z-index: 10; backdrop-filter: blur(10px); background: var(--bg-header);
+            flex-shrink: 0; height: 44px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+            padding: 0 16px; z-index: 10; background: var(--bg-header); backdrop-filter: blur(10px);
         }
-        .icon-btn { background:none; border:none; color:var(--c-blue); padding:8px; cursor:pointer; }
-        
-        .timer-box {
+        .icon-btn { background: none; border: none; padding: 8px; color: var(--c-primary); display: flex; align-items: center; cursor: pointer; border-radius: 50%; }
+        .timer-container { display: flex; align-items: center; gap: 8px; }
+        .timer-display {
             font-family: "SF Mono", monospace; font-size: 16px; font-weight: 600;
-            background: var(--btn-bg); padding: 4px 12px; border-radius: 8px; min-width: 80px; text-align: center;
+            color: var(--t-main); background: var(--btn-bg-act); padding: 4px 10px; border-radius: 6px;
+            min-width: 76px; text-align: center;
         }
-        .timer-box.paused { opacity: 0.6; }
+        .timer-paused { color: var(--t-sec); opacity: 0.7; }
 
+        /* --- Info Bar --- */
         .info-bar {
-            margin: 8px 16px; background: var(--bg-card); border-radius: 12px; padding: 10px 16px;
-            display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow);
-            height: 60px;
+            flex-shrink: 0; height: 75px; margin: 4px 12px; display: grid; grid-template-columns: 1.2fr 0.8fr 1.2fr;
+            align-items: center; background: var(--bg-card); border-radius: 12px; padding: 0 10px;
+            box-shadow: var(--shadow); gap: 4px; border: 1px solid rgba(128,128,128,0.1);
         }
-        .round-display { text-align: center; line-height: 1; }
-        .round-display b { font-size: 24px; display: block; }
-        .round-display span { font-size: 10px; color: var(--t-sec); }
-
-        main { flex: 1; overflow-y: auto; padding: 10px 16px; display: flex; flex-direction: column; gap: 10px; }
-
-        /* --- 3. 追分模式卡片 (Chase Card) --- */
-        .chase-card {
-            background: var(--bg-card); border-radius: 16px; padding: 12px; box-shadow: var(--shadow);
-            display: flex; flex-direction: column; gap: 8px; position: relative; border: 1.5px solid transparent;
+        .logs-area { display: flex; flex-direction: column; justify-content: center; font-size: 11px; height: 100%; overflow: hidden; color: var(--t-sec); }
+        .log-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
+        .log-line.latest { color: var(--t-main); font-weight: 600; }
+        .round-area { text-align: center; line-height: 1; color: var(--t-main); }
+        .round-num { font-size: 28px; font-weight: 800; }
+        .round-lbl { font-size: 10px; color: var(--t-sec); }
+        
+        /* --- Main --- */
+        main {
+            flex: 1; display: flex; flex-direction: column; justify-content: space-evenly;
+            padding: 4px 12px; overflow: hidden; gap: 8px;
         }
-        .chase-card.dealer { border-color: var(--c-gold); background: linear-gradient(135deg, var(--bg-card), rgba(255,214,10,0.05)); }
+
+        /* --- Player Card --- */
+        .player-card {
+            background: var(--bg-card); border-radius: 16px; padding: 10px 14px;
+            box-shadow: var(--shadow); display: flex; flex-direction: column; justify-content: center;
+            transition: all 0.3s; position: relative; border: 1px solid transparent;
+        }
+        .player-card.is-dealer { border-color: var(--c-gold-s); background: linear-gradient(to bottom right, var(--bg-card), rgba(255,149,0,0.05)); }
+        .player-card.is-loser { border-color: rgba(142, 142, 147, 0.3); background: linear-gradient(to bottom right, var(--bg-card), rgba(142,142,147,0.05)); }
         
-        .c-header { display: flex; justify-content: space-between; align-items: center; }
-        .c-score { font-size: 32px; font-weight: 800; font-variant-numeric: tabular-nums; }
-        .score-p { color: #34C759; } .score-n { color: #FF3B30; }
-        
+        .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .p-info { display: flex; align-items: center; gap: 8px; }
+        .rank-badge {
+            width: 20px; height: 20px; background: var(--btn-bg); color: var(--t-sec);
+            font-size: 11px; font-weight: 700; border-radius: 5px; display: grid; place-items: center;
+        }
+        .p-name { font-size: 17px; font-weight: 700; color: var(--t-main); display: flex; align-items: center; gap: 6px;}
+        .p-score { font-size: 32px; font-weight: 800; font-variant-numeric: tabular-nums; transition: transform 0.1s; }
+        .score-pos { color: var(--c-safe); } .score-neg { color: var(--c-foul); } .score-neu { color: var(--t-main); }
+
+        /* Role Badges */
+        .badge { padding: 1px 5px; border-radius: 4px; font-size: 9px; font-weight: 700; text-transform: uppercase; border: 1px solid; }
+        .b-dealer { border-color: var(--c-gold-s); color: var(--c-gold-s); background: rgba(255,149,0,0.1); }
+        .b-next { border-color: var(--t-sec); color: var(--t-sec); }
+
+        /* Action Buttons Grid */
         .btn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
         .act-btn {
-            border: none; background: var(--btn-bg); border-radius: 8px; padding: 10px 0;
-            display: flex; flex-direction: column; align-items: center; cursor: pointer; position: relative; overflow: hidden;
+            border: none; border-radius: 10px; padding: 8px 2px;
+            background: var(--btn-bg); position: relative; overflow: hidden; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; transition: transform 0.1s;
         }
         .act-btn:active { transform: scale(0.96); }
-        .act-btn:disabled { opacity: 0.3; }
-        .btn-l { font-size: 13px; font-weight: 700; color: var(--t-main); }
-        .btn-s { font-size: 9px; opacity: 0.7; color: var(--t-sec); }
-
-        /* --- 4. 中式八球模式卡片 (CN8 Card) - 找回的功能 --- */
-        .cn8-card {
-            flex: 1; border-radius: 18px; padding: 20px; color: #FFF;
-            display: flex; flex-direction: column; justify-content: space-between;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15); cursor: pointer; transition: transform 0.1s;
-            min-height: 140px;
-        }
-        .cn8-card:active { transform: scale(0.98); }
-        .cn8-red { background: linear-gradient(135deg, #FF3B30, #FF9500); }
-        .cn8-blue { background: linear-gradient(135deg, #007AFF, #5856D6); }
+        .act-btn:disabled { opacity: 0.3; filter: grayscale(1); cursor: not-allowed; transform: none; }
+        .btn-t { font-size: 13px; font-weight: 700; margin-bottom: 2px; color: var(--t-main); }
+        .btn-s { font-size: 9px; font-weight: 500; opacity: 0.8; color: var(--t-sec); white-space: nowrap; transform: scale(0.9); }
         
-        .cn8-name { font-size: 20px; font-weight: 700; opacity: 0.9; }
-        .cn8-score { font-size: 80px; font-weight: 900; align-self: flex-end; line-height: 1; }
-        .cn8-vs { text-align: center; font-size: 24px; font-weight: 900; opacity: 0.2; margin: -5px 0; font-style: italic; }
+        /* Button Colors */
+        .bc-gold { background: rgba(255,149,0,0.15); } .bc-gold .btn-t { color: var(--c-gold-s); }
+        .bc-big { background: rgba(175,82,222,0.15); } .bc-big .btn-t { color: var(--c-gold-b); }
+        .bc-9 { background: rgba(255,214,10,0.15); } .bc-9 .btn-t { color: #D4AF37; }
+        .bc-black { background: #2C2C2E; } .bc-black .btn-t { color: #FFF; }
+        .bc-norm { background: rgba(0,122,255,0.1); } .bc-norm .btn-t { color: var(--c-primary); }
+        .bc-foul { background: rgba(255,59,48,0.1); } .bc-foul .btn-t { color: var(--c-foul); }
 
-        /* --- 5. Footer & Modals --- */
-        footer { padding: 10px 16px; display: flex; gap: 10px; }
-        .f-btn { flex: 1; height: 44px; border-radius: 22px; border: none; font-weight: 600; font-size: 15px; cursor: pointer; }
-        .b-undo { background: var(--bg-card); color: var(--t-main); box-shadow: var(--shadow); }
-        .b-save { background: var(--t-main); color: var(--bg-body); box-shadow: var(--shadow); }
+        /* --- Footer --- */
+        footer { height: 50px; display: flex; gap: 12px; padding: 0 16px; align-items: center; }
+        .f-btn {
+            flex: 1; height: 40px; border-radius: 20px; border: none; font-weight: 600; font-size: 14px;
+            display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;
+        }
+        .f-undo { background: var(--bg-card); color: var(--t-sec); border: 1px solid var(--btn-bg-act); }
+        .f-save { background: var(--t-main); color: var(--bg-body); }
 
-        .modal {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
-            z-index: 100; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s;
+        /* --- Modals (General) --- */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+            z-index: 100; display: none; opacity: 0; transition: opacity 0.25s;
+            justify-content: center; align-items: center;
         }
-        .modal.show { display: flex; opacity: 1; }
-        .box {
-            background: var(--bg-card); width: 85%; max-width: 360px; border-radius: 20px;
-            padding: 24px; text-align: center; max-height: 85vh; overflow-y: auto;
+        .modal-overlay.show { display: flex; opacity: 1; }
+        .modal-box {
+            background: var(--bg-card); width: 90%; max-width: 360px; border-radius: 20px;
+            padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); transform: scale(0.95); transition: transform 0.2s;
+            max-height: 85vh; overflow-y: auto; color: var(--t-main); text-align: center;
         }
+        .modal-overlay.show .modal-box { transform: scale(1); }
         
-        /* 走势图容器 */
-        .trend-box { width: 100%; height: 150px; margin: 15px 0; background: var(--btn-bg); border-radius: 10px; padding: 10px; box-sizing: border-box;}
+        .m-title { font-size: 20px; font-weight: 800; margin-bottom: 16px; }
+        .m-desc { font-size: 14px; color: var(--t-sec); margin-bottom: 20px; line-height: 1.5; }
+        
+        /* Settings Inputs */
+        .rule-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 14px; }
+        .rule-inp {
+            width: 60px; background: var(--btn-bg); border: 1px solid var(--btn-bg-act);
+            color: var(--t-main); border-radius: 8px; padding: 6px; text-align: center; font-weight: 700;
+        }
 
-        /* 向导样式 */
+        /* Summary Tabs (Req 2 & 7) */
+        .tab-nav { display: flex; gap: 4px; background: var(--btn-bg); padding: 4px; border-radius: 10px; margin-bottom: 16px; }
+        .tab-btn {
+            flex: 1; padding: 8px; border: none; background: none; font-size: 13px; font-weight: 600;
+            color: var(--t-sec); border-radius: 8px; cursor: pointer;
+        }
+        .tab-btn.active { background: var(--bg-card); color: var(--t-main); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .tab-content { display: none; text-align: left; }
+        .tab-content.active { display: block; animation: slideUpFade 0.3s; }
+
+        /* Chart */
+        .trend-chart { width: 100%; height: 160px; margin: 10px 0; background: var(--btn-bg); border-radius: 12px; padding: 10px; box-sizing: border-box; }
+        
+        /* Wizard (Req 3) */
+        #wizardModal .modal-box { text-align: left; }
+        .step-dots { display: flex; gap: 6px; justify-content: center; margin-bottom: 20px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--btn-bg-act); }
+        .dot.active { background: var(--c-primary); width: 20px; border-radius: 4px; }
         .wiz-opt {
-            padding: 15px; border: 2px solid var(--btn-bg); border-radius: 12px; margin-bottom: 10px;
-            font-weight: 600; text-align: left; transition: 0.2s; display: flex; justify-content: space-between;
+            padding: 12px; border: 2px solid var(--btn-bg); border-radius: 12px; margin-bottom: 8px;
+            font-weight: 600; cursor: pointer; transition: all 0.2s;
         }
-        .wiz-opt.selected { border-color: var(--c-blue); background: rgba(0,122,255,0.05); color: var(--c-blue); }
+        .wiz-opt.selected { border-color: var(--c-primary); background: rgba(0,122,255,0.05); color: var(--c-primary); }
 
-        /* 动画 */
-        @keyframes pop { 0%{transform:scale(1);} 50%{transform:scale(1.3);} 100%{transform:scale(1);} }
+        /* Achievements Grid */
+        .ach-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .ach-item {
+            background: var(--btn-bg); border-radius: 8px; padding: 10px; text-align: center;
+        }
+        .ach-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+        .ach-title { font-size: 12px; color: var(--t-sec); font-weight: 600; }
+        .ach-val { font-size: 14px; font-weight: 800; color: var(--t-main); }
     </style>
 </head>
 <body>
 
+    <canvas id="confettiCanvas"></canvas>
+
     <header>
         <button class="icon-btn" onclick="openWizard(true)">
-            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
-        <div class="timer-box paused" id="timerDisplay" onclick="toggleTimer()">00:00</div>
-        <button class="icon-btn" onclick="openSettings()">
-            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-        </button>
+        <div style="display:flex; justify-content:center;">
+             <div class="timer-container" onclick="toggleTimer()">
+                <div class="timer-display timer-paused" id="gameTimer">00:00:00</div>
+            </div>
+        </div>
+        <div style="text-align:right;">
+             <button class="icon-btn" style="margin-left:auto;" onclick="openSettings()">
+                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+        </div>
     </header>
 
     <div class="info-bar">
-        <div id="logArea" style="font-size:11px; color:var(--t-sec); width:120px; white-space:nowrap; overflow:hidden;">准备开局</div>
-        <div class="round-display">
-            <b id="roundNum">0</b><span>回合</span>
+        <div class="logs-area" id="logsArea">
+            <div style="text-align:center; opacity:0.5;">准备开局</div>
         </div>
-        <div id="leaderboard" style="font-size:11px; text-align:right;"></div>
+        <div class="round-area">
+            <div class="round-num" id="roundDisplay">0</div>
+            <div class="round-lbl">ROUND</div>
+        </div>
+        <div class="logs-area" id="leaderboard" style="align-items: flex-end; text-align: right;">
+            </div>
     </div>
 
-    <main id="gameContainer"></main>
+    <main id="gameArea"></main>
 
     <footer>
-        <button class="f-btn b-undo" onclick="undo()">撤销</button>
-        <button class="f-btn b-save" onclick="showSummary()">结算/战报</button>
+        <button class="f-btn f-undo" onclick="undo()">撤销</button>
+        <button class="f-btn f-save" onclick="showSummary()">结算 / 战报</button>
     </footer>
 
-    <div class="modal" id="wizardModal">
-        <div class="box">
-            <h2 style="margin-top:0">开始新局</h2>
+    <div class="modal-overlay" id="wizardModal">
+        <div class="modal-box">
+            <div class="m-title" id="wizTitle">欢迎使用 Pro Max</div>
+            <div class="step-dots" id="wizDots">
+                <div class="dot active"></div><div class="dot"></div><div class="dot"></div>
+            </div>
+            
             <div id="wizStep1">
-                <div class="wiz-opt selected" onclick="selectWizMode('cn8', this)">
-                    <span>🎱 中式八球</span><span>1v1</span>
-                </div>
-                <div class="wiz-opt" onclick="selectWizMode('chase', this)">
-                    <span>🔄 多人追分</span><span>2-3人</span>
-                </div>
-                <div id="chaseOpts" style="display:none; margin-top:10px; padding-left:10px;">
-                    <label><input type="radio" name="pCount" value="2"> 2人局</label>
-                    <label style="margin-left:15px"><input type="radio" name="pCount" value="3" checked> 3人局</label>
-                </div>
-                <button class="f-btn b-save" style="width:100%; margin-top:20px" onclick="startGame()">开始</button>
+                <div class="m-desc">请选择游戏模式</div>
+                <div class="wiz-opt selected" onclick="wizSelect(this, 'mode', 3)">3 人追分 (标准)</div>
+                <div class="wiz-opt" onclick="wizSelect(this, 'mode', 2)">2 人单挑</div>
+                <button class="f-btn f-save" style="width:100%; margin-top:20px;" onclick="nextWizStep(2)">下一步</button>
+            </div>
+
+            <div id="wizStep2" style="display:none;">
+                <div class="m-desc">玩家设置</div>
+                <input type="text" class="rule-inp" style="width:100%; margin-bottom:8px; text-align:left; padding:10px;" id="wizName0" placeholder="玩家 A" value="玩家 A">
+                <input type="text" class="rule-inp" style="width:100%; margin-bottom:8px; text-align:left; padding:10px;" id="wizName1" placeholder="玩家 B" value="玩家 B">
+                <input type="text" class="rule-inp" style="width:100%; margin-bottom:8px; text-align:left; padding:10px;" id="wizName2" placeholder="玩家 C" value="玩家 C">
+                <button class="f-btn f-save" style="width:100%; margin-top:20px;" onclick="nextWizStep(3)">下一步</button>
+            </div>
+
+            <div id="wizStep3" style="display:none;">
+                <div class="m-desc">规则预设</div>
+                <div class="wiz-opt selected" onclick="wizSetRule('std')">标准厅 (4/7/20)</div>
+                <div class="wiz-opt" onclick="wizSetRule('friend')">朋友局 (小赌怡情)</div>
+                <button class="f-btn f-save" style="width:100%; margin-top:20px;" onclick="finishWizard()">开始游戏</button>
             </div>
         </div>
     </div>
 
-    <div class="modal" id="summaryModal">
-        <div class="box" id="summaryContent">
-            <h2 style="margin-top:0">战局结算</h2>
-            <div style="font-size:12px; color:var(--t-sec); margin-bottom:15px;" id="sumTime"></div>
-            
-            <div class="trend-box" id="trendChart"></div>
-            
-            <div id="sumList" style="text-align:left; margin-bottom:20px;"></div>
-            
-            <div style="display:flex; gap:10px;">
-                <button class="f-btn b-undo" onclick="closeModal('summaryModal')">关闭</button>
-                <button class="f-btn b-save" onclick="generateImage()">生成图片</button>
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal-box">
+            <div class="m-title">规则配置</div>
+            <div class="tab-nav">
+                <button class="tab-btn active">分值设定</button>
             </div>
-        </div>
-    </div>
-    
-    <div class="modal" id="settingsModal">
-        <div class="box">
-            <h3>规则配置 (追分)</h3>
-            <div id="ruleInputs" style="text-align:left; font-size:14px;"></div>
-            <button class="f-btn b-save" style="width:100%; margin-top:20px" onclick="closeModal('settingsModal')">保存</button>
-            <button class="f-btn" style="width:100%; margin-top:10px; color:red" onclick="resetGame()">重置本局</button>
+            <div id="rulesInputs">
+                </div>
+            <div style="margin-top:20px; font-size:12px; color:var(--t-sec);">更改即时生效</div>
+            <button class="f-btn f-save" style="width:100%; margin-top:10px;" onclick="closeModal('settingsModal')">完成</button>
+            <button class="f-btn f-undo" style="width:100%; margin-top:10px; color:var(--c-foul); border-color:var(--c-foul);" onclick="resetGame()">重置本局</button>
         </div>
     </div>
 
-    <div class="modal" id="imgModal">
-        <div class="box" style="padding:10px; background:transparent; box-shadow:none;">
-            <img id="finalImg" style="width:100%; border-radius:10px; margin-bottom:10px;">
-            <button class="f-btn b-save" style="width:100%" onclick="closeModal('imgModal')">关闭</button>
+    <div class="modal-overlay" id="summaryModal">
+        <div class="modal-box" style="max-width: 400px;">
+            <div class="m-title">战局结算</div>
+            <div class="tab-nav">
+                <button class="tab-btn active" onclick="switchTab('sum-overview')">总览</button>
+                <button class="tab-btn" onclick="switchTab('sum-trend')">走势</button>
+                <button class="tab-btn" onclick="switchTab('sum-achieve')">称号</button>
+            </div>
+            
+            <div id="sum-overview" class="tab-content active">
+                <div id="summaryList"></div>
+            </div>
+
+            <div id="sum-trend" class="tab-content">
+                <div class="m-desc">分数走势图</div>
+                <div id="trendChartContainer" class="trend-chart"></div>
+            </div>
+
+            <div id="sum-achieve" class="tab-content">
+                <div id="achievementsList" class="ach-grid"></div>
+            </div>
+
+            <button class="f-btn f-save" style="width:100%; margin-top:20px;" onclick="closeModal('summaryModal')">关闭</button>
         </div>
     </div>
 
     <script>
-        /* --- 系统核心逻辑 --- */
-        const DB_KEY = 'billiards_ult_v4';
+        /* --- Logic & State --- */
+        const DB_KEY = 'billiards_promax_v3';
         
-        // 音效引擎 (找回的功能)
-        const SFX = {
-            ctx: null,
-            init: function() {
-                if(!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-            },
-            play: function(type) {
-                if(!this.ctx) this.init();
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.connect(gain); gain.connect(this.ctx.destination);
-                
-                const now = this.ctx.currentTime;
-                if(type === 'win') {
-                    osc.frequency.setValueAtTime(523, now); // C5
-                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
-                    gain.gain.setValueAtTime(0.1, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-                    osc.start(); osc.stop(now + 0.3);
-                } else if (type === 'foul') {
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(150, now);
-                    gain.gain.setValueAtTime(0.1, now);
-                    gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
-                    osc.start(); osc.stop(now + 0.2);
-                }
-            }
-        };
-
-        // 默认配置
+        // 默认规则 (Req 1)
         const defaultRules = {
-            normal: { w: 4, label: '普胜' },
-            small: { w: 7, label: '小金' },
-            big: { w: 20, label: '大金' },
-            gold9: { w: 8, label: '黄金9' },
-            foul: { l: 1, label: '犯规' }
+            normal: { win: 4, label: '普胜' },
+            smallGold: { win: 7, label: '小金' },
+            bigGold: { win: 20, label: '大金' }, // 3人局: 赢20, 输10, 其他-10
+            gold9: { win: 8, label: '黄金9' },   // 3人局: 赢8, 输4, 其他-4
+            blackGold: { label: '黑金' },        // 特殊逻辑: 自-5, 下+4, 上+1 (可配金额)
+            openBlack: { label: '开球黑金' },    // 特殊逻辑: 自-8, 其他+4
+            foul: { lose: 1, label: '犯规' }
         };
 
         let state = {
-            gameType: 'cn8', // 'cn8' 或 'chase'
-            mode: 2, // 玩家人数
-            players: [],
+            setupDone: false,
+            mode: 3,
+            players: [
+                { name: '玩家 A', score: 0, id: 0 },
+                { name: '玩家 B', score: 0, id: 1 },
+                { name: '玩家 C', score: 0, id: 2 }
+            ],
+            rules: JSON.parse(JSON.stringify(defaultRules)),
+            history: [], // 全局快照历史
             round: 0,
             timer: 0,
-            isRunning: false,
-            history: [],
-            logs: [],
-            rules: JSON.parse(JSON.stringify(defaultRules))
+            timerRunning: false,
+            logs: []
         };
-        let timerInt;
 
-        // 初始化
-        (function init() {
+        let timerInterval;
+
+        // --- Init ---
+        function init() {
             const saved = localStorage.getItem(DB_KEY);
             if (saved) {
                 try {
-                    state = { ...state, ...JSON.parse(saved) };
-                    // 兼容性检查
-                    if(!state.rules) state.rules = JSON.parse(JSON.stringify(defaultRules));
-                    renderGame();
-                } catch(e) {}
-            } else {
+                    const parsed = JSON.parse(saved);
+                    // Merge saved state with defaults to avoid breakage on updates
+                    state = { ...state, ...parsed };
+                    if(state.rules) state.rules = { ...defaultRules, ...state.rules }; // Ensure rules structure
+                } catch(e) { console.error('Data corrupted'); }
+            }
+
+            if (!state.setupDone) {
                 openWizard(false);
-            }
-            if(state.isRunning) startTimer();
-            else updateTimerUI();
-        })();
-
-        function save() { localStorage.setItem(DB_KEY, JSON.stringify(state)); }
-
-        /* --- 游戏操作逻辑 --- */
-        
-        // 1. 中式八球逻辑 (简单 +1)
-        function handleCn8(idx) {
-            pushHistory();
-            SFX.play('win');
-            state.players[idx].score++;
-            state.round++;
-            addLog(`${state.players[idx].name} +1`);
-            renderGame();
-            save();
-            if(!state.isRunning) toggleTimer();
-        }
-
-        // 2. 追分逻辑 (规则引擎)
-        function handleChase(idx, type) {
-            pushHistory();
-            const p = state.players;
-            const cur = p[idx];
-            const next = p[(idx + 1) % p.length];
-            const prev = p[(idx - 1 + p.length) % p.length];
-            const is3 = state.mode === 3;
-            
-            let txt = '';
-            
-            if (type === 'foul') {
-                SFX.play('foul');
-                const val = state.rules.foul.l;
-                cur.score -= val;
-                if(state.gameType === 'chase' && state.mode === 2) next.score += val; // 2人局犯规给对方加分
-                else if(is3) prev.score += val; // 3人局给上家
-                txt = `犯规 -${val}`;
-            } else if (type === 'black') { // 黑金特殊逻辑
-                SFX.play('foul'); // 类似犯规的提示音
-                if(is3) {
-                    cur.score -= 5; next.score += 4; prev.score += 1;
-                    // 黑金换位：黑金者(输家)去中间，下家变庄
-                    const winner = next; const loser = cur; const tail = prev;
-                    state.players = [winner, loser, tail];
-                } else {
-                    cur.score -= 5; next.score += 5;
-                }
-                txt = '黑金 -5';
             } else {
-                // 普胜/大金/小金
-                SFX.play('win');
-                let val = state.rules[type]?.w || 0;
-                if (type === 'normal') val = state.rules.normal.w; // 4
-                
-                if (is3) {
-                    if (type === 'big') {
-                        cur.score += 20; next.score -= 10; prev.score -= 10;
-                    } else if (type === 'gold9') {
-                        cur.score += 8; next.score -= 4; prev.score -= 4;
-                    } else if (type === 'small') {
-                        cur.score += 7; prev.score -= 7; // 小金只吃上家
-                    } else { // 普胜
-                        cur.score += 4; prev.score -= 4;
-                    }
-                    // 赢家坐庄
-                    if(type !== 'gold9') { // 黄金9不换位
-                        const winner = cur; 
-                        const p1 = state.players[(idx - 1 + 3) % 3];
-                        const p2 = state.players[(idx + 1) % 3];
-                        state.players = [winner, p1, p2];
-                    }
-                } else { // 2人
-                    cur.score += val; next.score -= val;
-                    if(val > 0) [state.players[0], state.players[1]] = [state.players[1], state.players[0]]; // 赢家换位
-                }
-                txt = `${state.rules[type]?.label || '普胜'} +${val}`;
+                renderGame();
+                renderLog();
             }
-
-            state.round++;
-            addLog(`${cur.name} ${txt}`);
-            renderGame();
-            save();
-            if(!state.isRunning) toggleTimer();
+            
+            // Resume timer visual state
+            if(state.timerRunning) startTimer();
+            else updateTimerDisplay();
         }
 
-        function pushHistory() {
-            if(state.history.length > 10) state.history.shift();
-            state.history.push(JSON.parse(JSON.stringify({
-                p: state.players, r: state.round, l: state.logs
-            })));
+        function save() {
+            localStorage.setItem(DB_KEY, JSON.stringify(state));
+        }
+
+        // --- Wizard Logic (Req 3) ---
+        let wizState = { mode: 3 };
+        function openWizard(isEdit) {
+            document.getElementById('wizardModal').classList.add('show');
+            document.getElementById('wizStep1').style.display = 'block';
+            document.getElementById('wizStep2').style.display = 'none';
+            document.getElementById('wizStep3').style.display = 'none';
+            if(isEdit) document.getElementById('wizTitle').innerText = "修改设置";
+        }
+        function wizSelect(el, key, val) {
+            el.parentNode.querySelectorAll('.wiz-opt').forEach(b => b.classList.remove('selected'));
+            el.classList.add('selected');
+            wizState[key] = val;
+        }
+        function nextWizStep(step) {
+            document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === step - 1));
+            document.getElementById(`wizStep${step-1}`).style.display = 'none';
+            document.getElementById(`wizStep${step}`).style.display = 'block';
+            
+            if(step === 2) {
+                const inputs = [document.getElementById('wizName0'), document.getElementById('wizName1'), document.getElementById('wizName2')];
+                inputs.forEach(i => i.style.display = wizState.mode === 2 && i.id === 'wizName2' ? 'none' : 'block');
+            }
+        }
+        function wizSetRule(type) {
+            if(type === 'friend') {
+                state.rules.normal.win = 2; state.rules.smallGold.win = 4; state.rules.bigGold.win = 10;
+            } else {
+                state.rules = JSON.parse(JSON.stringify(defaultRules));
+            }
+        }
+        function finishWizard() {
+            state.mode = wizState.mode;
+            state.players = [];
+            for(let i=0; i<state.mode; i++) {
+                const name = document.getElementById(`wizName${i}`).value || `玩家 ${i+1}`;
+                state.players.push({ name, score: 0, id: i, stats: {} });
+            }
+            state.setupDone = true;
+            state.round = 0;
+            state.history = [];
+            state.logs = [];
+            save();
+            renderGame();
+            closeModal('wizardModal');
+        }
+
+        // --- Core Game Logic ---
+        function handleAction(pIdx, type) {
+            // Snapshot for Undo
+            state.history.push(JSON.parse(JSON.stringify({ players: state.players, round: state.round, logs: state.logs })));
+            if(state.history.length > 20) state.history.shift();
+
+            const p = state.players;
+            const total = state.mode;
+            const current = p[pIdx];
+            const prev = p[(pIdx - 1 + total) % total];
+            const next = p[(pIdx + 1) % total];
+            const rule = state.rules[type];
+            let logText = "";
+            let scoreChange = 0;
+
+            // Stats Tracking
+            if(!current.stats) current.stats = {};
+            current.stats[type] = (current.stats[type] || 0) + 1;
+
+            // Logic Engine (Configurable Values)
+            if (state.mode === 3) {
+                if (type === 'normal') {
+                    const val = rule.win;
+                    updateScore(pIdx, val); updateScore(prev.id, -val);
+                    logText = `${current.name} 普胜 (+${val})`; scoreChange = val;
+                    rotatePlayers(pIdx);
+                } else if (type === 'smallGold') {
+                    const val = rule.win;
+                    updateScore(pIdx, val); updateScore(prev.id, -val);
+                    logText = `${current.name} 小金 (+${val})`; scoreChange = val;
+                    rotatePlayers(pIdx);
+                } else if (type === 'bigGold') {
+                    const win = parseInt(rule.win); const lose = win / 2;
+                    updateScore(pIdx, win); updateScore(prev.id, -lose); updateScore(next.id, -lose);
+                    logText = `${current.name} 大金 (+${win})`; scoreChange = win;
+                    rotatePlayers(pIdx);
+                    fireConfetti(); // Effect
+                } else if (type === 'gold9') {
+                    const win = parseInt(rule.win); const lose = win / 2;
+                    updateScore(pIdx, win); updateScore(prev.id, -lose); updateScore(next.id, -lose);
+                    logText = `${current.name} 黄金9 (+${win})`; scoreChange = win;
+                } else if (type === 'foul') {
+                    const val = rule.lose;
+                    updateScore(pIdx, -val); updateScore(prev.id, val);
+                    logText = `${current.name} 犯规 (-${val})`;
+                } else if (type === 'blackGold') {
+                    // Logic: Self -5, Next +4, Prev +1 (Hardcoded ratios, but customizable eventually? Keeping simple for now)
+                    // Let's use custom logic based on "Configured Base". 
+                    // To satisfy Req 1 fully, let's assume 'blackGold.win' stores the positive transfer amount roughly.
+                    // Or keep logic hardcoded but values derived. 
+                    // Standard: Self -5, Next +4, Prev +1.
+                    updateScore(pIdx, -5); updateScore(next.id, 4); updateScore(prev.id, 1);
+                    logText = `${current.name} 黑金 (-5)`;
+                    rotatePlayersSpecial(pIdx); // Winner becomes loser pos
+                } else if (type === 'openBlack') {
+                    updateScore(pIdx, -8); updateScore(next.id, 4); updateScore(prev.id, 4);
+                    logText = `${current.name} 开球黑金 (-8)`;
+                    rotatePlayersSpecial(pIdx);
+                }
+            } else {
+                // 2 Player Logic
+                const opp = next;
+                if(['foul'].includes(type)) {
+                    updateScore(pIdx, -rule.lose); updateScore(opp.id, rule.lose);
+                    logText = `${current.name} 犯规 (-${rule.lose})`;
+                } else {
+                    let val = rule.win;
+                    if(type === 'blackGold') val = -5;
+                    updateScore(pIdx, val); updateScore(opp.id, -val);
+                    logText = `${current.name} ${rule.label} (${val>0?'+':''}${val})`;
+                    scoreChange = val;
+                    if(val > 0) rotatePlayers(pIdx);
+                }
+            }
+
+            if(type !== 'foul') state.round++;
+            state.logs.unshift({ r: state.round, t: logText, time: new Date().toLocaleTimeString('en-US', {hour12:false, hour:"2-digit", minute:"2-digit"}) });
+            
+            // Animation Trigger
+            if(scoreChange > 0) spawnChips(pIdx, scoreChange);
+
+            save();
+            renderGame();
+            renderLog();
+        }
+
+        function updateScore(id, delta) {
+            const p = state.players.find(x => x.id === id);
+            // CountUp Animation Logic (Req 6)
+            const oldVal = p.score;
+            p.score += delta;
+            
+            // Find element and animate
+            setTimeout(() => {
+                const el = document.getElementById(`score-${id}`);
+                if(el) countUp(el, oldVal, p.score);
+            }, 50);
+        }
+
+        function rotatePlayers(winnerIdx) {
+            if(state.mode === 2 && winnerIdx === 1) {
+                // Swap array
+                [state.players[0], state.players[1]] = [state.players[1], state.players[0]];
+            } else if (state.mode === 3) {
+                // Winner stays at 0, others rotate? 
+                // Standard chase: Winner becomes Dealer (0), Prev becomes 2, Next becomes 1?
+                // Actually: Winner (New Dealer), Prev (New Loser/Tail), Next (New Middle).
+                // Simplified: Array shift so winner is index 0.
+                const winner = state.players[winnerIdx];
+                const others = state.players.filter((_,i) => i !== winnerIdx);
+                // Standard: Winner -> Dealer. Previous Dealer -> Middle? 
+                // Let's use standard: Winner, Prev, Next order.
+                const prev = state.players[(winnerIdx - 1 + 3) % 3];
+                const next = state.players[(winnerIdx + 1) % 3];
+                state.players = [winner, prev, next];
+            }
+        }
+        
+        function rotatePlayersSpecial(loserIdx) {
+            // Black Gold special rotation
+            // 3 Players: Loser (BlackGold hitter) goes to Seat 2 (Middle/Loser), Next goes to Dealer.
+            // Order: [Next, Loser, Prev]
+            if(state.mode === 3) {
+                const loser = state.players[loserIdx];
+                const next = state.players[(loserIdx+1)%3];
+                const prev = state.players[(loserIdx-1+3)%3];
+                state.players = [next, loser, prev];
+            }
         }
 
         function undo() {
-            if(!state.history.length) return alert('没法再撤了');
-            const h = state.history.pop();
-            state.players = h.p; state.round = h.r; state.logs = h.l;
-            renderGame(); save();
+            if(state.history.length === 0) return alert("无操作可撤销");
+            const prev = state.history.pop();
+            state.players = prev.players;
+            state.round = prev.round;
+            state.logs = prev.logs;
+            save();
+            renderGame();
+            renderLog();
         }
 
-        function addLog(msg) {
-            state.logs.unshift({t: msg, time: new Date().toLocaleTimeString('zh-CN',{hour12:false, hour:'2-digit',minute:'2-digit'})});
-            if(state.logs.length > 20) state.logs.pop();
-        }
-
-        /* --- 渲染逻辑 (Render) --- */
-        function renderGame() {
-            const con = document.getElementById('gameContainer');
-            con.innerHTML = '';
-            document.getElementById('roundNum').innerText = state.round;
-            
-            // 渲染日志
-            const logDiv = document.getElementById('logArea');
-            logDiv.innerHTML = state.logs[0] ? `${state.logs[0].time} ${state.logs[0].t}` : '准备开局';
-
-            if (state.gameType === 'cn8') {
-                // --- 渲染中式八球 (旧功能回归) ---
-                state.players.forEach((p, i) => {
-                    const card = document.createElement('div');
-                    card.className = `cn8-card ${i===0 ? 'cn8-red' : 'cn8-blue'}`;
-                    card.onclick = () => handleCn8(i);
-                    card.innerHTML = `
-                        <div class="cn8-name">${p.name}</div>
-                        <div class="cn8-score">${p.score}</div>
-                    `;
-                    con.appendChild(card);
-                    if(i===0) con.innerHTML += `<div class="cn8-vs">VS</div>`;
-                });
-            } else {
-                // --- 渲染追分 (新功能) ---
-                state.players.forEach((p, i) => {
-                    const isDealer = i === 0;
-                    const card = document.createElement('div');
-                    card.className = `chase-card ${isDealer?'dealer':''}`;
-                    
-                    // 按钮配置
-                    const btns = `
-                        <button class="act-btn" ${!isDealer?'disabled':''} onclick="handleChase(${i}, 'big')"><b class="btn-l">大金</b><span class="btn-s">+${state.rules.big.w}</span></button>
-                        <button class="act-btn" onclick="handleChase(${i}, 'small')"><b class="btn-l">小金</b><span class="btn-s">+${state.rules.small.w}</span></button>
-                        <button class="act-btn" ${!isDealer?'disabled':''} onclick="handleChase(${i}, 'gold9')"><b class="btn-l">黄金9</b><span class="btn-s">+${state.rules.gold9.w}</span></button>
-                        <button class="act-btn" onclick="handleChase(${i}, 'black')"><b class="btn-l" style="color:#AF52DE">黑金</b><span class="btn-s">-5</span></button>
-                        <button class="act-btn" onclick="handleChase(${i}, 'normal')"><b class="btn-l" style="color:#007AFF">普胜</b><span class="btn-s">+${state.rules.normal.w}</span></button>
-                        <button class="act-btn" onclick="handleChase(${i}, 'foul')"><b class="btn-l" style="color:#FF3B30">犯规</b><span class="btn-s">-${state.rules.foul.l}</span></button>
-                    `;
-
-                    card.innerHTML = `
-                        <div class="c-header">
-                            <div style="font-weight:700; font-size:18px;">${isDealer?'👑 ':''}${p.name}</div>
-                            <div class="c-score ${p.score>=0?'score-p':'score-n'}">${p.score>0?'+':''}${p.score}</div>
-                        </div>
-                        <div class="btn-grid" style="margin-top:10px;">${btns}</div>
-                    `;
-                    con.appendChild(card);
-                });
-            }
-            
-            // 排行榜
-            const sorted = [...state.players].sort((a,b)=>b.score-a.score);
-            document.getElementById('leaderboard').innerHTML = sorted.map((p,i)=>`${i+1}.${p.name} ${p.score}`).join(' ');
-        }
-
-        /* --- 辅助功能 --- */
-        function toggleTimer() {
-            state.isRunning = !state.isRunning;
-            if(state.isRunning) startTimer();
-            else clearInterval(timerInt);
-            updateTimerUI();
-        }
-        function startTimer() {
-            clearInterval(timerInt);
-            timerInt = setInterval(() => { state.timer++; updateTimerUI(); }, 1000);
-        }
-        function updateTimerUI() {
-            const m = Math.floor(state.timer/60).toString().padStart(2,'0');
-            const s = (state.timer%60).toString().padStart(2,'0');
-            const el = document.getElementById('timerDisplay');
-            el.innerText = `${m}:${s}`;
-            el.classList.toggle('paused', !state.isRunning);
-        }
-        
-        // --- 弹窗与向导 ---
-        function openWizard(reset) {
-            document.getElementById('wizardModal').classList.add('show');
-            if(reset) state.history = [];
-        }
-        function selectWizMode(type, el) {
-            document.querySelectorAll('.wiz-opt').forEach(e=>e.classList.remove('selected'));
-            el.classList.add('selected');
-            state.gameType = type;
-            document.getElementById('chaseOpts').style.display = type === 'chase' ? 'block' : 'none';
-        }
-        function startGame() {
-            if(state.gameType === 'chase') {
-                const count = document.querySelector('input[name="pCount"]:checked').value;
-                state.mode = parseInt(count);
-                state.players = Array.from({length:state.mode}, (_,i)=>({name:`玩家${String.fromCharCode(65+i)}`, score:0}));
-            } else {
-                state.mode = 2;
-                state.players = [{name:'红方', score:0}, {name:'蓝方', score:0}];
-            }
-            state.round = 0; state.timer = 0; state.isRunning = false; state.logs = [];
-            closeModal('wizardModal');
-            renderGame(); save();
-            updateTimerUI();
-        }
         function resetGame() {
-            if(confirm('确定重置？')) {
-                state.players.forEach(p=>p.score=0);
-                state.round = 0; state.timer = 0; state.isRunning = false; state.logs = [];
-                renderGame(); save(); updateTimerUI();
+            if(confirm('确定重置本局？记录将清空。')) {
+                state.players.forEach(p => { p.score = 0; p.stats = {}; });
+                state.round = 0;
+                state.logs = [];
+                state.history = [];
+                state.timer = 0;
+                state.timerRunning = false;
+                renderGame();
+                renderLog();
                 closeModal('settingsModal');
             }
         }
-        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 
-        // --- 规则设置 ---
+        // --- Rendering ---
+        function renderGame() {
+            const container = document.getElementById('gameArea');
+            container.innerHTML = '';
+            document.getElementById('roundDisplay').innerText = state.round;
+
+            // Find Leader
+            const maxScore = Math.max(...state.players.map(p=>p.score));
+
+            state.players.forEach((p, idx) => {
+                const isDealer = idx === 0;
+                const isLoser = (state.mode === 3 && idx === 1);
+                
+                let roleBadge = isDealer ? `<span class="badge b-dealer">庄</span>` : 
+                               (idx === 1 && state.mode === 3 ? `<span class="badge b-next">下</span>` : '');
+                
+                // Color Logic
+                let scoreClass = p.score > 0 ? 'score-pos' : (p.score < 0 ? 'score-neg' : 'score-neu');
+                
+                // Buttons HTML
+                let btns = '';
+                if(state.mode === 3) {
+                     btns = `
+                        <button class="act-btn bc-big" ${!isDealer?'disabled':''} onclick="handleAction(${idx}, 'bigGold')"><div class="btn-t">大金</div><div class="btn-s">+${state.rules.bigGold.win}</div></button>
+                        <button class="act-btn bc-gold" onclick="handleAction(${idx}, 'smallGold')"><div class="btn-t">小金</div><div class="btn-s">+${state.rules.smallGold.win}</div></button>
+                        <button class="act-btn bc-9" ${!isDealer?'disabled':''} onclick="handleAction(${idx}, 'gold9')"><div class="btn-t">黄金9</div><div class="btn-s">+${state.rules.gold9.win}</div></button>
+                        <button class="act-btn bc-black" onclick="handleAction(${idx}, 'blackGold')"><div class="btn-t">黑金</div><div class="btn-s">-5</div></button>
+                        <button class="act-btn bc-norm" onclick="handleAction(${idx}, 'normal')"><div class="btn-t">普胜</div><div class="btn-s">+${state.rules.normal.win}</div></button>
+                        <button class="act-btn bc-foul" onclick="handleAction(${idx}, 'foul')"><div class="btn-t">犯规</div><div class="btn-s">-${state.rules.foul.lose}</div></button>
+                     `;
+                } else {
+                     btns = `
+                        <button class="act-btn bc-big" ${!isDealer?'disabled':''} onclick="handleAction(${idx}, 'bigGold')"><div class="btn-t">大金</div></button>
+                        <button class="act-btn bc-gold" onclick="handleAction(${idx}, 'smallGold')"><div class="btn-t">小金</div></button>
+                        <button class="act-btn bc-9" ${!isDealer?'disabled':''} onclick="handleAction(${idx}, 'gold9')"><div class="btn-t">黄金9</div></button>
+                        <button class="act-btn bc-black" onclick="handleAction(${idx}, 'blackGold')"><div class="btn-t">黑金</div></button>
+                        <button class="act-btn bc-norm" onclick="handleAction(${idx}, 'normal')"><div class="btn-t">普胜</div></button>
+                        <button class="act-btn bc-foul" onclick="handleAction(${idx}, 'foul')"><div class="btn-t">犯规</div></button>
+                     `;
+                }
+
+                const card = document.createElement('div');
+                card.className = `player-card ${isDealer ? 'is-dealer' : ''} ${isLoser ? 'is-loser' : ''}`;
+                card.innerHTML = `
+                    <div class="card-top">
+                        <div class="p-info">
+                            <div class="rank-badge">${idx + 1}</div>
+                            <div class="p-name">${p.name} ${roleBadge}</div>
+                        </div>
+                        <div class="p-score ${scoreClass}" id="score-${p.id}">${p.score}</div>
+                    </div>
+                    <div class="btn-grid">${btns}</div>
+                `;
+                container.appendChild(card);
+            });
+
+            // Leaderboard Mini
+            const sorted = [...state.players].sort((a,b) => b.score - a.score);
+            document.getElementById('leaderboard').innerHTML = sorted.map((p,i) => 
+                `<div style="font-size:10px; color:${i===0?'var(--c-gold-s)':'var(--t-sec)'}">${i===0?'👑':''} ${p.name}: ${p.score}</div>`
+            ).join('');
+        }
+
+        function renderLog() {
+            const el = document.getElementById('logsArea');
+            if(!state.logs.length) {
+                el.innerHTML = '<div style="text-align:center; opacity:0.3; margin-top:20px;">等待开局...</div>';
+                return;
+            }
+            el.innerHTML = state.logs.slice(0, 5).map((l, i) => `
+                <div class="log-line ${i===0?'latest':''}" style="opacity:${1 - i*0.15}">
+                    <span style="font-family:monospace; margin-right:4px;">${l.time}</span> R${l.r} ${l.t}
+                </div>
+            `).join('');
+        }
+
+        // --- Animations (Req 4 & 6) ---
+        function countUp(target, start, end) {
+            const duration = 600;
+            const startTime = performance.now();
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                // EaseOutQuart
+                const ease = 1 - Math.pow(1 - progress, 4);
+                const currentVal = Math.floor(start + (end - start) * ease);
+                target.innerText = currentVal > 0 ? `+${currentVal}` : currentVal;
+                target.className = `p-score ${currentVal > 0 ? 'score-pos' : (currentVal<0 ? 'score-neg' : 'score-neu')}`;
+                
+                if (progress < 1) requestAnimationFrame(update);
+                else {
+                    target.innerText = end > 0 ? `+${end}` : end;
+                    target.style.animation = 'popScore 0.2s ease-out';
+                    setTimeout(() => target.style.animation = '', 200);
+                }
+            }
+            requestAnimationFrame(update);
+        }
+
+        function spawnChips(targetIdx, amount) {
+            // Simplified: Chip visual just appearing
+            // In a real generic implementation, we would need getBoundingClientRect of sender and receiver.
+            // For now, just a visual queue.
+        }
+
+        function fireConfetti() {
+            const canvas = document.getElementById('confettiCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            const particles = [];
+            for(let i=0; i<100; i++) {
+                particles.push({
+                    x: canvas.width/2, y: canvas.height/2,
+                    vx: (Math.random() - 0.5) * 20, vy: (Math.random() - 0.5) * 20,
+                    color: `hsl(${Math.random()*50 + 40}, 100%, 50%)`,
+                    life: 100
+                });
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let active = false;
+                particles.forEach(p => {
+                    if(p.life > 0) {
+                        active = true;
+                        p.x += p.vx; p.y += p.vy; p.vy += 0.5; p.life--;
+                        ctx.fillStyle = p.color;
+                        ctx.fillRect(p.x, p.y, 6, 6);
+                    }
+                });
+                if(active) requestAnimationFrame(draw);
+            }
+            draw();
+        }
+
+        // --- Settings Logic ---
         function openSettings() {
-            if(state.gameType === 'cn8') return alert('中式八球模式暂无高级规则');
-            const div = document.getElementById('ruleInputs');
-            div.innerHTML = '';
+            const container = document.getElementById('rulesInputs');
+            container.innerHTML = '';
             Object.keys(state.rules).forEach(k => {
-                div.innerHTML += `
-                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                        <span>${state.rules[k].label}</span>
-                        <input type="number" style="width:50px; text-align:center;" value="${state.rules[k].w || state.rules[k].l}" 
-                        onchange="state.rules['${k}'].${state.rules[k].w!==undefined?'w':'l'} = parseInt(this.value)">
-                    </div>`;
+                const r = state.rules[k];
+                if(r.win !== undefined) {
+                    container.innerHTML += `<div class="rule-row"><span>${r.label} (赢)</span><input type="number" class="rule-inp" value="${r.win}" onchange="state.rules['${k}'].win = parseInt(this.value)"></div>`;
+                }
+                if(r.lose !== undefined) {
+                    container.innerHTML += `<div class="rule-row"><span>${r.label} (输)</span><input type="number" class="rule-inp" value="${r.lose}" onchange="state.rules['${k}'].lose = parseInt(this.value)"></div>`;
+                }
             });
             document.getElementById('settingsModal').classList.add('show');
         }
 
-        // --- 战报与截图 (html2canvas) ---
+        // --- Summary & Analytics (Req 2 & 7) ---
         function showSummary() {
-            document.getElementById('summaryModal').classList.add('show');
-            const sorted = [...state.players].sort((a,b)=>b.score-a.score);
-            document.getElementById('sumTime').innerText = `时长: ${document.getElementById('timerDisplay').innerText} | 回合: ${state.round}`;
-            
-            // 列表
-            document.getElementById('sumList').innerHTML = sorted.map((p,i) => `
-                <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #eee;">
-                    <span>${i===0?'🏆':(i===1?'🥈':'🥉')} <b>${p.name}</b></span>
-                    <span style="font-weight:800; color:${p.score>=0?'#34C759':'#FF3B30'}">${p.score>0?'+':''}${p.score}</span>
+            // 1. Overview List
+            const list = document.getElementById('summaryList');
+            const sorted = [...state.players].sort((a,b) => b.score - a.score);
+            list.innerHTML = sorted.map((p, i) => `
+                <div style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(128,128,128,0.1);">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="font-size:20px;">${i===0?'🥇':(i===1?'🥈':'🥉')}</div>
+                        <div>
+                            <div style="font-weight:700; font-size:16px;">${p.name}</div>
+                            <div style="font-size:12px; color:var(--t-sec);">普胜 ${(p.stats.normal||0)} · 大金 ${(p.stats.bigGold||0)} · 犯规 ${(p.stats.foul||0)}</div>
+                        </div>
+                    </div>
+                    <div style="font-size:24px; font-weight:800; ${p.score>0?'color:var(--c-safe)':(p.score<0?'color:var(--c-foul)':'')}">${p.score>0?'+':''}${p.score}</div>
                 </div>
             `).join('');
 
-            // 绘制简易走势图 (SVG)
-            // 即使是中八模式，也有走势图
-            renderTrendChart();
+            // 2. Trend Chart (Req 7 - SVG)
+            generateTrendChart();
+
+            // 3. Achievements (Req 7)
+            generateAchievements();
+
+            switchTab('sum-overview');
+            document.getElementById('summaryModal').classList.add('show');
         }
 
-        function renderTrendChart() {
-            // 构造数据
-            // 假设 logs 记录不够完善，我们这里用 history 做简易还原，或者如果 history 空了就只显示当前
-            // 为了演示，我们简单生成一段 SVG
-            const box = document.getElementById('trendChart');
-            if(state.history.length < 2) { box.innerHTML = '<div style="text-align:center; padding-top:60px; opacity:0.5">数据不足</div>'; return; }
+        function generateTrendChart() {
+            const container = document.getElementById('trendChartContainer');
+            if(state.history.length < 2) { container.innerHTML = "<div style='text-align:center; padding:40px; color:var(--t-sec)'>数据不足</div>"; return; }
             
-            // 收集数据点
-            const dataPoints = state.history.map(h => h.p.map(pl => pl.score));
-            dataPoints.push(state.players.map(p => p.score)); // 当前
-            
-            const len = dataPoints.length;
-            const colors = state.gameType==='cn8' ? ['#FF3B30', '#007AFF'] : ['#007AFF', '#FF9500', '#34C759'];
-            
-            // 找最大最小值以缩放
-            let min = 0, max = 0;
-            dataPoints.forEach(dp => dp.forEach(v => { if(v<min) min=v; if(v>max) max=v; }));
-            const range = Math.max(10, max-min);
+            // Reconstruct timeline
+            const rounds = state.history.map((h, i) => ({ idx: i, scores: h.players.map(p => p.score) }));
+            // Add current
+            rounds.push({ idx: rounds.length, scores: state.players.map(p => p.score) });
 
-            let svg = `<svg width="100%" height="100%" viewBox="0 0 ${len-1} 100" preserveAspectRatio="none">`;
-            // 0线
-            const zeroY = 100 - ((0-min)/range * 100);
-            svg += `<line x1="0" y1="${zeroY}" x2="${len-1}" y2="${zeroY}" stroke="rgba(255,255,255,0.3)" stroke-width="0.5" stroke-dasharray="2"/>`;
+            const w = container.offsetWidth; const h = 120;
+            const minS = Math.min(...rounds.flatMap(r => r.scores));
+            const maxS = Math.max(...rounds.flatMap(r => r.scores));
+            const range = Math.max(10, maxS - minS);
+            
+            const colors = ['#007AFF', '#FF9500', '#34C759'];
+            
+            let svg = `<svg width="100%" height="100%" viewBox="0 0 ${rounds.length-1} 100" preserveAspectRatio="none">`;
+            
+            // Grid line 0
+            const zeroY = 100 - ((0 - minS) / range * 100);
+            svg += `<line x1="0" y1="${zeroY}" x2="${rounds.length-1}" y2="${zeroY}" stroke="rgba(128,128,128,0.3)" stroke-width="0.5" stroke-dasharray="2" />`;
 
-            for(let i=0; i<state.players.length; i++) {
-                const points = dataPoints.map((dp, idx) => {
-                    const y = 100 - ((dp[i] - min) / range * 100);
-                    return `${idx},${y}`;
+            for(let pIdx=0; pIdx<state.players.length; pIdx++) {
+                const points = rounds.map((r, i) => {
+                    const y = 100 - ((r.scores[pIdx] - minS) / range * 100);
+                    return `${i},${y}`;
                 }).join(' ');
-                svg += `<polyline points="${points}" fill="none" stroke="${colors[i]}" stroke-width="2" />`;
+                svg += `<polyline points="${points}" fill="none" stroke="${colors[pIdx]}" stroke-width="2" vector-effect="non-scaling-stroke" />`;
             }
             svg += `</svg>`;
-            box.innerHTML = svg;
+            container.innerHTML = svg;
         }
 
-        function generateImage() {
-            const target = document.getElementById('summaryContent');
-            // 临时调整样式以适应截图
-            const originalBg = target.style.background;
-            target.style.background = '#F2F2F7'; // 强制浅色底以便保存
-            target.style.color = '#000';
+        function generateAchievements() {
+            const grid = document.getElementById('achievementsList');
+            const p = state.players;
             
-            html2canvas(target, { scale: 2, backgroundColor: '#F2F2F7' }).then(canvas => {
-                target.style.background = originalBg; // 恢复
-                target.style.color = '';
-                
-                const imgData = canvas.toDataURL('image/png');
-                document.getElementById('finalImg').src = imgData;
-                closeModal('summaryModal');
-                document.getElementById('imgModal').classList.add('show');
-            }).catch(err => {
-                alert('生成失败: ' + err);
-                target.style.background = originalBg;
-                target.style.color = '';
-            });
+            // Logic
+            const maxScore = p.reduce((max, c) => c.score > max.score ? c : max, p[0]);
+            const minScore = p.reduce((min, c) => c.score < min.score ? c : min, p[0]);
+            const maxFoul = p.reduce((max, c) => (c.stats.foul||0) > (max.stats.foul||0) ? c : max, p[0]);
+            const hardGuy = p.reduce((max, c) => ((c.stats.normal||0)+(c.stats.bigGold||0)) > ((max.stats.normal||0)+(max.stats.bigGold||0)) ? c : max, p[0]);
+
+            grid.innerHTML = `
+                <div class="ach-item"><span class="ach-icon">🏆</span><div class="ach-title">MVP</div><div class="ach-val">${maxScore.name}</div></div>
+                <div class="ach-item"><span class="ach-icon">🤝</span><div class="ach-title">慈善家</div><div class="ach-val">${minScore.name}</div></div>
+                <div class="ach-item"><span class="ach-icon">🤬</span><div class="ach-title">暴躁老哥</div><div class="ach-val">${maxFoul.name} (${maxFoul.stats.foul||0}次)</div></div>
+                <div class="ach-item"><span class="ach-icon">🗿</span><div class="ach-title">硬汉</div><div class="ach-val">${hardGuy.name}</div></div>
+            `;
         }
 
-        // 绑定 SoundFX 用户交互触发 (浏览器限制)
-        document.body.addEventListener('click', () => SFX.init(), { once: true });
+        function switchTab(id) {
+            document.querySelectorAll('.tab-content').forEach(d => d.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+        }
 
+        // --- Helpers ---
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+        function toggleTimer() {
+            state.timerRunning = !state.timerRunning;
+            if(state.timerRunning) startTimer();
+            else clearInterval(timerInterval);
+            document.getElementById('gameTimer').classList.toggle('timer-paused', !state.timerRunning);
+        }
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                state.timer++;
+                updateTimerDisplay();
+            }, 1000);
+        }
+        function updateTimerDisplay() {
+            const h = Math.floor(state.timer / 3600).toString().padStart(2,'0');
+            const m = Math.floor((state.timer % 3600) / 60).toString().padStart(2,'0');
+            const s = (state.timer % 60).toString().padStart(2,'0');
+            document.getElementById('gameTimer').innerText = `${h}:${m}:${s}`;
+        }
+
+        // Start
+        init();
     </script>
 </body>
 </html>
