@@ -142,6 +142,7 @@
             align-items: center; justify-content: center; cursor: pointer; padding: 7px 0;
             background: #F2F2F7; position: relative; overflow: hidden;
         }
+        .act-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
         .act-btn:active { transform: scale(0.96); }
         .act-btn::after {
             content: ""; position: absolute; width: 100%; height: 100%; top: 0; left: 0;
@@ -578,6 +579,9 @@
 
         window.handleAction = function(idx, type) {
             SoundFX.click();
+            if (state.gameType === 'chase' && ['bigGold','gold9','openBlackGold','openFoul'].includes(type) && idx !== 0) {
+                return showToast('仅开球者可操作');
+            }
             const pName = state.players[idx].name;
             const aName = actionNames[type];
             const diffText = calculateDiffText(idx, type);
@@ -731,7 +735,7 @@
             });
             if (state.logs.length > 50) state.logs.pop();
 
-            if (isGameEnd && type !== 'openBlackGold') rotateWinner(idx, type);
+            if (['normal','smallGold','blackGold'].includes(type)) rotateWinner(idx, type);
             
             saveData();
             updateUI();
@@ -752,13 +756,12 @@
                     
                     state.players = [next, current, prev];
                 } else {
-                    if (winnerIdx !== 0) {
-                        const p = state.players;
-                        const winner = p[winnerIdx];
-                        const loser = p[0]; 
-                        const other = p.find((_,i) => i!==0 && i!==winnerIdx);
-                        state.players = [winner, other, loser];
-                    }
+                    const total = 3;
+                    const p = state.players;
+                    const winner = p[winnerIdx];
+                    const prev = p[(winnerIdx - 1 + total) % total];
+                    const next = p[(winnerIdx + 1) % total];
+                    state.players = [winner, prev, next];
                 }
             } else if (state.mode === 2) {
                 if (winnerIdx !== 0) [state.players[0], state.players[1]] = [state.players[1], state.players[0]];
@@ -1014,6 +1017,8 @@
                         cardClass += ' is-loser';
                         statusIcon = '<span class="status-icon">😭</span>'; 
                     }
+
+                    const dealerOnlyDisabled = isDealer ? '' : 'disabled';
                     
                     const el = document.createElement('div');
                     el.className = cardClass;
@@ -1027,15 +1032,15 @@
                             <div class="p-score ${sc}">${sig}${p.score}</div>
                         </div>
                         <div class="btn-grid">
-                            <button class="act-btn b-bgold" onclick="handleAction(${i}, 'bigGold')"><span class="btn-t">大金</span><span class="btn-s">${txtBig}</span></button>
+                            <button class="act-btn b-bgold" ${dealerOnlyDisabled} onclick="handleAction(${i}, 'bigGold')"><span class="btn-t">大金</span><span class="btn-s">${txtBig}</span></button>
                             <button class="act-btn b-sgold" onclick="handleAction(${i}, 'smallGold')"><span class="btn-t">小金</span><span class="btn-s">自+7 上-7</span></button>
-                            <button class="act-btn b-gold9" onclick="handleAction(${i}, 'gold9')"><span class="btn-t">黄金9</span><span class="btn-s">${txtG9}</span></button>
+                            <button class="act-btn b-gold9" ${dealerOnlyDisabled} onclick="handleAction(${i}, 'gold9')"><span class="btn-t">黄金9</span><span class="btn-s">${txtG9}</span></button>
                             <button class="act-btn b-black" onclick="handleAction(${i}, 'blackGold')"><span class="btn-t">黑金</span><span class="btn-s">${txtBlack}</span></button>
                             <button class="act-btn b-norm" onclick="handleAction(${i}, 'normal')"><span class="btn-t">普胜</span><span class="btn-s">自+4 上-4</span></button>
-                            <button class="act-btn b-black" style="background:#2C2C2E" onclick="handleAction(${i}, 'openBlackGold')"><span class="btn-t">开球黑金</span><span class="btn-s">${txtOpenBlack}</span></button>
+                            <button class="act-btn b-black" style="background:#2C2C2E" ${dealerOnlyDisabled} onclick="handleAction(${i}, 'openBlackGold')"><span class="btn-t">开球黑金</span><span class="btn-s">${txtOpenBlack}</span></button>
                             <button class="act-btn b-foul" onclick="handleAction(${i}, 'foul')"><span class="btn-t">犯规</span><span class="btn-s">给上家 1</span></button>
                             <button class="act-btn b-let" onclick="handleAction(${i}, 'letFoul')"><span class="btn-t">让杆</span><span class="btn-s">给下家 1</span></button>
-                            <button class="act-btn b-foul" style="background:#FFEAEA" onclick="handleAction(${i}, 'openFoul')"><span class="btn-t">开球犯规</span><span class="btn-s">给下家 1</span></button>
+                            <button class="act-btn b-foul" style="background:#FFEAEA" ${dealerOnlyDisabled} onclick="handleAction(${i}, 'openFoul')"><span class="btn-t">开球犯规</span><span class="btn-s">给下家 1</span></button>
                         </div>
                     `;
                     box.appendChild(el);
