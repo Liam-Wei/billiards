@@ -4,837 +4,2977 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>桌球追分 Pro Max</title>
+    <meta name="theme-color" content="#F2F2F7">
+    <title>桌球追分 (Pro Max)</title>
     <style>
-        /* --- 1. 核心变量与深色模式 (Req 5) --- */
         :root {
-            /* 浅色模式变量 */
-            --bg-body: #F2F2F7; --bg-card: #FFFFFF; --bg-header: rgba(242,242,247,0.8);
-            --t-main: #000000; --t-sec: #8E8E93; --t-inv: #FFFFFF;
-            --c-primary: #007AFF; --c-gold-s: #FF9500; --c-gold-b: #AF52DE; --c-gold-9: #FFD60A;
-            --c-foul: #FF3B30; --c-let: #FF2D55; --c-safe: #34C759;
-            --btn-bg: #F2F2F7; --btn-bg-act: #E5E5EA;
-            --shadow: 0 4px 12px rgba(0,0,0,0.04);
+            --bg-body: #F2F2F7; --bg-card: #FFFFFF;
+            --c-primary: #007AFF; --c-gold-s: #FF9500; --c-gold-b: #AF52DE; --c-gold-9: #FFD60A; 
+            --c-foul: #FF3B30; --c-let: #FF2D55;      
+            --c-text: #1C1C1E; --c-text-muted: #8E8E93;
+            --bg-muted: #E5E5EA; --border: #E5E5EA;
+            --c-positive: #34C759; --c-negative: #FF3B30;
             --safe-top: env(safe-area-inset-top); --safe-bottom: env(safe-area-inset-bottom);
         }
-
-        @media (prefers-color-scheme: dark) {
-            :root {
-                /* 深色模式变量 */
-                --bg-body: #000000; --bg-card: #1C1C1E; --bg-header: rgba(0,0,0,0.8);
-                --t-main: #FFFFFF; --t-sec: #98989D; --t-inv: #000000;
-                --c-primary: #0A84FF; --btn-bg: #2C2C2E; --btn-bg-act: #3A3A3C;
-                --shadow: 0 4px 12px rgba(0,0,0,0.3);
-            }
-        }
-
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", sans-serif;
-            background-color: var(--bg-body); color: var(--t-main);
-            margin: 0; padding: 0; height: 100dvh; width: 100vw; overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+            background-color: var(--bg-body); margin: 0; padding: 0;
+            height: 100dvh; width: 100vw;
+            overflow: hidden; 
             display: flex; flex-direction: column;
             padding-top: max(10px, var(--safe-top)); padding-bottom: max(10px, var(--safe-bottom));
-            box-sizing: border-box; user-select: none; -webkit-user-select: none; touch-action: none;
-            transition: background 0.3s, color 0.3s;
+            box-sizing: border-box; user-select: none; -webkit-user-select: none;
+            touch-action: none; 
         }
-
-        /* --- 动效关键帧 (Req 4 & 6) --- */
-        @keyframes popScore { 0% { transform: scale(1); } 50% { transform: scale(1.4); } 100% { transform: scale(1); } }
-        @keyframes slideUpFade { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes pulseGold { 0% { box-shadow: 0 0 0 0 rgba(255, 214, 10, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 214, 10, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 214, 10, 0); } }
-        
-        /* 飞行筹码动画元素 */
-        .flying-chip {
-            position: fixed; width: 24px; height: 24px; border-radius: 50%;
-            background: var(--c-gold-9); box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            z-index: 999; pointer-events: none; display: flex; align-items: center; justify-content: center;
-            font-size: 10px; font-weight: 800; color: #000;
-        }
-
-        /* 礼花 Canvas */
-        #confettiCanvas { position: fixed; inset: 0; pointer-events: none; z-index: 200; }
 
         /* --- Header --- */
         header {
-            flex-shrink: 0; height: 44px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
-            padding: 0 16px; z-index: 10; background: var(--bg-header); backdrop-filter: blur(10px);
+            flex-shrink: 0; height: 44px; display: grid; grid-template-columns: 1.2fr 0.6fr 1.2fr; align-items: center;
+            padding: 0 16px; z-index: 10;
         }
-        .icon-btn { background: none; border: none; padding: 8px; color: var(--c-primary); display: flex; align-items: center; cursor: pointer; border-radius: 50%; }
-        .timer-container { display: flex; align-items: center; gap: 8px; }
+        .header-left { display: flex; gap: 8px; justify-content: flex-start; }
+        .icon-btn {
+            background: none; border: none; padding: 6px; color: var(--c-primary); 
+            display: flex; align-items: center; cursor: pointer; border-radius: 50%;
+        }
+        
+        /* 计时器样式 */
+        .timer-container {
+            display: flex; justify-content: center; align-items: center; gap: 8px;
+        }
+        .timer-btn {
+            background: none; border: none; padding: 0; color: #333; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
         .timer-display {
-            font-family: "SF Mono", monospace; font-size: 16px; font-weight: 600;
-            color: var(--t-main); background: var(--btn-bg-act); padding: 4px 10px; border-radius: 6px;
-            min-width: 76px; text-align: center;
+            font-family: "SF Mono", monospace; font-size: 17px; font-weight: 700; color: #333;
+            text-align: center; background: #E5E5EA; padding: 4px 12px; border-radius: 6px;
+            min-width: 80px;
         }
-        .timer-paused { color: var(--t-sec); opacity: 0.7; }
+        .timer-paused { color: #8E8E93; background: #F2F2F7; border: 1px solid #E5E5EA; }
 
-        /* --- Info Bar --- */
+        .header-right { display: flex; justify-content: flex-end; }
+        .reset-btn { 
+            border: none; background: none; color: var(--c-foul); font-size: 15px; font-weight: 600; 
+            cursor: pointer;
+        }
+
+        /* --- 顶部信息栏 --- */
         .info-bar {
-            flex-shrink: 0; height: 75px; margin: 4px 12px; display: grid; grid-template-columns: 1.2fr 0.8fr 1.2fr;
-            align-items: center; background: var(--bg-card); border-radius: 12px; padding: 0 10px;
-            box-shadow: var(--shadow); gap: 4px; border: 1px solid rgba(128,128,128,0.1);
+            flex-shrink: 0; height: 85px; 
+            margin: 4px 12px;
+            display: grid; 
+            grid-template-columns: 1.2fr 0.6fr 1.2fr;
+            align-items: center;
+            background: white;
+            border-radius: 12px;
+            padding: 0 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            gap: 4px;
         }
-        .logs-area { display: flex; flex-direction: column; justify-content: center; font-size: 11px; height: 100%; overflow: hidden; color: var(--t-sec); }
-        .log-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
-        .log-line.latest { color: var(--t-main); font-weight: 600; }
-        .round-area { text-align: center; line-height: 1; color: var(--t-main); }
-        .round-num { font-size: 28px; font-weight: 800; }
-        .round-lbl { font-size: 10px; color: var(--t-sec); }
-        
-        /* --- Main --- */
+
+        .logs-area {
+            display: flex; flex-direction: column; justify-content: center;
+            font-size: 11px; line-height: 1.35; color: #8E8E93; text-align: left; overflow: hidden;
+            height: 100%; padding: 4px 0;
+        }
+        .log-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .log-line.latest { color: var(--c-primary); font-weight: 600; font-size: 11.5px; }
+
+        .round-area {
+            text-align: center; font-size: 26px; font-weight: 800; color: #333;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            line-height: 1; height: 100%;
+        }
+        .round-area small { font-size: 10px; font-weight: 500; color: #8E8E93; margin-top: 2px; }
+
+        .leaderboard-area {
+            display: flex; flex-direction: column; justify-content: center;
+            font-size: 12px; color: #333; gap: 3px;
+        }
+        .lb-row { display: grid; grid-template-columns: 18px minmax(0, 40px) 48px; align-items: center; column-gap: 1px; justify-content: end; }
+        .lb-rank { width: auto; text-align: left; font-size: 12px; }
+        .lb-name { font-weight: 700; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #333; text-align: left; }
+        .lb-score { font-family: monospace; font-weight: 900; font-size: 14px; color: #000; text-align: right; font-variant-numeric: tabular-nums; }
+
+        /* --- 主区域 --- */
         main {
-            flex: 1; display: flex; flex-direction: column; justify-content: space-evenly;
-            padding: 4px 12px; overflow: hidden; gap: 8px;
+            flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; 
+            padding: 2px 12px; overflow: hidden; gap: 6px;
         }
 
-        /* --- Player Card --- */
         .player-card {
-            background: var(--bg-card); border-radius: 16px; padding: 10px 14px;
-            box-shadow: var(--shadow); display: flex; flex-direction: column; justify-content: center;
-            transition: all 0.3s; position: relative; border: 1px solid transparent;
+            background: var(--bg-card); border-radius: 16px; 
+            padding: 8px 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            display: flex; flex-direction: column; justify-content: center; transition: all 0.3s;
         }
-        .player-card.is-dealer { border-color: var(--c-gold-s); background: linear-gradient(to bottom right, var(--bg-card), rgba(255,149,0,0.05)); }
-        .player-card.is-loser { border-color: rgba(142, 142, 147, 0.3); background: linear-gradient(to bottom right, var(--bg-card), rgba(142,142,147,0.05)); }
         
-        .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-        .p-info { display: flex; align-items: center; gap: 8px; }
-        .rank-badge {
-            width: 20px; height: 20px; background: var(--btn-bg); color: var(--t-sec);
-            font-size: 11px; font-weight: 700; border-radius: 5px; display: grid; place-items: center;
+        /* 1. 庄家 (第一张卡片) 样式 */
+        .player-card.is-dealer { 
+            border: 1.5px solid rgba(255, 149, 0, 0.3); 
+            background: #FFFCF5; /* 暖色背景 */
         }
-        .p-name { font-size: 17px; font-weight: 700; color: var(--t-main); display: flex; align-items: center; gap: 6px;}
-        .p-score { font-size: 32px; font-weight: 800; font-variant-numeric: tabular-nums; transition: transform 0.1s; }
-        .score-pos { color: var(--c-safe); } .score-neg { color: var(--c-foul); } .score-neu { color: var(--t-main); }
+        
+        /* 2. 输家/闲家 (第二张卡片) 样式 */
+        .player-card.is-loser { 
+            border: 1.5px solid rgba(142, 142, 147, 0.3); 
+            background: #ECF1F6; /* 冷灰蓝背景 */
+        }
+        
+        .card-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .left-info { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .rank-num {
+            width: 20px; height: 20px; background: #E5E5EA; color: #666; 
+            font-size: 12px; font-weight: 700; border-radius: 5px; 
+            display: flex; align-items: center; justify-content: center;
+        }
+        
+        /* 状态图标动画 */
+        .status-icon { font-size: 16px; margin-left: 4px; animation: popIn 0.3s; display: inline-block; }
+        @keyframes popIn { 0%{transform:scale(0);} 80%{transform:scale(1.2);} 100%{transform:scale(1);} }
 
-        /* Role Badges */
-        .badge { padding: 1px 5px; border-radius: 4px; font-size: 9px; font-weight: 700; text-transform: uppercase; border: 1px solid; }
-        .b-dealer { border-color: var(--c-gold-s); color: var(--c-gold-s); background: rgba(255,149,0,0.1); }
-        .b-next { border-color: var(--t-sec); color: var(--t-sec); }
+        .p-name { font-size: 16px; font-weight: 600; color: #333; }
+        .p-score { font-size: 28px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+        .score-p { color: #34C759; } .score-n { color: #FF3B30; } .score-z { color: #1C1C1E; }
 
-        /* Action Buttons Grid */
-        .btn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .btn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 2px;}
         .act-btn {
-            border: none; border-radius: 10px; padding: 8px 2px;
-            background: var(--btn-bg); position: relative; overflow: hidden; cursor: pointer;
-            display: flex; flex-direction: column; align-items: center; transition: transform 0.1s;
+            border: none; border-radius: 9px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; cursor: pointer; padding: 7px 0;
+            background: #F2F2F7; position: relative; overflow: hidden;
         }
+        .act-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
         .act-btn:active { transform: scale(0.96); }
-        .act-btn:disabled { opacity: 0.3; filter: grayscale(1); cursor: not-allowed; transform: none; }
-        .btn-t { font-size: 13px; font-weight: 700; margin-bottom: 2px; color: var(--t-main); }
-        .btn-s { font-size: 9px; font-weight: 500; opacity: 0.8; color: var(--t-sec); white-space: nowrap; transform: scale(0.9); }
-        
-        /* Button Colors */
-        .bc-gold { background: rgba(255,149,0,0.15); } .bc-gold .btn-t { color: var(--c-gold-s); }
-        .bc-big { background: rgba(175,82,222,0.15); } .bc-big .btn-t { color: var(--c-gold-b); }
-        .bc-9 { background: rgba(255,214,10,0.15); } .bc-9 .btn-t { color: #D4AF37; }
-        .bc-black { background: #2C2C2E; } .bc-black .btn-t { color: #FFF; }
-        .bc-norm { background: rgba(0,122,255,0.1); } .bc-norm .btn-t { color: var(--c-primary); }
-        .bc-foul { background: rgba(255,59,48,0.1); } .bc-foul .btn-t { color: var(--c-foul); }
+        .act-btn::after {
+            content: ""; position: absolute; width: 100%; height: 100%; top: 0; left: 0;
+            background: rgba(0,0,0,0.05); opacity: 0; transition: opacity 0.2s;
+        }
+        .act-btn:active::after { opacity: 1; }
+
+        .btn-t { font-size: 13px; font-weight: 600; margin-bottom: 0px; white-space: nowrap;}
+        .btn-s { font-size: 9px; opacity: 0.7; font-weight: 500; letter-spacing: -0.2px; white-space: nowrap; transform: scale(0.95); }
+
+        .b-norm { background: #E1F0FF; color: var(--c-primary); }
+        .b-sgold { background: #FFF3DC; color: var(--c-gold-s); }
+        .b-bgold { background: #F3E5F5; color: var(--c-gold-b); }
+        .b-gold9 { background: #FFFDE7; color: #9A7D0A; } 
+        .b-black { background: #3A3A3C; color: #FFF; }
+        .b-foul { background: #FFEEEE; color: var(--c-foul); }
+        .b-let { background: #FFF0F5; color: var(--c-let); }
 
         /* --- Footer --- */
-        footer { height: 50px; display: flex; gap: 12px; padding: 0 16px; align-items: center; }
-        .f-btn {
-            flex: 1; height: 40px; border-radius: 20px; border: none; font-weight: 600; font-size: 14px;
-            display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;
+        footer {
+            flex-shrink: 0; display: flex; justify-content: space-between;
+            padding: 8px 16px; gap: 12px; height: 44px;
         }
-        .f-undo { background: var(--bg-card); color: var(--t-sec); border: 1px solid var(--btn-bg-act); }
-        .f-save { background: var(--t-main); color: var(--bg-body); }
+        .footer-btn {
+            flex: 1; border-radius: 21px; display: flex; align-items: center; justify-content: center; gap: 6px;
+            font-size: 14px; font-weight: 600; border: none; cursor: pointer;
+        }
+        .btn-undo { background: #FFF; color: #555; border: 1px solid #E5E5EA; }
+        .btn-save { background: #1C1C1E; color: #FFF; }
 
-        /* --- Modals (General) --- */
+        /* Modals */
         .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+            position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px);
             z-index: 100; display: none; opacity: 0; transition: opacity 0.25s;
             justify-content: center; align-items: center;
         }
         .modal-overlay.show { display: flex; opacity: 1; }
-        .modal-box {
-            background: var(--bg-card); width: 90%; max-width: 360px; border-radius: 20px;
-            padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); transform: scale(0.95); transition: transform 0.2s;
-            max-height: 85vh; overflow-y: auto; color: var(--t-main); text-align: center;
+        .center-box {
+            background: #FFF; width: 300px; max-width: 90%; border-radius: 18px; 
+            padding: 20px; text-align: center; transform: scale(0.9); transition: transform 0.2s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-height: 80vh; overflow-y: auto;
         }
-        .modal-overlay.show .modal-box { transform: scale(1); }
-        
-        .m-title { font-size: 20px; font-weight: 800; margin-bottom: 16px; }
-        .m-desc { font-size: 14px; color: var(--t-sec); margin-bottom: 20px; line-height: 1.5; }
-        
-        /* Settings Inputs */
-        .rule-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 14px; }
-        .rule-inp {
-            width: 60px; background: var(--btn-bg); border: 1px solid var(--btn-bg-act);
-            color: var(--t-main); border-radius: 8px; padding: 6px; text-align: center; font-weight: 700;
+        .modal-overlay.show .center-box { transform: scale(1); }
+        .modal-input {
+            width: 100%; box-sizing: border-box; padding: 12px; background: #F2F2F7; 
+            border: none; border-radius: 12px; margin: 16px 0; text-align: center; font-size: 16px;
+        }
+        .setting-opt {
+            background: #F2F2F7; padding: 10px; border-radius: 10px; margin-bottom: 8px;
+            display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+            touch-action: manipulation;
+        }
+        .setting-opt.selected { background: #E1F0FF; border: 1px solid var(--c-primary); }
+
+        .player-card.tap-add { cursor: pointer; }
+        .player-card.tap-add:active { transform: scale(0.99); }
+        .cn8-card {
+            border-radius: 18px;
+            padding: 16px 16px;
+            min-height: 118px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.06);
+        }
+        .cn8-layout { position: relative; width: 100%; height: 104px; }
+        .cn8-rank { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); }
+        .cn8-name {
+            position: absolute;
+            left: 56px;
+            right: 32%;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .cn8-score {
+            position: absolute;
+            left: 75%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 68px;
+            font-weight: 950;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+        }
+        .cn8-red {
+            background: linear-gradient(135deg, #FF4D4D, #FF2D55);
+            color: #FFF;
+        }
+        .cn8-blue {
+            background: linear-gradient(135deg, #2E7BFF, #5856D6);
+            color: #FFF;
+        }
+        .cn8-card .rank-num { background: rgba(255,255,255,0.18); color: rgba(255,255,255,0.95); }
+        .cn8-card .p-name { color: #FFF; font-size: 18px; font-weight: 800; }
+        .cn8-card .p-score { color: #FFF; font-size: 44px; font-weight: 900; }
+        .vs-divider {
+            text-align: center;
+            height: 118px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 76px;
+            font-weight: 800;
+            color: #8E8E93;
+            letter-spacing: 2px;
+            margin: 6px 0;
+            font-style: italic;
+            opacity: 0.35;
         }
 
-        /* Summary Tabs (Req 2 & 7) */
-        .tab-nav { display: flex; gap: 4px; background: var(--btn-bg); padding: 4px; border-radius: 10px; margin-bottom: 16px; }
+        #summaryModal .center-box { 
+            max-height: 90vh; 
+            background: #FFFEFB;
+            position: relative;
+            overflow: visible;
+            padding-bottom: 32px;
+            box-shadow: 0 20px 44px rgba(0,0,0,0.22);
+            transform-origin: top center;
+            width: calc(100vw - 24px);
+            max-width: none;
+        }
+        #summaryModal .center-box::after,
+        #summaryModal .center-box::before {
+            content: none;
+        }
+        #summaryModal .result-row { padding: 18px 0; }
+        #summaryModal .res-name { font-size: 18px; font-weight: 900; }
+        #summaryModal .res-score { font-size: 22px; font-weight: 950; }
+        #summaryModal .stat-badge { font-size: 12px; padding: 6px 5px; border-radius: 8px; }
+
+        .btn-confirm { flex:1; padding:12px; border:none; border-radius:12px; background:var(--c-primary); color:#FFF; font-weight:600; transition: all 0.2s; }
+        .btn-confirm:disabled { background: #CCC; cursor: not-allowed; opacity: 0.7; }
+
+        /* Summary Receipt Style */
+        .receipt-header { border-bottom: none; padding-bottom: 6px; margin-bottom: 6px; position: relative; }
+        .receipt-header::after { content: none; }
+        .res-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 6px; }
+        .stat-badge {
+            display: flex; align-items: center; justify-content: center;
+            font-size: 9px; padding: 3px 2px; border-radius: 4px; 
+            font-weight: 600; margin: 0; white-space: nowrap;
+        }
+        .sb-gold { background: #F3E5F5; color: var(--c-gold-b); }
+        .sb-win { background: #E1F0FF; color: var(--c-primary); }
+        .sb-foul { background: #FFEEEE; color: var(--c-foul); }
+        .result-row { display: flex; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid #F2F2F7; }
+
+        .summary-tabs {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
         .tab-btn {
-            flex: 1; padding: 8px; border: none; background: none; font-size: 13px; font-weight: 600;
-            color: var(--t-sec); border-radius: 8px; cursor: pointer;
+            padding: 10px 0;
+            border: 1px solid #E5E5EA;
+            border-radius: 12px;
+            background: #F6F6F8;
+            font-weight: 750;
+            font-size: 14px;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.18s;
         }
-        .tab-btn.active { background: var(--bg-card); color: var(--t-main); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .tab-content { display: none; text-align: left; }
-        .tab-content.active { display: block; animation: slideUpFade 0.3s; }
-
-        /* Chart */
-        .trend-chart { width: 100%; height: 160px; margin: 10px 0; background: var(--btn-bg); border-radius: 12px; padding: 10px; box-sizing: border-box; }
-        
-        /* Wizard (Req 3) */
-        #wizardModal .modal-box { text-align: left; }
-        .step-dots { display: flex; gap: 6px; justify-content: center; margin-bottom: 20px; }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--btn-bg-act); }
-        .dot.active { background: var(--c-primary); width: 20px; border-radius: 4px; }
-        .wiz-opt {
-            padding: 12px; border: 2px solid var(--btn-bg); border-radius: 12px; margin-bottom: 8px;
-            font-weight: 600; cursor: pointer; transition: all 0.2s;
+        .tab-btn.active {
+            background: linear-gradient(120deg, rgba(0,122,255,0.1), rgba(255,149,0,0.08));
+            border-color: rgba(0,122,255,0.38);
+            color: #0A84FF;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.06);
         }
-        .wiz-opt.selected { border-color: var(--c-primary); background: rgba(0,122,255,0.05); color: var(--c-primary); }
+        .summary-view { text-align:left; }
 
-        /* Achievements Grid */
-        .ach-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .ach-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
         .ach-item {
-            background: var(--btn-bg); border-radius: 8px; padding: 10px; text-align: center;
+            background: var(--bg-muted);
+            border-radius: 14px;
+            padding: 12px;
+            display: grid;
+            grid-template-columns: 36px 1fr;
+            column-gap: 10px;
+            align-items: center;
         }
-        .ach-icon { font-size: 20px; display: block; margin-bottom: 4px; }
-        .ach-title { font-size: 12px; color: var(--t-sec); font-weight: 600; }
-        .ach-val { font-size: 14px; font-weight: 800; color: var(--t-main); }
+        .ach-icon {
+            font-size: 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ach-title {
+            font-size: 12px;
+            color: var(--c-text-muted);
+            margin-bottom: 2px;
+            font-weight: 700;
+        }
+        .ach-val {
+            font-size: 15px;
+            font-weight: 900;
+            color: var(--c-text);
+        }
+
+        #toast {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.85); color: white; padding: 16px 24px; border-radius: 12px;
+            font-size: 15px; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+            z-index: 999; text-align: center; line-height: 1.4; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .role-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 18px;
+            min-width: 18px;
+            padding: 0 6px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: -0.2px;
+            line-height: 1;
+        }
+        .rb-dealer { background: rgba(255,149,0,0.18); color: #B25E00; border: 1px solid rgba(255,149,0,0.22); }
+        .rb-pos { background: rgba(142,142,147,0.15); color: #555; border: 1px solid rgba(142,142,147,0.18); }
+        .rb-lead { background: rgba(52,199,89,0.16); color: #0E7A2E; border: 1px solid rgba(52,199,89,0.2); }
+        .rb-low { background: rgba(255,59,48,0.12); color: #A60000; border: 1px solid rgba(255,59,48,0.18); }
+
+        #nameQuickList {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 0 0 14px;
+            justify-content: center;
+        }
+        .name-chip {
+            border: none;
+            background: #F2F2F7;
+            color: #333;
+            padding: 8px 10px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 650;
+            cursor: pointer;
+            max-width: 100%;
+        }
+        .name-chip:active { transform: scale(0.98); }
+
+        #posterModal .center-box { width: 340px; max-height: 86vh; }
+        #posterImg { width: 100%; border-radius: 14px; display: block; background: #F2F2F7; }
+        .poster-btn-row { display:flex; gap:10px; margin-top:14px; }
+
+        .score-bump { animation: scoreBump 0.28s ease-out; }
+        @keyframes scoreBump { 0% { transform: translateY(0) scale(1); } 45% { transform: translateY(-4px) scale(1.08); } 100% { transform: translateY(0) scale(1); } }
+
+        .lead-flash { animation: leadFlash 0.55s ease-out; }
+        @keyframes leadFlash { 0% { box-shadow: 0 0 0 rgba(52,199,89,0); } 35% { box-shadow: 0 0 0 4px rgba(52,199,89,0.22); } 100% { box-shadow: 0 0 0 rgba(52,199,89,0); } }
+
+        .fly-point {
+            position: fixed;
+            z-index: 9999;
+            pointer-events: none;
+            font-family: ui-monospace, Menlo, monospace;
+            font-weight: 900;
+            font-variant-numeric: tabular-nums;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(0,0,0,0.78);
+            color: #fff;
+            transform: translate(-50%, -50%);
+            will-change: transform, opacity;
+        }
+
+        .coin {
+            position: fixed;
+            z-index: 9998;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #FFF3B0, #FFD60A);
+            box-shadow: 0 6px 14px rgba(0,0,0,0.22);
+            pointer-events: none;
+            animation: coinFall 900ms ease-in forwards;
+        }
+        @keyframes coinFall {
+            0% { transform: translateY(-40px) rotate(0deg); opacity: 0; }
+            15% { opacity: 1; }
+            100% { transform: translateY(240px) rotate(260deg); opacity: 0; }
+        }
+
+        .confetti-star {
+            position: fixed;
+            z-index: 9999;
+            width: 14px;
+            height: 14px;
+            background: #FFD60A;
+            clip-path: polygon(50% 0%, 63% 35%, 98% 35%, 70% 57%, 82% 91%, 50% 72%, 18% 91%, 30% 57%, 2% 35%, 37% 35%);
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.2);
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.18));
+        }
+        .confetti-ring {
+            position: fixed;
+            z-index: 9998;
+            width: 6px;
+            height: 6px;
+            border: 2px solid rgba(255,214,10,0.55);
+            border-radius: 50%;
+            left: 50%;
+            top: 18%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+        }
+        @keyframes starBurst {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(0.25) rotate(0deg); }
+            60% { opacity: 1; }
+            100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.8) rotate(340deg); }
+        }
+        @keyframes ringExpand {
+            0% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+            80% { opacity: 0.2; }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(18); }
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-body: #000000; --bg-card: #1C1C1E;
+                --c-text: rgba(255,255,255,0.92); --c-text-muted: rgba(235,235,245,0.6);
+                --bg-muted: #2C2C2E; --border: #2C2C2E;
+            }
+            body { background-color: var(--bg-body); }
+            .timer-display { color: var(--c-text); background: var(--bg-muted); }
+            .timer-paused { color: var(--c-text-muted); background: rgba(44,44,46,0.65); border: 1px solid var(--border); }
+            .info-bar { background: var(--bg-card); box-shadow: 0 2px 10px rgba(0,0,0,0.35); }
+            .round-area { color: var(--c-text); }
+            .lb-name { color: var(--c-text); }
+            .lb-score { color: var(--c-text); }
+            .player-card { box-shadow: 0 8px 18px rgba(0,0,0,0.35); }
+            .player-card.is-dealer { background: rgba(255,149,0,0.12); }
+            .player-card.is-loser { background: rgba(142,142,147,0.10); }
+            .rank-num { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); }
+            .p-name { color: var(--c-text); }
+            .score-z { color: var(--c-text); }
+            .act-btn { background: rgba(44,44,46,0.85); }
+            .btn-undo { background: var(--bg-card); color: var(--c-text); border: 1px solid var(--border); }
+            .modal-overlay { background: rgba(0,0,0,0.6); }
+            .center-box { background: var(--bg-card); box-shadow: 0 14px 34px rgba(0,0,0,0.55); }
+            .modal-input { background: var(--bg-muted); color: var(--c-text); }
+            .setting-opt { background: rgba(44,44,46,0.85); }
+            .setting-opt.selected { background: rgba(0,122,255,0.18); }
+            .name-chip { background: rgba(44,44,46,0.85); color: var(--c-text); }
+            .result-row { border-bottom: 1px solid rgba(255,255,255,0.06); }
+            .receipt-header { border-bottom: 2px dashed rgba(255,255,255,0.18); }
+            #posterImg { background: var(--bg-muted); }
+        }
     </style>
 </head>
 <body>
-
-    <canvas id="confettiCanvas"></canvas>
+    <div id="toast">已保存</div>
 
     <header>
-        <button class="icon-btn" onclick="openWizard(true)">
-            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-        <div style="display:flex; justify-content:center;">
-             <div class="timer-container" onclick="toggleTimer()">
-                <div class="timer-display timer-paused" id="gameTimer">00:00:00</div>
-            </div>
-        </div>
-        <div style="text-align:right;">
-             <button class="icon-btn" style="margin-left:auto;" onclick="openSettings()">
-                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="header-left">
+            <button class="icon-btn" onclick="openSettings()">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
+            <button class="icon-btn" onclick="openLogModal()">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+        </div>
+
+        <div class="timer-container">
+            <button class="timer-btn" id="timerControlBtn" onclick="toggleTimer()">
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            </button>
+            <div class="timer-display timer-paused" id="gameTimer">00:00:00</div>
+        </div>
+
+        <div class="header-right">
+            <button class="reset-btn" onclick="openResetModal()">重置</button>
         </div>
     </header>
 
     <div class="info-bar">
         <div class="logs-area" id="logsArea">
-            <div style="text-align:center; opacity:0.5;">准备开局</div>
+            <div style="opacity:0.3">等待开局...</div>
         </div>
-        <div class="round-area">
-            <div class="round-num" id="roundDisplay">0</div>
-            <div class="round-lbl">ROUND</div>
-        </div>
-        <div class="logs-area" id="leaderboard" style="align-items: flex-end; text-align: right;">
-            </div>
+        <div class="round-area" id="roundBigDisplay">0<small>回合</small></div>
+        <div class="leaderboard-area" id="leaderboardArea"></div> 
     </div>
 
-    <main id="gameArea"></main>
+    <main id="container"></main>
 
     <footer>
-        <button class="f-btn f-undo" onclick="undo()">撤销</button>
-        <button class="f-btn f-save" onclick="showSummary()">结算 / 战报</button>
+        <button class="footer-btn btn-undo" onclick="undo()">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>撤销
+        </button>
+        <button class="footer-btn btn-save" onclick="handleSettleNow(); return false;">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>结算/分享
+        </button>
     </footer>
 
-    <div class="modal-overlay" id="wizardModal">
-        <div class="modal-box">
-            <div class="m-title" id="wizTitle">欢迎使用 Pro Max</div>
-            <div class="step-dots" id="wizDots">
-                <div class="dot active"></div><div class="dot"></div><div class="dot"></div>
+    <div class="modal-overlay" id="confirmModal" style="z-index: 150;">
+        <div class="center-box">
+            <div id="confirmTitle" style="font-size:18px; font-weight:800; margin-bottom:12px;">操作确认</div>
+            <div id="confirmDesc" style="font-size:15px; color:#333; margin-bottom:8px; font-weight:600;"></div>
+            <div id="confirmDetail" style="font-size:13px; color:#666; margin-bottom:20px; background:#F2F2F7; padding:10px; border-radius:8px;"></div>
+            <div style="display:flex; gap:10px;">
+                <button style="flex:1; padding:12px; border:none; border-radius:12px; background:#F2F2F7; color:#8E8E93; font-weight:600;" onclick="closeConfirmModal()">取消</button>
+                <button id="realConfirmBtn" class="btn-confirm" onclick="confirmPendingAction()" disabled>确定 (0.5s)</button>
             </div>
-            
-            <div id="wizStep1">
-                <div class="m-desc">请选择游戏模式</div>
-                <div class="wiz-opt selected" onclick="wizSelect(this, 'mode', 3)">3 人追分 (标准)</div>
-                <div class="wiz-opt" onclick="wizSelect(this, 'mode', 2)">2 人单挑</div>
-                <button class="f-btn f-save" style="width:100%; margin-top:20px;" onclick="nextWizStep(2)">下一步</button>
-            </div>
+        </div>
+    </div>
 
-            <div id="wizStep2" style="display:none;">
-                <div class="m-desc">玩家设置</div>
-                <input type="text" class="rule-inp" style="width:100%; margin-bottom:8px; text-align:left; padding:10px;" id="wizName0" placeholder="玩家 A" value="玩家 A">
-                <input type="text" class="rule-inp" style="width:100%; margin-bottom:8px; text-align:left; padding:10px;" id="wizName1" placeholder="玩家 B" value="玩家 B">
-                <input type="text" class="rule-inp" style="width:100%; margin-bottom:8px; text-align:left; padding:10px;" id="wizName2" placeholder="玩家 C" value="玩家 C">
-                <button class="f-btn f-save" style="width:100%; margin-top:20px;" onclick="nextWizStep(3)">下一步</button>
+    <div class="modal-overlay" id="resetModal" style="z-index: 160;">
+        <div class="center-box">
+            <div style="font-size:18px; font-weight:800; margin-bottom:10px;">重置</div>
+            <div id="resetDesc" style="font-size:13px; color:#666; margin-bottom:16px; background:#F2F2F7; padding:10px; border-radius:10px;"></div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <button style="width:100%; padding:12px; border:none; border-radius:12px; background:#1C1C1E; color:#FFF; font-weight:700;" onclick="resetCurrentSession()">新开一局（仅当前模式）</button>
+                <button style="width:100%; padding:12px; border:none; border-radius:12px; background:#FFEEEE; color:var(--c-foul); font-weight:800;" onclick="clearAllData()">彻底清空（所有模式）</button>
+                <button style="width:100%; padding:12px; border:none; border-radius:12px; background:#F2F2F7; color:#333; font-weight:650;" onclick="closeResetModal()">取消</button>
             </div>
+        </div>
+    </div>
 
-            <div id="wizStep3" style="display:none;">
-                <div class="m-desc">规则预设</div>
-                <div class="wiz-opt selected" onclick="wizSetRule('std')">标准厅 (4/7/20)</div>
-                <div class="wiz-opt" onclick="wizSetRule('friend')">朋友局 (小赌怡情)</div>
-                <button class="f-btn f-save" style="width:100%; margin-top:20px;" onclick="finishWizard()">开始游戏</button>
-            </div>
+    <div class="modal-overlay" id="logModal">
+        <div class="center-box" style="width:320px;">
+            <div style="font-size:18px; font-weight:800; margin-bottom:12px;">操作日志</div>
+            <div id="logContent" style="max-height: 300px; overflow-y: auto; margin-bottom:16px;"></div>
+            <button style="width:100%; padding:12px; background:#F2F2F7; color:#333; border:none; border-radius:12px; font-weight:600;" onclick="closeLogModal()">关闭</button>
         </div>
     </div>
 
     <div class="modal-overlay" id="settingsModal">
-        <div class="modal-box">
-            <div class="m-title">规则配置</div>
-            <div class="tab-nav">
-                <button class="tab-btn active">分值设定</button>
+        <div class="center-box">
+            <div style="font-size:16px; font-weight:700; margin-bottom:12px;">设置</div>
+
+            <div style="text-align:left; font-size:12px; color:#8E8E93; margin-bottom:6px;">游戏模式</div>
+            <div class="setting-opt selected" id="optChase" onclick="setGameType('chase')">
+                <div style="text-align:left; flex:1"><span style="font-weight:700;font-size:14px;">追分模式</span></div>
+                <div style="color:var(--c-primary); font-weight:bold;">✓</div>
             </div>
-            <div id="rulesInputs">
+            <div class="setting-opt" id="optCn8" onclick="setGameType('cn8')">
+                <div style="text-align:left; flex:1"><span style="font-weight:700;font-size:14px;">中式八球</span></div>
+                <div style="color:var(--c-primary); font-weight:bold; display:none;">✓</div>
+            </div>
+            
+            <div id="playerCountSection">
+                <div style="text-align:left; font-size:12px; color:#8E8E93; margin-bottom:6px;">人数模式</div>
+                <div style="display:flex; background:#E5E5EA; border-radius:10px; padding:2px; margin-bottom:16px;">
+                    <button class="toggle-btn" id="mode2" onclick="switchMode(2)" style="flex:1; padding:8px; border:none; background:transparent; border-radius:8px; font-weight:600; color:#888;">2人</button>
+                    <button class="toggle-btn active" id="mode3" onclick="switchMode(3)" style="flex:1; padding:8px; border:none; background:#FFF; border-radius:8px; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,0.1);">3人</button>
                 </div>
-            <div style="margin-top:20px; font-size:12px; color:var(--t-sec);">更改即时生效</div>
-            <button class="f-btn f-save" style="width:100%; margin-top:10px;" onclick="closeModal('settingsModal')">完成</button>
-            <button class="f-btn f-undo" style="width:100%; margin-top:10px; color:var(--c-foul); border-color:var(--c-foul);" onclick="resetGame()">重置本局</button>
+            </div>
+
+            <div id="twoPlayerScoreModeSection">
+                <div style="text-align:left; font-size:12px; color:#8E8E93; margin-bottom:6px;">2人局计分机制</div>
+                <div class="setting-opt selected" id="optTransfer" onclick="setScoreMode('transfer')">
+                    <div><span style="font-weight:600;font-size:14px;">给付制</span><div style="font-size:10px;color:#888">赢+10 输-10</div></div>
+                    <div style="color:var(--c-primary); font-weight:bold;">✓</div>
+                </div>
+                <div class="setting-opt" id="optRace" onclick="setScoreMode('race')">
+                    <div><span style="font-weight:600;font-size:14px;">抢分制</span><div style="font-size:10px;color:#888">赢+10 输0</div></div>
+                    <div style="color:var(--c-primary); font-weight:bold; display:none;">✓</div>
+                </div>
+            </div>
+
+            <div style="text-align:left; font-size:12px; color:#8E8E93; margin-bottom:6px;">结算规则</div>
+            <div class="setting-opt" onclick="openRuleSetModal()">
+                <div style="text-align:left; flex:1"><span style="font-weight:700;font-size:14px;">当前：<span id="activeRuleSetName">常规厅</span></span><div style="font-size:10px;color:#888">可配置普胜/小金/黑金等</div></div>
+                <div style="color:var(--c-primary); font-weight:bold;">›</div>
+            </div>
+
+            <div class="setting-opt" onclick="openWizard(true)">
+                <div style="text-align:left; flex:1"><span style="font-weight:700;font-size:14px;">开局向导</span><div style="font-size:10px;color:#888">模式→人数→名字→规则→开始</div></div>
+                <div style="color:var(--c-primary); font-weight:bold;">›</div>
+            </div>
+            <div class="modal-btns" style="margin-top:16px;">
+                <button style="background:var(--c-primary); color:#FFF; flex:1; padding:12px; border:none; border-radius:12px; font-size:15px; font-weight:600; width:100%" onclick="closeSettings()">完成</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="ruleSetModal">
+        <div class="center-box" style="width:320px;">
+            <div style="font-size:18px; font-weight:800; margin-bottom:12px;">结算规则</div>
+            <div id="ruleSetList" style="max-height: 320px; overflow-y: auto; margin-bottom:14px;"></div>
+            <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <button style="flex:1; padding:12px; border:none; border-radius:12px; background:#F2F2F7; color:#333; font-weight:650;" onclick="createRuleSet()">新建</button>
+                <button style="flex:1; padding:12px; border:none; border-radius:12px; background:var(--c-primary); color:#FFF; font-weight:750;" onclick="openRuleEditor()">编辑</button>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button style="flex:1; padding:12px; border:none; border-radius:12px; background:#FFEEEE; color:var(--c-foul); font-weight:800;" onclick="deleteActiveRuleSet()">删除</button>
+                <button style="flex:1; padding:12px; border:none; border-radius:12px; background:#F2F2F7; color:#333; font-weight:650;" onclick="closeRuleSetModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="ruleEditorModal">
+        <div class="center-box" style="width:340px;">
+            <div style="font-size:18px; font-weight:800; margin-bottom:10px;">规则编辑</div>
+            <div style="font-size:12px; color:#8E8E93; margin-bottom:10px; text-align:left;">当前：<span id="ruleEditorTitle" style="font-weight:800;"></span></div>
+            <div id="ruleEditorBody" style="max-height: 56vh; overflow-y: auto; text-align:left;"></div>
+            <div style="display:flex; gap:10px; margin-top:14px;">
+                <button style="flex:1; padding:12px; border:none; border-radius:12px; background:#F2F2F7; color:#333; font-weight:650;" onclick="closeRuleEditor()">取消</button>
+                <button style="flex:1; padding:12px; border:none; border-radius:12px; background:var(--c-primary); color:#FFF; font-weight:750;" onclick="saveRuleEditor()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="wizardModal" style="z-index: 170;">
+        <div class="center-box" style="width:340px;">
+            <div id="wizardTitle" style="font-size:18px; font-weight:900; margin-bottom:8px;">开局向导</div>
+            <div id="wizardStepHint" style="font-size:12px; color:#8E8E93; margin-bottom:10px;"></div>
+            <div id="wizardBody" style="text-align:left;"></div>
+            <div style="display:flex; gap:10px; margin-top:14px;">
+                <button id="wizardBackBtn" style="flex:1; padding:12px; border:none; border-radius:12px; background:#F2F2F7; color:#333; font-weight:650;" onclick="wizardBack()">上一步</button>
+                <button id="wizardNextBtn" style="flex:1; padding:12px; border:none; border-radius:12px; background:var(--c-primary); color:#FFF; font-weight:800;" onclick="wizardNext()">下一步</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="nameModal">
+        <div class="center-box">
+            <div style="font-size:16px; font-weight:700;">修改名字</div>
+            <input type="text" class="modal-input" id="nameInput" placeholder="输入新名字" maxlength="8">
+            <div id="nameQuickList"></div>
+            <div style="display:flex; gap:10px;">
+                <button style="flex:1; padding:10px; border:none; border-radius:12px; background:#F2F2F7; color:#8E8E93; font-weight:600;" onclick="closeNameModal()">取消</button>
+                <button style="flex:1; padding:10px; border:none; border-radius:12px; background:var(--c-primary); color:#FFF; font-weight:600;" onclick="saveName()">确定</button>
+            </div>
         </div>
     </div>
 
     <div class="modal-overlay" id="summaryModal">
-        <div class="modal-box" style="max-width: 400px;">
-            <div class="m-title">战局结算</div>
-            <div class="tab-nav">
-                <button class="tab-btn active" onclick="switchTab('sum-overview')">总览</button>
-                <button class="tab-btn" onclick="switchTab('sum-trend')">走势</button>
-                <button class="tab-btn" onclick="switchTab('sum-achieve')">称号</button>
+        <div class="center-box" style="width: calc(100vw - 24px);">
+            <div class="receipt-header">
+                <div id="summaryTitle" style="font-size:20px; font-weight:800;">战局结算</div>
+                <div id="summaryTime" style="font-size:12px; color:#8E8E93; margin-top:4px;"></div>
             </div>
-            
-            <div id="sum-overview" class="tab-content active">
-                <div id="summaryList"></div>
+            <div id="summaryContent" style="max-height: none; overflow: visible;"></div>
+            <div id="summaryActionsRow" style="display:flex; gap:10px; margin-top:16px;">
+                 <button style="flex:1; padding:12px; background:#F2F2F7; color:#333; border:none; border-radius:12px; font-weight:600;" onclick="closeSummary()">关闭</button>
+                 <button style="flex:1; padding:12px; background:var(--c-primary); color:#FFF; border:none; border-radius:12px; font-weight:700;" onclick="copyReport()">复制战报</button>
+                 <button style="flex:1; padding:12px; background:#1C1C1E; color:#FFF; border:none; border-radius:12px; font-weight:700;" onclick="generatePoster()">生成图片</button>
             </div>
-
-            <div id="sum-trend" class="tab-content">
-                <div class="m-desc">分数走势图</div>
-                <div id="trendChartContainer" class="trend-chart"></div>
-            </div>
-
-            <div id="sum-achieve" class="tab-content">
-                <div id="achievementsList" class="ach-grid"></div>
-            </div>
-
-            <button class="f-btn f-save" style="width:100%; margin-top:20px;" onclick="closeModal('summaryModal')">关闭</button>
         </div>
     </div>
 
+    <div class="modal-overlay" id="posterModal">
+        <div class="center-box">
+            <div style="font-size:16px; font-weight:800; margin-bottom:10px;">图片战报</div>
+            <img id="posterImg" alt="poster" />
+            <div class="poster-btn-row">
+                <button style="flex:1; padding:12px; background:#F2F2F7; color:#333; border:none; border-radius:12px; font-weight:650;" onclick="closePosterModal()">关闭</button>
+                <button style="flex:1; padding:12px; background:var(--c-primary); color:#FFF; border:none; border-radius:12px; font-weight:750;" onclick="savePosterImage()">保存图片</button>
+                <button style="flex:1; padding:12px; background:#1C1C1E; color:#FFF; border:none; border-radius:12px; font-weight:750;" onclick="sharePosterImage()">分享</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script>
-        /* --- Logic & State --- */
-        const DB_KEY = 'billiards_promax_v3';
+        // --- 音效合成引擎 ---
+        const SoundFX = {
+            ctx: null,
+            init: function() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) this.ctx = new AudioContext();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+            },
+            playTone: function(freq, type, duration) {
+                if (!this.ctx) this.init();
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + duration);
+            },
+            click: function() { this.playTone(800, 'sine', 0.1); },
+            win: function() { 
+                setTimeout(()=>this.playTone(523.25, 'triangle', 0.3), 0); // C5
+                setTimeout(()=>this.playTone(659.25, 'triangle', 0.3), 100); // E5
+                setTimeout(()=>this.playTone(783.99, 'triangle', 0.4), 200); // G5
+            },
+            foul: function() {
+                this.playTone(150, 'sawtooth', 0.3);
+                setTimeout(()=>this.playTone(100, 'sawtooth', 0.3), 150);
+            }
+        };
+
+        // --- 核心逻辑 ---
+        const DB_KEY = 'billiards_pro_max_v2';
+        let pendingAction = null;
+        let currentEditIndex = -1;
+        let timerInterval = null;
+        let posterBlob = null;
+        let posterObjectUrl = null;
+        let ruleEditorDraft = null;
+        let wizardDraft = null;
+        let lastLeaderId = null;
+        let uiEffects = null;
+        let summaryViews = {};
+        let summaryActiveTab = 'overview';
+
+        const emptyStats = () => ({ bigGold: 0, smallGold: 0, gold9: 0, normal: 0, blackGold: 0, fouls: 0 });
         
-        // 默认规则 (Req 1)
-        const defaultRules = {
-            normal: { win: 4, label: '普胜' },
-            smallGold: { win: 7, label: '小金' },
-            bigGold: { win: 20, label: '大金' }, // 3人局: 赢20, 输10, 其他-10
-            gold9: { win: 8, label: '黄金9' },   // 3人局: 赢8, 输4, 其他-4
-            blackGold: { label: '黑金' },        // 特殊逻辑: 自-5, 下+4, 上+1 (可配金额)
-            openBlack: { label: '开球黑金' },    // 特殊逻辑: 自-8, 其他+4
-            foul: { lose: 1, label: '犯规' }
-        };
-
         let state = {
-            setupDone: false,
+            gameType: 'chase',
+            lastChaseMode: 3,
+            namePool: ['玩家 A', '玩家 B', '玩家 C'],
+            recentNames: [],
+            sessionStore: {},
             mode: 3,
-            players: [
-                { name: '玩家 A', score: 0, id: 0 },
-                { name: '玩家 B', score: 0, id: 1 },
-                { name: '玩家 C', score: 0, id: 2 }
-            ],
-            rules: JSON.parse(JSON.stringify(defaultRules)),
-            history: [], // 全局快照历史
-            round: 0,
-            timer: 0,
+            round: 0, 
+            timerSeconds: 0,
             timerRunning: false,
-            logs: []
+            scoreMode: 'transfer', 
+            players: [
+                { id: 0, name: '玩家 A', score: 0, stats: emptyStats() },
+                { id: 1, name: '玩家 B', score: 0, stats: emptyStats() },
+                { id: 2, name: '玩家 C', score: 0, stats: emptyStats() }
+            ],
+            history: [],
+            logs: [],
+            rulesets: null,
+            activeRuleSetId: null,
+            timeline: [],
+            hasCompletedWizard: false
         };
 
-        let timerInterval;
-
-        // --- Init ---
-        function init() {
+        // 初始化
+        (function init() {
             const saved = localStorage.getItem(DB_KEY);
             if (saved) {
                 try {
                     const parsed = JSON.parse(saved);
-                    // Merge saved state with defaults to avoid breakage on updates
-                    state = { ...state, ...parsed };
-                    if(state.rules) state.rules = { ...defaultRules, ...state.rules }; // Ensure rules structure
-                } catch(e) { console.error('Data corrupted'); }
+                    if (parsed.startTime !== undefined && parsed.timerSeconds === undefined) {
+                         parsed.timerSeconds = 0; parsed.timerRunning = false;
+                    }
+                    if (parsed.gameType === undefined) parsed.gameType = 'chase';
+                    if (parsed.lastChaseMode === undefined) parsed.lastChaseMode = 3;
+                    if (!parsed.namePool) parsed.namePool = (parsed.players || []).map(p => p.name).concat(['玩家 C']).slice(0, 3);
+                    if (!parsed.recentNames) parsed.recentNames = [];
+                    if (!parsed.sessionStore) parsed.sessionStore = {};
+                    state = parsed;
+                } catch(e) { console.error('Resetting data due to error'); }
             }
 
-            if (!state.setupDone) {
-                openWizard(false);
-            } else {
-                renderGame();
-                renderLog();
+            if (!state.namePool) state.namePool = ['玩家 A', '玩家 B', '玩家 C'];
+            if (!state.recentNames) state.recentNames = [];
+            if (!state.sessionStore) state.sessionStore = {};
+            if (state.gameType === 'chase') state.lastChaseMode = state.mode || state.lastChaseMode || 3;
+
+            if (!state.timeline) state.timeline = [];
+            if (state.hasCompletedWizard === undefined) state.hasCompletedWizard = false;
+            ensureRuleSetsInState();
+            syncActiveRuleSetNameUI();
+
+            ensureCurrentSessionKey();
+            
+            updateTimerDisplay();
+            if(state.timerRunning) startTimerInterval();
+            else updateTimerBtnUI(false);
+
+            updateUI();
+
+            if (!state.hasCompletedWizard) {
+                setTimeout(() => {
+                    try { openWizard(false); } catch(e) {}
+                }, 160);
             }
             
-            // Resume timer visual state
-            if(state.timerRunning) startTimer();
-            else updateTimerDisplay();
-        }
+            document.addEventListener('click', async () => {
+                SoundFX.init(); 
+                try { if ('wakeLock' in navigator) await navigator.wakeLock.request('screen'); } catch(e){}
+            }, {once:true});
+        })();
 
-        function save() {
+        function saveData() {
+            try { if (typeof saveCurrentSessionToStore === 'function') saveCurrentSessionToStore(); } catch(e) {}
             localStorage.setItem(DB_KEY, JSON.stringify(state));
         }
 
-        // --- Wizard Logic (Req 3) ---
-        let wizState = { mode: 3 };
-        function openWizard(isEdit) {
-            document.getElementById('wizardModal').classList.add('show');
-            document.getElementById('wizStep1').style.display = 'block';
-            document.getElementById('wizStep2').style.display = 'none';
-            document.getElementById('wizStep3').style.display = 'none';
-            if(isEdit) document.getElementById('wizTitle').innerText = "修改设置";
-        }
-        function wizSelect(el, key, val) {
-            el.parentNode.querySelectorAll('.wiz-opt').forEach(b => b.classList.remove('selected'));
-            el.classList.add('selected');
-            wizState[key] = val;
-        }
-        function nextWizStep(step) {
-            document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === step - 1));
-            document.getElementById(`wizStep${step-1}`).style.display = 'none';
-            document.getElementById(`wizStep${step}`).style.display = 'block';
-            
-            if(step === 2) {
-                const inputs = [document.getElementById('wizName0'), document.getElementById('wizName1'), document.getElementById('wizName2')];
-                inputs.forEach(i => i.style.display = wizState.mode === 2 && i.id === 'wizName2' ? 'none' : 'block');
-            }
-        }
-        function wizSetRule(type) {
-            if(type === 'friend') {
-                state.rules.normal.win = 2; state.rules.smallGold.win = 4; state.rules.bigGold.win = 10;
-            } else {
-                state.rules = JSON.parse(JSON.stringify(defaultRules));
-            }
-        }
-        function finishWizard() {
-            state.mode = wizState.mode;
-            state.players = [];
-            for(let i=0; i<state.mode; i++) {
-                const name = document.getElementById(`wizName${i}`).value || `玩家 ${i+1}`;
-                state.players.push({ name, score: 0, id: i, stats: {} });
-            }
-            state.setupDone = true;
-            state.round = 0;
-            state.history = [];
-            state.logs = [];
-            save();
-            renderGame();
-            closeModal('wizardModal');
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg; t.style.opacity = 1; t.style.top = '50%';
+            setTimeout(() => t.style.opacity = 0, 2000);
         }
 
-        // --- Core Game Logic ---
-        function handleAction(pIdx, type) {
-            // Snapshot for Undo
-            state.history.push(JSON.parse(JSON.stringify({ players: state.players, round: state.round, logs: state.logs })));
-            if(state.history.length > 20) state.history.shift();
-
-            const p = state.players;
-            const total = state.mode;
-            const current = p[pIdx];
-            const prev = p[(pIdx - 1 + total) % total];
-            const next = p[(pIdx + 1) % total];
-            const rule = state.rules[type];
-            let logText = "";
-            let scoreChange = 0;
-
-            // Stats Tracking
-            if(!current.stats) current.stats = {};
-            current.stats[type] = (current.stats[type] || 0) + 1;
-
-            // Logic Engine (Configurable Values)
-            if (state.mode === 3) {
-                if (type === 'normal') {
-                    const val = rule.win;
-                    updateScore(pIdx, val); updateScore(prev.id, -val);
-                    logText = `${current.name} 普胜 (+${val})`; scoreChange = val;
-                    rotatePlayers(pIdx);
-                } else if (type === 'smallGold') {
-                    const val = rule.win;
-                    updateScore(pIdx, val); updateScore(prev.id, -val);
-                    logText = `${current.name} 小金 (+${val})`; scoreChange = val;
-                    rotatePlayers(pIdx);
-                } else if (type === 'bigGold') {
-                    const win = parseInt(rule.win); const lose = win / 2;
-                    updateScore(pIdx, win); updateScore(prev.id, -lose); updateScore(next.id, -lose);
-                    logText = `${current.name} 大金 (+${win})`; scoreChange = win;
-                    rotatePlayers(pIdx);
-                    fireConfetti(); // Effect
-                } else if (type === 'gold9') {
-                    const win = parseInt(rule.win); const lose = win / 2;
-                    updateScore(pIdx, win); updateScore(prev.id, -lose); updateScore(next.id, -lose);
-                    logText = `${current.name} 黄金9 (+${win})`; scoreChange = win;
-                } else if (type === 'foul') {
-                    const val = rule.lose;
-                    updateScore(pIdx, -val); updateScore(prev.id, val);
-                    logText = `${current.name} 犯规 (-${val})`;
-                } else if (type === 'blackGold') {
-                    // Logic: Self -5, Next +4, Prev +1 (Hardcoded ratios, but customizable eventually? Keeping simple for now)
-                    // Let's use custom logic based on "Configured Base". 
-                    // To satisfy Req 1 fully, let's assume 'blackGold.win' stores the positive transfer amount roughly.
-                    // Or keep logic hardcoded but values derived. 
-                    // Standard: Self -5, Next +4, Prev +1.
-                    updateScore(pIdx, -5); updateScore(next.id, 4); updateScore(prev.id, 1);
-                    logText = `${current.name} 黑金 (-5)`;
-                    rotatePlayersSpecial(pIdx); // Winner becomes loser pos
-                } else if (type === 'openBlack') {
-                    updateScore(pIdx, -8); updateScore(next.id, 4); updateScore(prev.id, 4);
-                    logText = `${current.name} 开球黑金 (-8)`;
-                    rotatePlayersSpecial(pIdx);
+        function buildDefaultRuleSets() {
+            const base = {
+                dealerOnlyActions: ['bigGold', 'gold9', 'openBlackGold', 'openFoul'],
+                actions: {
+                    normal: { roundEnd: true, rotate: true, points3: { self: 4, up: -4, down: 0 }, points2: { transfer: { self: 4, opp: -4 }, race: { self: 4, opp: 0 } } },
+                    smallGold: { roundEnd: true, rotate: true, points3: { self: 7, up: -7, down: 0 }, points2: { transfer: { self: 7, opp: -7 }, race: { self: 7, opp: 0 } } },
+                    bigGold: { roundEnd: true, rotate: false, points3: { self: 20, up: -10, down: -10 }, points2: { transfer: { self: 10, opp: -10 }, race: { self: 10, opp: 0 } } },
+                    gold9: { roundEnd: true, rotate: false, points3: { self: 8, up: -4, down: -4 }, points2: { transfer: { self: 4, opp: -4 }, race: { self: 4, opp: 0 } } },
+                    foul: { roundEnd: false, rotate: false, points3: { self: -1, up: 1, down: 0 }, points2: { transfer: { self: -1, opp: 1 }, race: { self: -1, opp: 0 } } },
+                    letFoul: { roundEnd: false, rotate: false, points3: { self: -1, up: 0, down: 1 }, points2: { transfer: { self: -1, opp: 1 }, race: { self: -1, opp: 0 } } },
+                    openFoul: { roundEnd: false, rotate: false, points3: { self: -1, up: 0, down: 1 }, points2: { transfer: { self: -1, opp: 1 }, race: { self: -1, opp: 0 } } },
+                    blackGold: { roundEnd: true, rotate: true, points3: { self: -5, up: 1, down: 4 }, points2: { transfer: { self: -5, opp: 5 }, race: { self: -5, opp: 0 } } },
+                    openBlackGold: { roundEnd: true, rotate: true, points3: { self: -8, up: 4, down: 4 }, points2: { transfer: { self: -8, opp: 8 }, race: { self: -8, opp: 0 } } }
                 }
-            } else {
-                // 2 Player Logic
-                const opp = next;
-                if(['foul'].includes(type)) {
-                    updateScore(pIdx, -rule.lose); updateScore(opp.id, rule.lose);
-                    logText = `${current.name} 犯规 (-${rule.lose})`;
-                } else {
-                    let val = rule.win;
-                    if(type === 'blackGold') val = -5;
-                    updateScore(pIdx, val); updateScore(opp.id, -val);
-                    logText = `${current.name} ${rule.label} (${val>0?'+':''}${val})`;
-                    scoreChange = val;
-                    if(val > 0) rotatePlayers(pIdx);
-                }
+            };
+            const mk = (id, name) => ({ id, name, chase: deepClone(base) });
+            return [mk('regular', '常规厅'), mk('competitive', '竞技厅'), mk('friends', '朋友局')];
+        }
+
+        function ensureRuleSetsInState() {
+            if (!state.rulesets || !Array.isArray(state.rulesets) || state.rulesets.length === 0) {
+                state.rulesets = buildDefaultRuleSets();
             }
-
-            if(type !== 'foul') state.round++;
-            state.logs.unshift({ r: state.round, t: logText, time: new Date().toLocaleTimeString('en-US', {hour12:false, hour:"2-digit", minute:"2-digit"}) });
-            
-            // Animation Trigger
-            if(scoreChange > 0) spawnChips(pIdx, scoreChange);
-
-            save();
-            renderGame();
-            renderLog();
+            if (!state.activeRuleSetId) state.activeRuleSetId = state.rulesets[0].id;
+            const ok = (state.rulesets || []).some(r => r && r.id === state.activeRuleSetId);
+            if (!ok) state.activeRuleSetId = state.rulesets[0].id;
         }
 
-        function updateScore(id, delta) {
-            const p = state.players.find(x => x.id === id);
-            // CountUp Animation Logic (Req 6)
-            const oldVal = p.score;
-            p.score += delta;
-            
-            // Find element and animate
-            setTimeout(() => {
-                const el = document.getElementById(`score-${id}`);
-                if(el) countUp(el, oldVal, p.score);
-            }, 50);
+        function getActiveRuleSet() {
+            ensureRuleSetsInState();
+            return (state.rulesets || []).find(r => r && r.id === state.activeRuleSetId) || state.rulesets[0];
         }
 
-        function rotatePlayers(winnerIdx) {
-            if(state.mode === 2 && winnerIdx === 1) {
-                // Swap array
-                [state.players[0], state.players[1]] = [state.players[1], state.players[0]];
-            } else if (state.mode === 3) {
-                // Winner stays at 0, others rotate? 
-                // Standard chase: Winner becomes Dealer (0), Prev becomes 2, Next becomes 1?
-                // Actually: Winner (New Dealer), Prev (New Loser/Tail), Next (New Middle).
-                // Simplified: Array shift so winner is index 0.
-                const winner = state.players[winnerIdx];
-                const others = state.players.filter((_,i) => i !== winnerIdx);
-                // Standard: Winner -> Dealer. Previous Dealer -> Middle? 
-                // Let's use standard: Winner, Prev, Next order.
-                const prev = state.players[(winnerIdx - 1 + 3) % 3];
-                const next = state.players[(winnerIdx + 1) % 3];
-                state.players = [winner, prev, next];
-            }
-        }
-        
-        function rotatePlayersSpecial(loserIdx) {
-            // Black Gold special rotation
-            // 3 Players: Loser (BlackGold hitter) goes to Seat 2 (Middle/Loser), Next goes to Dealer.
-            // Order: [Next, Loser, Prev]
-            if(state.mode === 3) {
-                const loser = state.players[loserIdx];
-                const next = state.players[(loserIdx+1)%3];
-                const prev = state.players[(loserIdx-1+3)%3];
-                state.players = [next, loser, prev];
-            }
+        function syncActiveRuleSetNameUI() {
+            const el = document.getElementById('activeRuleSetName');
+            if (!el) return;
+            const rs = getActiveRuleSet();
+            el.innerText = (rs && rs.name) ? rs.name : '规则';
         }
 
-        function undo() {
-            if(state.history.length === 0) return alert("无操作可撤销");
-            const prev = state.history.pop();
-            state.players = prev.players;
-            state.round = prev.round;
-            state.logs = prev.logs;
-            save();
-            renderGame();
-            renderLog();
+        function setActiveRuleSet(id) {
+            ensureRuleSetsInState();
+            const found = (state.rulesets || []).some(r => r && r.id === id);
+            if (!found) return;
+            state.activeRuleSetId = id;
+            syncActiveRuleSetNameUI();
+            saveData();
+            updateUI();
         }
 
-        function resetGame() {
-            if(confirm('确定重置本局？记录将清空。')) {
-                state.players.forEach(p => { p.score = 0; p.stats = {}; });
-                state.round = 0;
-                state.logs = [];
-                state.history = [];
-                state.timer = 0;
-                state.timerRunning = false;
-                renderGame();
-                renderLog();
-                closeModal('settingsModal');
-            }
+        window.openRuleSetModal = function() {
+            SoundFX.click();
+            ensureRuleSetsInState();
+            renderRuleSetList();
+            const modal = document.getElementById('ruleSetModal');
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('show'), 10);
         }
 
-        // --- Rendering ---
-        function renderGame() {
-            const container = document.getElementById('gameArea');
-            container.innerHTML = '';
-            document.getElementById('roundDisplay').innerText = state.round;
+        window.closeRuleSetModal = function() {
+            SoundFX.click();
+            const modal = document.getElementById('ruleSetModal');
+            modal.classList.remove('show');
+            setTimeout(() => modal.style.display = 'none', 200);
+        }
 
-            // Find Leader
-            const maxScore = Math.max(...state.players.map(p=>p.score));
-
-            state.players.forEach((p, idx) => {
-                const isDealer = idx === 0;
-                const isLoser = (state.mode === 3 && idx === 1);
-                
-                let roleBadge = isDealer ? `<span class="badge b-dealer">庄</span>` : 
-                               (idx === 1 && state.mode === 3 ? `<span class="badge b-next">下</span>` : '');
-                
-                // Color Logic
-                let scoreClass = p.score > 0 ? 'score-pos' : (p.score < 0 ? 'score-neg' : 'score-neu');
-                
-                // Buttons HTML
-                let btns = '';
-                if(state.mode === 3) {
-                     btns = `
-                        <button class="act-btn bc-big" ${!isDealer?'disabled':''} onclick="handleAction(${idx}, 'bigGold')"><div class="btn-t">大金</div><div class="btn-s">+${state.rules.bigGold.win}</div></button>
-                        <button class="act-btn bc-gold" onclick="handleAction(${idx}, 'smallGold')"><div class="btn-t">小金</div><div class="btn-s">+${state.rules.smallGold.win}</div></button>
-                        <button class="act-btn bc-9" ${!isDealer?'disabled':''} onclick="handleAction(${idx}, 'gold9')"><div class="btn-t">黄金9</div><div class="btn-s">+${state.rules.gold9.win}</div></button>
-                        <button class="act-btn bc-black" onclick="handleAction(${idx}, 'blackGold')"><div class="btn-t">黑金</div><div class="btn-s">-5</div></button>
-                        <button class="act-btn bc-norm" onclick="handleAction(${idx}, 'normal')"><div class="btn-t">普胜</div><div class="btn-s">+${state.rules.normal.win}</div></button>
-                        <button class="act-btn bc-foul" onclick="handleAction(${idx}, 'foul')"><div class="btn-t">犯规</div><div class="btn-s">-${state.rules.foul.lose}</div></button>
-                     `;
-                } else {
-                     btns = `
-                        <button class="act-btn bc-big" ${!isDealer?'disabled':''} onclick="handleAction(${idx}, 'bigGold')"><div class="btn-t">大金</div></button>
-                        <button class="act-btn bc-gold" onclick="handleAction(${idx}, 'smallGold')"><div class="btn-t">小金</div></button>
-                        <button class="act-btn bc-9" ${!isDealer?'disabled':''} onclick="handleAction(${idx}, 'gold9')"><div class="btn-t">黄金9</div></button>
-                        <button class="act-btn bc-black" onclick="handleAction(${idx}, 'blackGold')"><div class="btn-t">黑金</div></button>
-                        <button class="act-btn bc-norm" onclick="handleAction(${idx}, 'normal')"><div class="btn-t">普胜</div></button>
-                        <button class="act-btn bc-foul" onclick="handleAction(${idx}, 'foul')"><div class="btn-t">犯规</div></button>
-                     `;
-                }
-
-                const card = document.createElement('div');
-                card.className = `player-card ${isDealer ? 'is-dealer' : ''} ${isLoser ? 'is-loser' : ''}`;
-                card.innerHTML = `
-                    <div class="card-top">
-                        <div class="p-info">
-                            <div class="rank-badge">${idx + 1}</div>
-                            <div class="p-name">${p.name} ${roleBadge}</div>
-                        </div>
-                        <div class="p-score ${scoreClass}" id="score-${p.id}">${p.score}</div>
+        function renderRuleSetList() {
+            const box = document.getElementById('ruleSetList');
+            if (!box) return;
+            const rs = state.rulesets || [];
+            const activeId = state.activeRuleSetId;
+            box.innerHTML = rs.map(r => {
+                const sel = r.id === activeId;
+                return `
+                    <div class="setting-opt ${sel ? 'selected' : ''}" style="margin-bottom:8px;" onclick="selectRuleSet('${escapeAttr(r.id)}')">
+                        <div style="text-align:left; flex:1"><span style="font-weight:800; font-size:14px;">${escapeAttr(r.name || '未命名规则')}</span><div style="font-size:10px;color:#888">ID: <span style="font-family:monospace">${escapeAttr(r.id)}</span></div></div>
+                        <div style="color:var(--c-primary); font-weight:bold; ${sel ? '' : 'display:none'}">✓</div>
                     </div>
-                    <div class="btn-grid">${btns}</div>
                 `;
-                container.appendChild(card);
-            });
-
-            // Leaderboard Mini
-            const sorted = [...state.players].sort((a,b) => b.score - a.score);
-            document.getElementById('leaderboard').innerHTML = sorted.map((p,i) => 
-                `<div style="font-size:10px; color:${i===0?'var(--c-gold-s)':'var(--t-sec)'}">${i===0?'👑':''} ${p.name}: ${p.score}</div>`
-            ).join('');
+            }).join('');
         }
 
-        function renderLog() {
-            const el = document.getElementById('logsArea');
-            if(!state.logs.length) {
-                el.innerHTML = '<div style="text-align:center; opacity:0.3; margin-top:20px;">等待开局...</div>';
-                return;
-            }
-            el.innerHTML = state.logs.slice(0, 5).map((l, i) => `
-                <div class="log-line ${i===0?'latest':''}" style="opacity:${1 - i*0.15}">
-                    <span style="font-family:monospace; margin-right:4px;">${l.time}</span> R${l.r} ${l.t}
+        window.selectRuleSet = function(id) {
+            SoundFX.click();
+            setActiveRuleSet(id);
+            renderRuleSetList();
+        }
+
+        window.createRuleSet = function() {
+            SoundFX.click();
+            ensureRuleSetsInState();
+            const name = (prompt('规则名称', '新规则') || '').trim();
+            if (!name) return;
+            const base = deepClone(getActiveRuleSet());
+            const id = `rs_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+            base.id = id;
+            base.name = name;
+            state.rulesets.push(base);
+            state.activeRuleSetId = id;
+            syncActiveRuleSetNameUI();
+            saveData();
+            renderRuleSetList();
+            updateUI();
+        }
+
+        window.deleteActiveRuleSet = function() {
+            SoundFX.click();
+            ensureRuleSetsInState();
+            if ((state.rulesets || []).length <= 1) return showToast('至少保留一套规则');
+            const rs = getActiveRuleSet();
+            const ok = confirm(`删除规则「${rs.name}」？`);
+            if (!ok) return;
+            state.rulesets = (state.rulesets || []).filter(r => r && r.id !== rs.id);
+            state.activeRuleSetId = state.rulesets[0].id;
+            syncActiveRuleSetNameUI();
+            saveData();
+            renderRuleSetList();
+            updateUI();
+        }
+
+        window.openRuleEditor = function() {
+            SoundFX.click();
+            ensureRuleSetsInState();
+            ruleEditorDraft = deepClone(getActiveRuleSet());
+            renderRuleEditor();
+            const modal = document.getElementById('ruleEditorModal');
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('show'), 10);
+        }
+
+        window.closeRuleEditor = function() {
+            SoundFX.click();
+            const modal = document.getElementById('ruleEditorModal');
+            modal.classList.remove('show');
+            setTimeout(() => modal.style.display = 'none', 200);
+            ruleEditorDraft = null;
+        }
+
+        function renderRuleEditor() {
+            const titleEl = document.getElementById('ruleEditorTitle');
+            const body = document.getElementById('ruleEditorBody');
+            if (!titleEl || !body || !ruleEditorDraft) return;
+            titleEl.innerText = ruleEditorDraft.name || '未命名规则';
+
+            const meta = [
+                { k: 'normal', n: '普胜' },
+                { k: 'smallGold', n: '小金' },
+                { k: 'bigGold', n: '大金' },
+                { k: 'gold9', n: '黄金9' },
+                { k: 'blackGold', n: '黑金' },
+                { k: 'openBlackGold', n: '开球黑金' },
+                { k: 'foul', n: '犯规' },
+                { k: 'letFoul', n: '让杆' },
+                { k: 'openFoul', n: '开球犯规' }
+            ];
+
+            const dealerOnly = new Set(ruleEditorDraft?.chase?.dealerOnlyActions || []);
+            const act = ruleEditorDraft?.chase?.actions || {};
+            const get3 = (k, f) => Number(act?.[k]?.points3?.[f] ?? 0);
+            const get2 = (k, m, f) => Number(act?.[k]?.points2?.[m]?.[f] ?? 0);
+
+            body.innerHTML = `
+                <div style="margin-bottom:10px;">
+                    <div style="font-size:12px; color:#8E8E93; margin-bottom:6px;">规则名称</div>
+                    <input id="re_name" class="modal-input" style="margin:0; text-align:left;" value="${escapeAttr(ruleEditorDraft.name || '')}" />
                 </div>
-            `).join('');
-        }
-
-        // --- Animations (Req 4 & 6) ---
-        function countUp(target, start, end) {
-            const duration = 600;
-            const startTime = performance.now();
-            function update(currentTime) {
-                const elapsed = currentTime - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                // EaseOutQuart
-                const ease = 1 - Math.pow(1 - progress, 4);
-                const currentVal = Math.floor(start + (end - start) * ease);
-                target.innerText = currentVal > 0 ? `+${currentVal}` : currentVal;
-                target.className = `p-score ${currentVal > 0 ? 'score-pos' : (currentVal<0 ? 'score-neg' : 'score-neu')}`;
-                
-                if (progress < 1) requestAnimationFrame(update);
-                else {
-                    target.innerText = end > 0 ? `+${end}` : end;
-                    target.style.animation = 'popScore 0.2s ease-out';
-                    setTimeout(() => target.style.animation = '', 200);
-                }
-            }
-            requestAnimationFrame(update);
-        }
-
-        function spawnChips(targetIdx, amount) {
-            // Simplified: Chip visual just appearing
-            // In a real generic implementation, we would need getBoundingClientRect of sender and receiver.
-            // For now, just a visual queue.
-        }
-
-        function fireConfetti() {
-            const canvas = document.getElementById('confettiCanvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            
-            const particles = [];
-            for(let i=0; i<100; i++) {
-                particles.push({
-                    x: canvas.width/2, y: canvas.height/2,
-                    vx: (Math.random() - 0.5) * 20, vy: (Math.random() - 0.5) * 20,
-                    color: `hsl(${Math.random()*50 + 40}, 100%, 50%)`,
-                    life: 100
-                });
-            }
-
-            function draw() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                let active = false;
-                particles.forEach(p => {
-                    if(p.life > 0) {
-                        active = true;
-                        p.x += p.vx; p.y += p.vy; p.vy += 0.5; p.life--;
-                        ctx.fillStyle = p.color;
-                        ctx.fillRect(p.x, p.y, 6, 6);
-                    }
-                });
-                if(active) requestAnimationFrame(draw);
-            }
-            draw();
-        }
-
-        // --- Settings Logic ---
-        function openSettings() {
-            const container = document.getElementById('rulesInputs');
-            container.innerHTML = '';
-            Object.keys(state.rules).forEach(k => {
-                const r = state.rules[k];
-                if(r.win !== undefined) {
-                    container.innerHTML += `<div class="rule-row"><span>${r.label} (赢)</span><input type="number" class="rule-inp" value="${r.win}" onchange="state.rules['${k}'].win = parseInt(this.value)"></div>`;
-                }
-                if(r.lose !== undefined) {
-                    container.innerHTML += `<div class="rule-row"><span>${r.label} (输)</span><input type="number" class="rule-inp" value="${r.lose}" onchange="state.rules['${k}'].lose = parseInt(this.value)"></div>`;
-                }
-            });
-            document.getElementById('settingsModal').classList.add('show');
-        }
-
-        // --- Summary & Analytics (Req 2 & 7) ---
-        function showSummary() {
-            // 1. Overview List
-            const list = document.getElementById('summaryList');
-            const sorted = [...state.players].sort((a,b) => b.score - a.score);
-            list.innerHTML = sorted.map((p, i) => `
-                <div style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(128,128,128,0.1);">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <div style="font-size:20px;">${i===0?'🥇':(i===1?'🥈':'🥉')}</div>
-                        <div>
-                            <div style="font-weight:700; font-size:16px;">${p.name}</div>
-                            <div style="font-size:12px; color:var(--t-sec);">普胜 ${(p.stats.normal||0)} · 大金 ${(p.stats.bigGold||0)} · 犯规 ${(p.stats.foul||0)}</div>
+                <div style="font-size:12px; color:#8E8E93; margin-bottom:6px;">仅开球者可点</div>
+                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-bottom:12px;">
+                    ${meta.map(m => {
+                        const checked = dealerOnly.has(m.k) ? 'checked' : '';
+                        return `<label style="display:flex; align-items:center; gap:6px; background:#F2F2F7; padding:8px; border-radius:10px; font-size:12px; font-weight:700;">
+                            <input type="checkbox" id="re_dealer_${escapeAttr(m.k)}" ${checked} />${escapeAttr(m.n)}
+                        </label>`;
+                    }).join('')}
+                </div>
+                ${meta.map(m => {
+                    return `
+                        <div style="padding:10px; border-radius:14px; background:#F2F2F7; margin-bottom:10px;">
+                            <div style="font-weight:900; font-size:14px; margin-bottom:8px;">${escapeAttr(m.n)}</div>
+                            <div style="font-size:12px; color:#8E8E93; margin-bottom:6px;">3人局（自/上/下）</div>
+                            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-bottom:10px;">
+                                <input type="number" id="re_${escapeAttr(m.k)}_3_self" class="modal-input" style="margin:0;" value="${get3(m.k, 'self')}" />
+                                <input type="number" id="re_${escapeAttr(m.k)}_3_up" class="modal-input" style="margin:0;" value="${get3(m.k, 'up')}" />
+                                <input type="number" id="re_${escapeAttr(m.k)}_3_down" class="modal-input" style="margin:0;" value="${get3(m.k, 'down')}" />
+                            </div>
+                            <div style="font-size:12px; color:#8E8E93; margin-bottom:6px;">2人局（给付制：自/他）</div>
+                            <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:8px; margin-bottom:10px;">
+                                <input type="number" id="re_${escapeAttr(m.k)}_2_transfer_self" class="modal-input" style="margin:0;" value="${get2(m.k, 'transfer', 'self')}" />
+                                <input type="number" id="re_${escapeAttr(m.k)}_2_transfer_opp" class="modal-input" style="margin:0;" value="${get2(m.k, 'transfer', 'opp')}" />
+                            </div>
+                            <div style="font-size:12px; color:#8E8E93; margin-bottom:6px;">2人局（抢分制：自/他）</div>
+                            <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:8px;">
+                                <input type="number" id="re_${escapeAttr(m.k)}_2_race_self" class="modal-input" style="margin:0;" value="${get2(m.k, 'race', 'self')}" />
+                                <input type="number" id="re_${escapeAttr(m.k)}_2_race_opp" class="modal-input" style="margin:0;" value="${get2(m.k, 'race', 'opp')}" />
+                            </div>
                         </div>
-                    </div>
-                    <div style="font-size:24px; font-weight:800; ${p.score>0?'color:var(--c-safe)':(p.score<0?'color:var(--c-foul)':'')}">${p.score>0?'+':''}${p.score}</div>
-                </div>
-            `).join('');
-
-            // 2. Trend Chart (Req 7 - SVG)
-            generateTrendChart();
-
-            // 3. Achievements (Req 7)
-            generateAchievements();
-
-            switchTab('sum-overview');
-            document.getElementById('summaryModal').classList.add('show');
-        }
-
-        function generateTrendChart() {
-            const container = document.getElementById('trendChartContainer');
-            if(state.history.length < 2) { container.innerHTML = "<div style='text-align:center; padding:40px; color:var(--t-sec)'>数据不足</div>"; return; }
-            
-            // Reconstruct timeline
-            const rounds = state.history.map((h, i) => ({ idx: i, scores: h.players.map(p => p.score) }));
-            // Add current
-            rounds.push({ idx: rounds.length, scores: state.players.map(p => p.score) });
-
-            const w = container.offsetWidth; const h = 120;
-            const minS = Math.min(...rounds.flatMap(r => r.scores));
-            const maxS = Math.max(...rounds.flatMap(r => r.scores));
-            const range = Math.max(10, maxS - minS);
-            
-            const colors = ['#007AFF', '#FF9500', '#34C759'];
-            
-            let svg = `<svg width="100%" height="100%" viewBox="0 0 ${rounds.length-1} 100" preserveAspectRatio="none">`;
-            
-            // Grid line 0
-            const zeroY = 100 - ((0 - minS) / range * 100);
-            svg += `<line x1="0" y1="${zeroY}" x2="${rounds.length-1}" y2="${zeroY}" stroke="rgba(128,128,128,0.3)" stroke-width="0.5" stroke-dasharray="2" />`;
-
-            for(let pIdx=0; pIdx<state.players.length; pIdx++) {
-                const points = rounds.map((r, i) => {
-                    const y = 100 - ((r.scores[pIdx] - minS) / range * 100);
-                    return `${i},${y}`;
-                }).join(' ');
-                svg += `<polyline points="${points}" fill="none" stroke="${colors[pIdx]}" stroke-width="2" vector-effect="non-scaling-stroke" />`;
-            }
-            svg += `</svg>`;
-            container.innerHTML = svg;
-        }
-
-        function generateAchievements() {
-            const grid = document.getElementById('achievementsList');
-            const p = state.players;
-            
-            // Logic
-            const maxScore = p.reduce((max, c) => c.score > max.score ? c : max, p[0]);
-            const minScore = p.reduce((min, c) => c.score < min.score ? c : min, p[0]);
-            const maxFoul = p.reduce((max, c) => (c.stats.foul||0) > (max.stats.foul||0) ? c : max, p[0]);
-            const hardGuy = p.reduce((max, c) => ((c.stats.normal||0)+(c.stats.bigGold||0)) > ((max.stats.normal||0)+(max.stats.bigGold||0)) ? c : max, p[0]);
-
-            grid.innerHTML = `
-                <div class="ach-item"><span class="ach-icon">🏆</span><div class="ach-title">MVP</div><div class="ach-val">${maxScore.name}</div></div>
-                <div class="ach-item"><span class="ach-icon">🤝</span><div class="ach-title">慈善家</div><div class="ach-val">${minScore.name}</div></div>
-                <div class="ach-item"><span class="ach-icon">🤬</span><div class="ach-title">暴躁老哥</div><div class="ach-val">${maxFoul.name} (${maxFoul.stats.foul||0}次)</div></div>
-                <div class="ach-item"><span class="ach-icon">🗿</span><div class="ach-title">硬汉</div><div class="ach-val">${hardGuy.name}</div></div>
+                    `;
+                }).join('')}
             `;
         }
 
-        function switchTab(id) {
-            document.querySelectorAll('.tab-content').forEach(d => d.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
+        window.saveRuleEditor = function() {
+            SoundFX.click();
+            if (!ruleEditorDraft) return;
+            const nameEl = document.getElementById('re_name');
+            const name = (nameEl ? nameEl.value : '').trim();
+            if (!name) return showToast('规则名称不能为空');
+            ruleEditorDraft.name = name;
+
+            const meta = [
+                { k: 'normal' }, { k: 'smallGold' }, { k: 'bigGold' }, { k: 'gold9' }, { k: 'blackGold' },
+                { k: 'openBlackGold' }, { k: 'foul' }, { k: 'letFoul' }, { k: 'openFoul' }
+            ];
+
+            const dealerOnly = [];
+            meta.forEach(m => {
+                const ck = document.getElementById(`re_dealer_${m.k}`);
+                if (ck && ck.checked) dealerOnly.push(m.k);
+            });
+            if (!ruleEditorDraft.chase) ruleEditorDraft.chase = {};
+            ruleEditorDraft.chase.dealerOnlyActions = dealerOnly;
+            if (!ruleEditorDraft.chase.actions) ruleEditorDraft.chase.actions = {};
+
+            const readNum = (id) => {
+                const el = document.getElementById(id);
+                const v = el ? Number(el.value) : 0;
+                return Number.isFinite(v) ? v : 0;
+            };
+
+            meta.forEach(m => {
+                const k = m.k;
+                const prev = ruleEditorDraft.chase.actions[k] || {};
+                const keepRoundEnd = prev.roundEnd !== undefined ? prev.roundEnd : ['normal','smallGold','bigGold','gold9','blackGold','openBlackGold'].includes(k);
+                const keepRotate = prev.rotate !== undefined ? prev.rotate : ['normal','smallGold','blackGold','openBlackGold'].includes(k);
+                ruleEditorDraft.chase.actions[k] = {
+                    roundEnd: keepRoundEnd,
+                    rotate: keepRotate,
+                    points3: {
+                        self: readNum(`re_${k}_3_self`),
+                        up: readNum(`re_${k}_3_up`),
+                        down: readNum(`re_${k}_3_down`)
+                    },
+                    points2: {
+                        transfer: { self: readNum(`re_${k}_2_transfer_self`), opp: readNum(`re_${k}_2_transfer_opp`) },
+                        race: { self: readNum(`re_${k}_2_race_self`), opp: readNum(`re_${k}_2_race_opp`) }
+                    }
+                };
+            });
+
+            ensureRuleSetsInState();
+            state.rulesets = (state.rulesets || []).map(r => (r && r.id === ruleEditorDraft.id) ? deepClone(ruleEditorDraft) : r);
+            syncActiveRuleSetNameUI();
+            saveData();
+            closeRuleEditor();
+            renderRuleSetList();
+            updateUI();
+            showToast('规则已保存');
         }
 
-        // --- Helpers ---
-        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-        function toggleTimer() {
-            state.timerRunning = !state.timerRunning;
-            if(state.timerRunning) startTimer();
-            else clearInterval(timerInterval);
-            document.getElementById('gameTimer').classList.toggle('timer-paused', !state.timerRunning);
+        window.openWizard = function(force) {
+            SoundFX.click();
+            ensureRuleSetsInState();
+            const n = state.gameType === 'cn8' ? 2 : (state.mode || 3);
+            wizardDraft = {
+                force: !!force,
+                step: 0,
+                gameType: state.gameType || 'chase',
+                mode: state.gameType === 'cn8' ? 2 : (state.mode || 3),
+                scoreMode: state.scoreMode || 'transfer',
+                names: (state.players || []).slice(0, n).map((p, i) => (p && p.name) ? p.name : `玩家 ${String.fromCharCode(65 + i)}`),
+                ruleSetId: state.activeRuleSetId
+            };
+            renderWizard();
+            const modal = document.getElementById('wizardModal');
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('show'), 10);
         }
-        function startTimer() {
+
+        function closeWizard(setCompleted) {
+            SoundFX.click();
+            const modal = document.getElementById('wizardModal');
+            modal.classList.remove('show');
+            setTimeout(() => modal.style.display = 'none', 200);
+            wizardDraft = null;
+            if (setCompleted) {
+                state.hasCompletedWizard = true;
+                saveData();
+            }
+        }
+
+        window.wizardBack = function() {
+            SoundFX.click();
+            if (!wizardDraft) return;
+            if (wizardDraft.step <= 0) {
+                closeWizard(true);
+                showToast('已跳过向导（可在设置里再次打开）');
+                return;
+            }
+            wizardDraft.step -= 1;
+            renderWizard();
+        }
+
+        window.wizardNext = function() {
+            SoundFX.click();
+            if (!wizardDraft) return;
+            if (!syncWizardDraftFromUI()) return;
+            const lastStep = 4;
+            if (wizardDraft.step >= lastStep) {
+                applyWizard();
+                return;
+            }
+            wizardDraft.step += 1;
+            renderWizard();
+        }
+
+        function syncWizardDraftFromUI() {
+            if (!wizardDraft) return false;
+            if (wizardDraft.step === 0) {
+                const gt = document.querySelector('input[name="wiz_gameType"]:checked');
+                if (gt) wizardDraft.gameType = gt.value;
+                if (wizardDraft.gameType === 'cn8') {
+                    wizardDraft.mode = 2;
+                }
+                return true;
+            }
+            if (wizardDraft.step === 1) {
+                if (wizardDraft.gameType === 'cn8') return true;
+                const md = document.querySelector('input[name="wiz_mode"]:checked');
+                if (md) wizardDraft.mode = Number(md.value) || 3;
+                if (wizardDraft.mode === 2) {
+                    const sm = document.querySelector('input[name="wiz_scoreMode"]:checked');
+                    if (sm) wizardDraft.scoreMode = sm.value;
+                }
+                return true;
+            }
+            if (wizardDraft.step === 2) {
+                const list = [];
+                const cnt = wizardDraft.gameType === 'cn8' ? 2 : (wizardDraft.mode || 3);
+                for (let i = 0; i < cnt; i++) {
+                    const el = document.getElementById(`wiz_name_${i}`);
+                    const v = (el ? el.value : '').trim();
+                    if (!v) return showToast('名字不能为空'), false;
+                    list.push(v);
+                }
+                wizardDraft.names = list;
+                return true;
+            }
+            if (wizardDraft.step === 3) {
+                if (wizardDraft.gameType === 'cn8') return true;
+                const rs = document.querySelector('input[name="wiz_ruleset"]:checked');
+                if (rs) wizardDraft.ruleSetId = rs.value;
+                return true;
+            }
+            return true;
+        }
+
+        function renderWizard() {
+            const body = document.getElementById('wizardBody');
+            const hint = document.getElementById('wizardStepHint');
+            const backBtn = document.getElementById('wizardBackBtn');
+            const nextBtn = document.getElementById('wizardNextBtn');
+            if (!body || !hint || !backBtn || !nextBtn || !wizardDraft) return;
+
+            const step = wizardDraft.step;
+            const isCn8 = wizardDraft.gameType === 'cn8';
+            backBtn.innerText = step === 0 ? '跳过' : '上一步';
+            nextBtn.innerText = step === 4 ? '开始' : '下一步';
+
+            if (step === 0) {
+                hint.innerText = '第 1/5 步：选择模式';
+                body.innerHTML = `
+                    <label class="setting-opt" style="margin-bottom:8px;" onclick="document.getElementById('wiz_gt_chase').checked=true;">
+                        <div><span style="font-weight:800;font-size:14px;">追分模式</span><div style="font-size:10px;color:#888">支持规则引擎化结算</div></div>
+                        <input type="radio" id="wiz_gt_chase" name="wiz_gameType" value="chase" ${wizardDraft.gameType !== 'cn8' ? 'checked' : ''} />
+                    </label>
+                    <label class="setting-opt" onclick="document.getElementById('wiz_gt_cn8').checked=true;">
+                        <div><span style="font-weight:800;font-size:14px;">中式八球</span><div style="font-size:10px;color:#888">快速记分</div></div>
+                        <input type="radio" id="wiz_gt_cn8" name="wiz_gameType" value="cn8" ${wizardDraft.gameType === 'cn8' ? 'checked' : ''} />
+                    </label>
+                `;
+                return;
+            }
+
+            if (step === 1) {
+                hint.innerText = '第 2/5 步：选择人数与计分机制';
+                if (isCn8) {
+                    body.innerHTML = `<div style="font-size:13px; color:#8E8E93; background:#F2F2F7; padding:12px; border-radius:12px;">八球固定 2 人。</div>`;
+                    return;
+                }
+                body.innerHTML = `
+                    <div style="display:flex; gap:10px; margin-bottom:10px;">
+                        <label class="setting-opt" style="flex:1;" onclick="document.getElementById('wiz_mode_2').checked=true;">
+                            <div><span style="font-weight:800;font-size:14px;">2 人</span></div>
+                            <input type="radio" id="wiz_mode_2" name="wiz_mode" value="2" ${(wizardDraft.mode === 2) ? 'checked' : ''} />
+                        </label>
+                        <label class="setting-opt" style="flex:1;" onclick="document.getElementById('wiz_mode_3').checked=true;">
+                            <div><span style="font-weight:800;font-size:14px;">3 人</span></div>
+                            <input type="radio" id="wiz_mode_3" name="wiz_mode" value="3" ${(wizardDraft.mode !== 2) ? 'checked' : ''} />
+                        </label>
+                    </div>
+                    <div style="font-size:12px; color:#8E8E93; margin-bottom:6px;">2人局计分机制</div>
+                    <label class="setting-opt" style="margin-bottom:8px;" onclick="document.getElementById('wiz_sm_transfer').checked=true;">
+                        <div><span style="font-weight:800;font-size:14px;">给付制</span><div style="font-size:10px;color:#888">输赢双方都变化</div></div>
+                        <input type="radio" id="wiz_sm_transfer" name="wiz_scoreMode" value="transfer" ${(wizardDraft.scoreMode !== 'race') ? 'checked' : ''} />
+                    </label>
+                    <label class="setting-opt" onclick="document.getElementById('wiz_sm_race').checked=true;">
+                        <div><span style="font-weight:800;font-size:14px;">抢分制</span><div style="font-size:10px;color:#888">只给胜方加分</div></div>
+                        <input type="radio" id="wiz_sm_race" name="wiz_scoreMode" value="race" ${(wizardDraft.scoreMode === 'race') ? 'checked' : ''} />
+                    </label>
+                    <div style="font-size:11px; color:#8E8E93; margin-top:8px;">提示：选择 3 人会忽略 2 人计分机制。</div>
+                `;
+                return;
+            }
+
+            if (step === 2) {
+                hint.innerText = '第 3/5 步：输入名字';
+                const cnt = isCn8 ? 2 : (wizardDraft.mode || 3);
+                body.innerHTML = `
+                    ${Array.from({ length: cnt }).map((_, i) => {
+                        const val = wizardDraft.names?.[i] || '';
+                        return `
+                            <div style="margin-bottom:10px;">
+                                <div style="font-size:12px; color:#8E8E93; margin-bottom:6px;">玩家 ${i + 1}</div>
+                                <input id="wiz_name_${i}" class="modal-input" style="margin:0; text-align:left;" maxlength="8" value="${escapeAttr(val)}" />
+                            </div>
+                        `;
+                    }).join('')}
+                `;
+                return;
+            }
+
+            if (step === 3) {
+                hint.innerText = '第 4/5 步：选择规则';
+                if (isCn8) {
+                    body.innerHTML = `<div style="font-size:13px; color:#8E8E93; background:#F2F2F7; padding:12px; border-radius:12px;">八球模式无需选择追分规则。</div>`;
+                    return;
+                }
+                const list = state.rulesets || [];
+                body.innerHTML = list.map(r => {
+                    const sel = r.id === wizardDraft.ruleSetId;
+                    return `
+                        <label class="setting-opt" style="margin-bottom:8px;" onclick="document.getElementById('wiz_rs_${escapeAttr(r.id)}').checked=true;">
+                            <div style="text-align:left; flex:1"><span style="font-weight:800;font-size:14px;">${escapeAttr(r.name || '未命名规则')}</span></div>
+                            <input type="radio" id="wiz_rs_${escapeAttr(r.id)}" name="wiz_ruleset" value="${escapeAttr(r.id)}" ${sel ? 'checked' : ''} />
+                        </label>
+                    `;
+                }).join('');
+                return;
+            }
+
+            hint.innerText = '第 5/5 步：确认并开始';
+            const cnt = isCn8 ? 2 : (wizardDraft.mode || 3);
+            const rs = isCn8 ? null : (state.rulesets || []).find(r => r.id === wizardDraft.ruleSetId);
+            body.innerHTML = `
+                <div style="background:#F2F2F7; padding:12px; border-radius:12px; font-size:13px; line-height:1.5;">
+                    <div style="font-weight:900; margin-bottom:6px;">本次开局配置</div>
+                    <div>模式：<b>${isCn8 ? '中式八球' : '追分'}</b></div>
+                    <div>人数：<b>${cnt}</b></div>
+                    ${(!isCn8 && cnt === 2) ? `<div>2人机制：<b>${wizardDraft.scoreMode === 'race' ? '抢分制' : '给付制'}</b></div>` : ''}
+                    ${(!isCn8 && rs) ? `<div>规则：<b>${escapeAttr(rs.name)}</b></div>` : ''}
+                    <div style="margin-top:8px; color:#8E8E93; font-size:11px;">开始会重置当前这一局的回合/分数/日志。</div>
+                </div>
+            `;
+        }
+
+        function applyWizard() {
+            if (!wizardDraft) return;
+            const ok = confirm('确认开始新一局？');
+            if (!ok) return;
+
             clearInterval(timerInterval);
+            saveCurrentSessionToStore();
+
+            state.gameType = wizardDraft.gameType;
+            if (wizardDraft.gameType === 'cn8') {
+                state.mode = 2;
+                loadSessionFromStore(getSessionKey('cn8', 2));
+            } else {
+                state.mode = (wizardDraft.mode === 2) ? 2 : 3;
+                state.lastChaseMode = state.mode;
+                state.scoreMode = (state.mode === 2) ? (wizardDraft.scoreMode === 'race' ? 'race' : 'transfer') : (state.scoreMode || 'transfer');
+                loadSessionFromStore(getSessionKey('chase', state.mode));
+            }
+
+            if (wizardDraft.ruleSetId) state.activeRuleSetId = wizardDraft.ruleSetId;
+            ensureRuleSetsInState();
+            syncActiveRuleSetNameUI();
+
+            const cnt = (state.gameType === 'cn8') ? 2 : (state.mode || 3);
+            if (!state.namePool) state.namePool = [];
+            for (let i = 0; i < cnt; i++) {
+                const nm = (wizardDraft.names?.[i] || '').trim();
+                if (nm) {
+                    state.namePool[i] = nm;
+                    if (state.players?.[i]) state.players[i].name = nm;
+                }
+            }
+
+            state.round = 0;
+            state.history = [];
+            state.logs = [];
+            state.timeline = [];
+            state.timerSeconds = 0;
+            state.timerRunning = false;
+            (state.players || []).forEach(p => { p.score = 0; p.stats = emptyStats(); });
+            lastLeaderId = null;
+
+            applyTimerFromState();
+            saveCurrentSessionToStore();
+            saveData();
+            updateUI();
+            closeWizard(true);
+            showToast('已开局');
+        }
+
+        // --- 计时器逻辑 ---
+        function toggleTimer() {
+            SoundFX.click();
+            state.timerRunning = !state.timerRunning;
+            if (state.timerRunning) {
+                startTimerInterval();
+            } else {
+                clearInterval(timerInterval);
+                updateTimerBtnUI(false);
+            }
+            saveData();
+        }
+
+        function startTimerInterval() {
+            updateTimerBtnUI(true);
+            if(timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(() => {
-                state.timer++;
+                state.timerSeconds++;
                 updateTimerDisplay();
+                if(state.timerSeconds % 10 === 0) saveData(); 
             }, 1000);
         }
+
+        function updateTimerBtnUI(isRunning) {
+            const btn = document.getElementById('timerControlBtn');
+            const display = document.getElementById('gameTimer');
+            if (isRunning) {
+                btn.innerHTML = '<svg width="24" height="24" fill="#FF3B30" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>'; // Pause
+                display.classList.remove('timer-paused');
+                display.style.background = 'var(--bg-muted)';
+            } else {
+                btn.innerHTML = '<svg width="24" height="24" fill="#34C759" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>'; // Play
+                display.classList.add('timer-paused');
+            }
+            saveData();
+        }
+
         function updateTimerDisplay() {
-            const h = Math.floor(state.timer / 3600).toString().padStart(2,'0');
-            const m = Math.floor((state.timer % 3600) / 60).toString().padStart(2,'0');
-            const s = (state.timer % 60).toString().padStart(2,'0');
+            const total = state.timerSeconds || 0;
+            const h = Math.floor(total / 3600).toString().padStart(2, '0');
+            const m = Math.floor((total % 3600) / 60).toString().padStart(2, '0');
+            const s = (total % 60).toString().padStart(2, '0');
             document.getElementById('gameTimer').innerText = `${h}:${m}:${s}`;
         }
 
-        // Start
-        init();
+        const actionNames = {
+            'normal': '普胜', 'smallGold': '小金', 'bigGold': '大金', 'gold9': '黄金9',
+            'blackGold': '黑金', 'openBlackGold': '开球黑金', 'foul': '犯规', 'letFoul': '让杆', 'openFoul': '开球犯规'
+        };
+
+        function getRuleAction(type) {
+            const rs = getActiveRuleSet();
+            const a = rs?.chase?.actions?.[type];
+            if (a) return a;
+            const fallback = buildDefaultRuleSets()?.[0]?.chase?.actions?.[type];
+            return fallback || { roundEnd: false, rotate: false, points3: { self: 0, up: 0, down: 0 }, points2: { transfer: { self: 0, opp: 0 }, race: { self: 0, opp: 0 } } };
+        }
+
+        function isDealerOnlyAction(type) {
+            const rs = getActiveRuleSet();
+            const list = rs?.chase?.dealerOnlyActions;
+            return Array.isArray(list) ? list.includes(type) : false;
+        }
+
+        function getRuleVector(total, type) {
+            const a = getRuleAction(type);
+            if (total === 3) {
+                const v = a?.points3 || {};
+                return { self: Number(v.self || 0), up: Number(v.up || 0), down: Number(v.down || 0) };
+            }
+            const mode = state.scoreMode === 'race' ? 'race' : 'transfer';
+            const v = a?.points2?.[mode] || {};
+            return { self: Number(v.self || 0), opp: Number(v.opp || 0) };
+        }
+
+        function getRuleTargets(total, type) {
+            const vec = getRuleVector(total, type);
+            const targets = [];
+            if (total === 3) {
+                if (vec.self) targets.push({ t: 'self', v: vec.self });
+                if (vec.up) targets.push({ t: 'up', v: vec.up });
+                if (vec.down) targets.push({ t: 'down', v: vec.down });
+                return targets;
+            }
+            if (vec.self) targets.push({ t: 'self', v: vec.self });
+            if (vec.opp) targets.push({ t: 'opp', v: vec.opp });
+            return targets;
+        }
+
+        function resolveTargetIndex(total, idx, t) {
+            if (total === 3) {
+                if (t === 'self') return idx;
+                if (t === 'up') return (idx - 1 + total) % total;
+                if (t === 'down') return (idx + 1) % total;
+                return idx;
+            }
+            if (t === 'self') return idx;
+            if (t === 'opp') return (idx + 1) % 2;
+            return idx;
+        }
+
+        function computeRuleChanges(idx, type) {
+            const total = state.mode;
+            const targets = getRuleTargets(total, type);
+            const changes = targets.map(x => ({ i: resolveTargetIndex(total, idx, x.t), v: x.v, t: x.t }));
+            const byI = new Map();
+            changes.forEach(c => byI.set(c.i, (byI.get(c.i) || 0) + c.v));
+            return Array.from(byI.entries()).map(([i, v]) => ({ i, v }));
+        }
+
+        function buildRuleDiffText(idx, type) {
+            const p = state.players;
+            const changes = computeRuleChanges(idx, type);
+            return changes.map(c => `${p[c.i].name} ${c.v > 0 ? '+' : ''}${c.v}`).join('，');
+        }
+
+        function buildRuleHintText(type) {
+            const total = state.mode;
+            const targets = getRuleTargets(total, type);
+            const mapToken = (t) => {
+                if (t === 'self') return '自';
+                if (t === 'up') return '上';
+                if (t === 'down') return '下';
+                if (t === 'opp') return '他';
+                return '';
+            };
+            const parts = targets.filter(x => x.v !== 0).map(x => `${mapToken(x.t)}${x.v > 0 ? '+' : ''}${x.v}`);
+            return parts.join(' ');
+        }
+
+        window.handleAction = function(idx, type) {
+            SoundFX.click();
+            if (state.gameType === 'chase' && isDealerOnlyAction(type) && idx !== 0) {
+                return showToast('仅开球者可操作');
+            }
+            const pName = state.players[idx].name;
+            const aName = actionNames[type];
+            const diffText = buildRuleDiffText(idx, type);
+            pendingAction = { idx, type, pName, aName, diffText };
+            
+            document.getElementById('confirmDesc').innerText = `确认 ${pName} ${aName}？`;
+            document.getElementById('confirmDetail').innerText = diffText;
+            
+            const btn = document.getElementById('realConfirmBtn');
+            btn.disabled = true;
+            btn.innerText = "确定 (0.5s)";
+            btn.style.opacity = 0.6;
+            
+            const modal = document.getElementById('confirmModal');
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('show'), 10);
+
+            let cd = 5;
+            const cdTimer = setInterval(() => {
+                cd--;
+                if(cd <= 0) {
+                    clearInterval(cdTimer);
+                    btn.disabled = false;
+                    btn.innerText = "确定";
+                    btn.style.opacity = 1;
+                } else {
+                    btn.innerText = `确定 (0.${cd}s)`;
+                }
+            }, 100);
+        };
+
+        function calculateDiffText(idx, type) {
+            return buildRuleDiffText(idx, type);
+        }
+
+        window.closeConfirmModal = function() {
+            document.getElementById('confirmModal').classList.remove('show');
+            setTimeout(() => document.getElementById('confirmModal').style.display = 'none', 200);
+            pendingAction = null;
+        };
+
+        function confirmPendingAction() {
+            if (!pendingAction) return;
+            const { idx, type, pName, aName, diffText } = pendingAction;
+            closeConfirmModal();
+
+            if(['foul','letFoul','openFoul','blackGold','openBlackGold'].includes(type)) SoundFX.foul();
+            else SoundFX.win();
+
+            const psBefore = state.players;
+            const prevScoreById = new Map((psBefore || []).map(p => [p.id, p.score]));
+
+            if (state.history.length > 20) state.history.shift();
+            state.history.push(JSON.parse(JSON.stringify({
+                mode: state.mode, round: state.round, scoreMode: state.scoreMode,
+                players: state.players, logs: state.logs, timerSeconds: state.timerSeconds, timerRunning: state.timerRunning,
+                timeline: state.timeline
+            })));
+
+            const aCfg = getRuleAction(type);
+            const isGameEnd = !!aCfg.roundEnd;
+            if (isGameEnd) state.round++;
+
+            if(!state.timerRunning) toggleTimer();
+
+            const total = state.mode;
+            let ps = state.players;
+            const idxToIdBeforeRotate = (ps || []).map(pp => pp.id);
+
+            if (!ps[idx].stats) ps[idx].stats = emptyStats();
+            
+            if (type === 'normal') ps[idx].stats.normal++;
+            else if (type === 'smallGold') ps[idx].stats.smallGold++;
+            else if (type === 'bigGold') ps[idx].stats.bigGold++;
+            else if (type === 'gold9') ps[idx].stats.gold9++;
+            else if (type === 'blackGold' || type === 'openBlackGold') ps[idx].stats.blackGold++;
+            else if (['foul', 'letFoul', 'openFoul'].includes(type)) ps[idx].stats.fouls++;
+
+            const changes = computeRuleChanges(idx, type);
+            changes.forEach(c => {
+                if (!ps[c.i]) return;
+                ps[c.i].score += c.v;
+            });
+
+            if (!state.logs) state.logs = [];
+            state.logs.unshift({
+                round: isGameEnd ? state.round : '-',
+                text: `${pName} ${aName}`,
+                detail: diffText,
+                time: new Date().toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'})
+            });
+            if (state.logs.length > 50) state.logs.pop();
+
+            if (aCfg.rotate) rotateWinner(idx, type);
+
+            if (!state.timeline) state.timeline = [];
+            try {
+                const actorId = idxToIdBeforeRotate[idx];
+                const deltas = changes.map(c => ({ playerId: idxToIdBeforeRotate[c.i], delta: c.v }));
+                state.timeline.push({
+                    ts: Date.now(),
+                    time: new Date().toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'}),
+                    round: state.round,
+                    roundEnd: isGameEnd,
+                    type,
+                    actionName: aName,
+                    actorId,
+                    orderBefore: idxToIdBeforeRotate,
+                    orderAfter: (state.players || []).map(pp => pp.id),
+                    changes: deltas,
+                    scores: state.players.map(p => ({ playerId: p.id, score: p.score }))
+                });
+                if (state.timeline.length > 400) state.timeline.shift();
+
+                uiEffects = { type, prevScoreById, deltas, winClass: type };
+            } catch(e) {}
+            
+            saveData();
+            updateUI();
+        };
+
+        function animateScoreNumber(el, from, to) {
+            if (!el) return;
+            if (!Number.isFinite(from) || !Number.isFinite(to)) return;
+            const start = performance.now();
+            const dur = 260;
+            const step = (t) => {
+                const p = Math.min(1, (t - start) / dur);
+                const v = Math.round(from + (to - from) * p);
+                const sig = v > 0 ? '+' : '';
+                el.textContent = sig + String(v);
+                if (p < 1) requestAnimationFrame(step);
+                else {
+                    const sig2 = to > 0 ? '+' : '';
+                    el.textContent = sig2 + String(to);
+                }
+            };
+            requestAnimationFrame(step);
+        }
+
+        function bumpScore(el) {
+            if (!el) return;
+            el.classList.remove('score-bump');
+            void el.offsetWidth;
+            el.classList.add('score-bump');
+        }
+
+        function getUniqueLeaderId(players) {
+            const list = players || [];
+            if (list.length === 0) return null;
+            const scores = list.map(p => Number(p.score || 0));
+            const max = Math.max(...scores);
+            const idxs = scores.map((v, i) => v === max ? i : -1).filter(i => i >= 0);
+            if (idxs.length !== 1) return null;
+            return list[idxs[0]].id;
+        }
+
+        function spawnCoins(count) {
+            const n = Math.max(6, Math.min(28, Number(count || 16)));
+            const w = window.innerWidth;
+            for (let i = 0; i < n; i++) {
+                const el = document.createElement('div');
+                el.className = 'coin';
+                el.style.left = Math.round((w * 0.2) + Math.random() * (w * 0.6)) + 'px';
+                el.style.top = Math.round(20 + Math.random() * 30) + 'px';
+                el.style.animationDelay = Math.round(Math.random() * 180) + 'ms';
+                document.body.appendChild(el);
+                setTimeout(() => { try { el.remove(); } catch(e) {} }, 1200);
+            }
+        }
+
+        function getCenter(el) {
+            const r = el.getBoundingClientRect();
+            return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        }
+
+        function spawnConfettiBurst(winClass) {
+            const palette = {
+                bigGold: ['#FFB347', '#FF6B00', '#FFD2A0'],
+                smallGold: ['#FFE5A0', '#FFC94A', '#FFB703'],
+                gold9: ['#FFD60A', '#FFC300', '#F4C430']
+            }[winClass] || ['#FFD60A', '#FFC94A'];
+            const centerX = window.innerWidth * 0.5;
+            const centerY = window.innerHeight * 0.18;
+            const burst = (spread, life) => {
+                const n = 18;
+                for (let i = 0; i < n; i++) {
+                    const el = document.createElement('div');
+                    el.className = 'confetti-star';
+                    const angle = (Math.PI * 2 * i / n) + Math.random() * 0.6;
+                    const radius = spread * (0.6 + Math.random() * 0.7);
+                    const dx = Math.cos(angle) * radius;
+                    const dy = Math.sin(angle) * radius;
+                    el.style.left = `${centerX}px`;
+                    el.style.top = `${centerY}px`;
+                    el.style.setProperty('--dx', `${dx}px`);
+                    el.style.setProperty('--dy', `${dy}px`);
+                    el.style.background = palette[i % palette.length];
+                    document.body.appendChild(el);
+                    el.animate([
+                        { opacity: 1, transform: 'translate(-50%, -50%) scale(0.25) rotate(0deg)' },
+                        { opacity: 1, offset: 0.6 },
+                        { opacity: 0, transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.8) rotate(340deg)` }
+                    ], { duration: life, easing: 'cubic-bezier(.18,.9,.3,1)', fill: 'forwards' }).onfinish = () => { try { el.remove(); } catch(e) {} };
+                }
+                const ring = document.createElement('div');
+                ring.className = 'confetti-ring';
+                ring.style.left = `${centerX}px`;
+                ring.style.top = `${centerY}px`;
+                document.body.appendChild(ring);
+                ring.animate([
+                    { opacity: 0.7, transform: 'translate(-50%, -50%) scale(1)' },
+                    { opacity: 0.2, offset: 0.8 },
+                    { opacity: 0, transform: 'translate(-50%, -50%) scale(18)' }
+                ], { duration: life * 1.2, easing: 'cubic-bezier(.18,.9,.3,1)', fill: 'forwards' }).onfinish = () => { try { ring.remove(); } catch(e) {} };
+            };
+            burst(110, 950);
+            setTimeout(() => burst(190, 1150), 180);
+        }
+
+        function spawnFlyPoint(fromEl, toEl, text) {
+            if (!fromEl || !toEl) return;
+            const a = getCenter(fromEl);
+            const b = getCenter(toEl);
+            const node = document.createElement('div');
+            node.className = 'fly-point';
+            node.textContent = text;
+            node.style.left = a.x + 'px';
+            node.style.top = a.y + 'px';
+            document.body.appendChild(node);
+            const dx = b.x - a.x;
+            const dy = b.y - a.y;
+            const anim = node.animate([
+                { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+                { transform: `translate(${dx}px, ${dy}px) translate(-50%, -50%) scale(0.9)`, opacity: 0.05 }
+            ], { duration: 520, easing: 'cubic-bezier(.2,.8,.2,1)' });
+            anim.onfinish = () => { try { node.remove(); } catch(e) {} };
+        }
+
+        function applyUIEffectsIfAny() {
+            const eff = uiEffects;
+            if (!eff) return;
+            uiEffects = null;
+            const prev = eff.prevScoreById || new Map();
+            const deltas = eff.deltas || [];
+
+            const neg = deltas.filter(d => d.delta < 0);
+            const pos = deltas.filter(d => d.delta > 0);
+
+            const negEls = neg.map(d => ({ d, el: document.getElementById(`score_${d.playerId}`) })).filter(x => x.el);
+            const posEls = pos.map(d => ({ d, el: document.getElementById(`score_${d.playerId}`) })).filter(x => x.el);
+
+            posEls.forEach((x, i) => {
+                const src = negEls[i % Math.max(1, negEls.length)];
+                if (!src) return;
+                spawnFlyPoint(src.el, x.el, `+${Math.abs(x.d.delta)}`);
+            });
+
+            (deltas || []).forEach(d => {
+                const el = document.getElementById(`score_${d.playerId}`);
+                if (!el) return;
+                const to = Number(el.getAttribute('data-score'));
+                const fromMaybe = prev.get(d.playerId);
+                const from = Number.isFinite(fromMaybe) ? fromMaybe : (Number.isFinite(to) ? (to - Number(d.delta || 0)) : 0);
+                animateScoreNumber(el, from, to);
+                bumpScore(el);
+            });
+
+            if (eff.type === 'bigGold') spawnCoins(18);
+            if (['bigGold','smallGold','gold9'].includes(eff.winClass)) spawnConfettiBurst(eff.winClass);
+        }
+
+        function rotateWinner(winnerIdx, type) {
+            if (state.mode === 3) {
+                if (type === 'blackGold' || type === 'openBlackGold') {
+                    // 修改：3人局黑金特殊换位
+                    // 规则：黑金者(Current)成为输家(位置1)，下家(Next)成为赢家/庄(位置0)，上家(Prev)成为末家(位置2)
+                    // 顺序变成：[Next, Current, Prev]
+                    const total = 3;
+                    const p = state.players;
+                    
+                    const current = p[winnerIdx]; 
+                    const next = p[(winnerIdx + 1) % total];
+                    const prev = p[(winnerIdx - 1 + total) % total];
+                    
+                    state.players = [next, current, prev];
+                } else {
+                    const total = 3;
+                    const p = state.players;
+                    const winner = p[winnerIdx];
+                    const prev = p[(winnerIdx - 1 + total) % total];
+                    const next = p[(winnerIdx + 1) % total];
+                    state.players = [winner, prev, next];
+                }
+            } else if (state.mode === 2) {
+                if (type === 'blackGold' || type === 'openBlackGold') {
+                    if (winnerIdx === 0) [state.players[0], state.players[1]] = [state.players[1], state.players[0]];
+                } else {
+                    if (winnerIdx !== 0) [state.players[0], state.players[1]] = [state.players[1], state.players[0]];
+                }
+            }
+        }
+
+        window.openLogModal = function() {
+            SoundFX.click();
+            const el = document.getElementById('logContent');
+            if (!state.logs || state.logs.length === 0) {
+                el.innerHTML = '<div style="color:#ccc; font-size:13px; text-align:center; padding:20px;">暂无记录</div>';
+            } else {
+                el.innerHTML = state.logs.map(l => `
+                    <div class="log-item" style="border-bottom:1px solid #eee; padding:8px 0;">
+                        <div style="font-size:14px; color:#333;"><span style="color:#aaa; font-family:monospace; margin-right:4px;">R${l.round}</span> ${l.text} <span style="float:right; color:#ccc; font-size:11px;">${l.time}</span></div>
+                        <div style="font-size:11px; color:#888; margin-top:2px;">${l.detail}</div>
+                    </div>
+                `).join('');
+            }
+            const modal = document.getElementById('logModal');
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('show'), 10);
+        };
+        window.closeLogModal = function() {
+            SoundFX.click();
+            const modal = document.getElementById('logModal');
+            modal.classList.remove('show');
+            setTimeout(() => modal.style.display = 'none', 200);
+        };
+
+        window.undo = function() {
+            SoundFX.click();
+            if (!state.history || state.history.length === 0) return showToast("无操作可撤销");
+            const previous = state.history.pop();
+            state.mode = previous.mode;
+            state.round = previous.round;
+            state.scoreMode = previous.scoreMode;
+            state.players = previous.players;
+            state.logs = previous.logs || [];
+            state.timerSeconds = previous.timerSeconds || 0;
+            if (previous.timerRunning !== undefined) state.timerRunning = previous.timerRunning;
+            state.timeline = previous.timeline || [];
+            applyTimerFromState();
+            saveData();
+            updateUI();
+            showToast("↺ 已撤销一步"); 
+        };
+
+        window.openResetModal = function() {
+            SoundFX.click();
+            const desc = document.getElementById('resetDesc');
+            if (desc) {
+                const key = getSessionKey(state.gameType, state.mode);
+                const modeText = state.gameType === 'cn8' ? '中式八球' : `追分 ${state.mode}人`;
+                desc.innerHTML = `当前：${modeText}<br>仅当前模式：<span style="font-family:monospace;">${key}</span>`;
+            }
+            const modal = document.getElementById('resetModal');
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('show'), 10);
+        };
+
+        window.closeResetModal = function() {
+            const modal = document.getElementById('resetModal');
+            modal.classList.remove('show');
+            setTimeout(() => modal.style.display = 'none', 200);
+        };
+
+        window.resetCurrentSession = function() {
+            SoundFX.click();
+            closeResetModal();
+            state.round = 0;
+            state.history = [];
+            state.logs = [];
+            state.timeline = [];
+            state.timerSeconds = 0;
+            state.timerRunning = false;
+            clearInterval(timerInterval);
+            updateTimerBtnUI(false);
+            updateTimerDisplay();
+            (state.players || []).forEach(p => { p.score = 0; p.stats = emptyStats(); });
+            lastLeaderId = null;
+            saveCurrentSessionToStore();
+            saveData();
+            updateUI();
+            showToast('已新开一局');
+        };
+
+        window.clearAllData = function() {
+            SoundFX.click();
+            closeResetModal();
+            localStorage.removeItem(DB_KEY);
+            location.reload();
+        };
+
+        window.switchMode = function(n) {
+            SoundFX.click();
+            if (state.gameType !== 'chase') return;
+            if (state.mode === n) return;
+            saveCurrentSessionToStore();
+            clearInterval(timerInterval);
+            state.lastChaseMode = n;
+            loadSessionFromStore(getSessionKey('chase', n));
+            applyTimerFromState();
+            saveData();
+            updateUI();
+        };
+
+        window.saveName = function() { 
+            const val = document.getElementById('nameInput').value.trim(); 
+            if(val) {
+                state.players[currentEditIndex].name = val;
+                if (!state.namePool) state.namePool = ['玩家 A', '玩家 B', '玩家 C'];
+                state.namePool[currentEditIndex] = val;
+                if (!state.recentNames) state.recentNames = [];
+                state.recentNames = uniqueNames([val].concat(state.recentNames)).slice(0, 10);
+                saveCurrentSessionToStore();
+                saveData();
+                updateUI();
+            } 
+            closeNameModal(); 
+        };
+        window.setScoreMode = function(mode) { SoundFX.click(); state.scoreMode = mode; saveData(); updateUI(); };
+
+        window.setGameType = function(type) {
+            SoundFX.click();
+            if (state.gameType === type) return;
+            clearInterval(timerInterval);
+
+            saveCurrentSessionToStore();
+            state.gameType = type;
+            if (type === 'cn8') {
+                loadSessionFromStore(getSessionKey('cn8', 2));
+            } else {
+                const n = state.lastChaseMode || 3;
+                loadSessionFromStore(getSessionKey('chase', n));
+            }
+            applyTimerFromState();
+            saveData();
+            updateUI();
+        };
+
+        function syncSettingsUI() {
+            const chaseSelected = state.gameType !== 'cn8';
+            const cn8Selected = state.gameType === 'cn8';
+            const optChase = document.getElementById('optChase');
+            const optCn8 = document.getElementById('optCn8');
+
+            try { syncActiveRuleSetNameUI(); } catch(e) {}
+
+            optChase.classList.toggle('selected', chaseSelected);
+            optChase.lastElementChild.style.display = chaseSelected ? 'block' : 'none';
+            optCn8.classList.toggle('selected', cn8Selected);
+            optCn8.lastElementChild.style.display = cn8Selected ? 'block' : 'none';
+
+            const playerCountSection = document.getElementById('playerCountSection');
+            const twoPlayerScoreModeSection = document.getElementById('twoPlayerScoreModeSection');
+            const showChaseOptions = state.gameType === 'chase';
+            playerCountSection.style.display = showChaseOptions ? 'block' : 'none';
+
+            const showTwoPlayerScoreMode = state.gameType === 'chase' && state.mode === 2;
+            twoPlayerScoreModeSection.style.display = showTwoPlayerScoreMode ? 'block' : 'none';
+
+            const mode2Btn = document.getElementById('mode2');
+            const mode3Btn = document.getElementById('mode3');
+            if (mode2Btn && mode3Btn) {
+                mode2Btn.className = state.mode === 2 ? 'toggle-btn active' : 'toggle-btn';
+                mode2Btn.style.background = state.mode === 2 ? '#FFF' : 'transparent';
+                mode3Btn.className = state.mode === 3 ? 'toggle-btn active' : 'toggle-btn';
+                mode3Btn.style.background = state.mode === 3 ? '#FFF' : 'transparent';
+            }
+
+            const optTransfer = document.getElementById('optTransfer');
+            const optRace = document.getElementById('optRace');
+            if (optTransfer && optRace) {
+                const isTransfer = state.scoreMode === 'transfer';
+                optTransfer.classList.toggle('selected', isTransfer);
+                optTransfer.lastElementChild.style.display = isTransfer ? 'block' : 'none';
+                optRace.classList.toggle('selected', !isTransfer);
+                optRace.lastElementChild.style.display = !isTransfer ? 'block' : 'none';
+            }
+        }
+
+        window.handleCn8Point = function(idx) {
+            SoundFX.click();
+            if (state.gameType !== 'cn8') return;
+
+            if (state.history.length > 20) state.history.shift();
+            state.history.push(JSON.parse(JSON.stringify({
+                mode: state.mode, round: state.round, scoreMode: state.scoreMode,
+                players: state.players, logs: state.logs, timerSeconds: state.timerSeconds
+            })));
+
+            if(!state.timerRunning) toggleTimer();
+
+            state.round = (state.round || 0) + 1;
+            state.players[idx].score += 1;
+            if (!state.logs) state.logs = [];
+            state.logs.unshift({
+                round: '-',
+                text: `${state.players[idx].name} +1`,
+                detail: `${state.players[idx].name} +1`,
+                time: new Date().toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'})
+            });
+            if (state.logs.length > 50) state.logs.pop();
+
+            saveData();
+            updateUI();
+        };
+
+        function updateUI() {
+            const roundLabel = state.gameType === 'cn8' ? '回合' : '回合';
+            const roundValue = state.gameType === 'cn8' ? (state.round || 0) : state.round;
+            document.getElementById('roundBigDisplay').innerHTML = `${roundValue}<small>${roundLabel}</small>`;
+            
+            const logBox = document.getElementById('logsArea');
+            const recentLogs = state.logs ? state.logs.slice(0, 5) : [];
+            if (recentLogs.length === 0) {
+                logBox.innerHTML = '<div style="opacity:0.3; text-align:center; margin-top:10px;">等待开局...</div>';
+            } else {
+                logBox.innerHTML = recentLogs.map((l, idx) => `
+                    <div class="log-line ${idx === 0 ? 'latest' : ''}" style="opacity:${1 - idx*0.15}">
+                        <span style="font-family:monospace; margin-right:2px; font-size:10px;">${l.time}</span> ${l.text}
+                    </div>
+                `).join('');
+            }
+
+            const lbBox = document.getElementById('leaderboardArea');
+            const sortedP = [...state.players].sort((a,b) => b.score - a.score);
+            const medals = ['🥇','🥈','🥉'];
+            lbBox.innerHTML = sortedP.map((p, i) => {
+                if(i > 2) return '';
+                return `
+                <div class="lb-row">
+                    <div class="lb-rank">${medals[i]||(i+1)}</div>
+                    <div class="lb-name">${p.name}</div>
+                    <div class="lb-score">${p.score}</div>
+                </div>`;
+            }).join('');
+
+            const box = document.getElementById('container');
+            box.innerHTML = '';
+            if (state.gameType === 'cn8') {
+                state.players.slice(0, 2).forEach((p, i) => {
+                    const el = document.createElement('div');
+                    el.className = `player-card tap-add cn8-card ${i === 0 ? 'cn8-red' : 'cn8-blue'}`;
+                    el.setAttribute('data-player-id', String(p.id));
+                    el.setAttribute('onclick', `handleCn8Point(${i})`);
+                    el.innerHTML = `
+                        <div class="cn8-layout">
+                            <div class="rank-num cn8-rank">${i + 1}</div>
+                            <div class="cn8-name" onclick="event.stopPropagation(); openNameModal(${i})">
+                                <span style="font-size:18px; font-weight:900; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p.name}</span>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(255,255,255,0.75)"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
+                            </div>
+                            <div class="cn8-score" id="score_${p.id}" data-score="${p.score}">${p.score}</div>
+                        </div>
+                    `;
+                    box.appendChild(el);
+                    if (i === 0) {
+                        const vs = document.createElement('div');
+                        vs.className = 'vs-divider';
+                        vs.innerText = 'VS';
+                        box.appendChild(vs);
+                    }
+                });
+            } else {
+                const hintBig = buildRuleHintText('bigGold');
+                const hintSmall = buildRuleHintText('smallGold');
+                const hintG9 = buildRuleHintText('gold9');
+                const hintBlack = buildRuleHintText('blackGold');
+                const hintOpenBlack = buildRuleHintText('openBlackGold');
+                const hintNormal = buildRuleHintText('normal');
+                const hintFoul = buildRuleHintText('foul');
+                const hintLet = buildRuleHintText('letFoul');
+                const hintOpenFoul = buildRuleHintText('openFoul');
+
+                const scoresAll = (state.players || []).map(x => x.score || 0);
+                const maxScore = scoresAll.length ? Math.max(...scoresAll) : 0;
+                const minScore = scoresAll.length ? Math.min(...scoresAll) : 0;
+                const maxCount = scoresAll.filter(v => v === maxScore).length;
+                const minCount = scoresAll.filter(v => v === minScore).length;
+
+                state.players.forEach((p, i) => {
+                    let sc = p.score > 0 ? 'score-p' : (p.score < 0 ? 'score-n' : 'score-z');
+                    let sig = p.score > 0 ? '+' : '';
+                    
+                    const isDealer = (i === 0);
+                    const isSecond = (i === 1);
+                    
+                    let cardClass = 'player-card';
+                    let roleBadges = '';
+                    
+                    if (isDealer) {
+                        cardClass += ' is-dealer';
+                        roleBadges += '<span class="role-badge rb-dealer">庄</span>';
+                    } else if (isSecond) {
+                        cardClass += ' is-loser';
+                    }
+
+                    if (state.mode === 3) {
+                        if (i === 1) roleBadges += '<span class="role-badge rb-pos">下</span>';
+                        if (i === 2) roleBadges += '<span class="role-badge rb-pos">上</span>';
+                    } else if (state.mode === 2) {
+                        if (i === 1) roleBadges += '<span class="role-badge rb-pos">客</span>';
+                    }
+
+                    if (maxCount === 1 && p.score === maxScore) roleBadges += '<span class="role-badge rb-lead">领先</span>';
+                    if (minCount === 1 && p.score === minScore) roleBadges += '<span class="role-badge rb-low">暂负</span>';
+
+                    const dBig = (isDealerOnlyAction('bigGold') && !isDealer) ? 'disabled' : '';
+                    const dG9 = (isDealerOnlyAction('gold9') && !isDealer) ? 'disabled' : '';
+                    const dOpenBlack = (isDealerOnlyAction('openBlackGold') && !isDealer) ? 'disabled' : '';
+                    const dOpenFoul = (isDealerOnlyAction('openFoul') && !isDealer) ? 'disabled' : '';
+                    
+                    const el = document.createElement('div');
+                    el.className = cardClass;
+                    el.setAttribute('data-player-id', String(p.id));
+                    el.innerHTML = `
+                        <div class="card-header-row">
+                            <div class="left-info" onclick="openNameModal(${i})">
+                                <div class="rank-num">${i + 1}</div>
+                                <div class="p-name">${p.name} <span style="margin-left:6px; display:inline-flex; gap:6px; vertical-align:middle;">${roleBadges}</span></div>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="#CCC"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
+                            </div>
+                            <div class="p-score ${sc}" id="score_${p.id}" data-score="${p.score}">${sig}${p.score}</div>
+                        </div>
+                        <div class="btn-grid">
+                            <button class="act-btn b-bgold" ${dBig} onclick="handleAction(${i}, 'bigGold')"><span class="btn-t">大金</span><span class="btn-s">${hintBig}</span></button>
+                            <button class="act-btn b-sgold" onclick="handleAction(${i}, 'smallGold')"><span class="btn-t">小金</span><span class="btn-s">${hintSmall}</span></button>
+                            <button class="act-btn b-gold9" ${dG9} onclick="handleAction(${i}, 'gold9')"><span class="btn-t">黄金9</span><span class="btn-s">${hintG9}</span></button>
+                            <button class="act-btn b-black" onclick="handleAction(${i}, 'blackGold')"><span class="btn-t">黑金</span><span class="btn-s">${hintBlack}</span></button>
+                            <button class="act-btn b-norm" onclick="handleAction(${i}, 'normal')"><span class="btn-t">普胜</span><span class="btn-s">${hintNormal}</span></button>
+                            <button class="act-btn b-black" style="background:#2C2C2E" ${dOpenBlack} onclick="handleAction(${i}, 'openBlackGold')"><span class="btn-t">开球黑金</span><span class="btn-s">${hintOpenBlack}</span></button>
+                            <button class="act-btn b-foul" onclick="handleAction(${i}, 'foul')"><span class="btn-t">犯规</span><span class="btn-s">${hintFoul}</span></button>
+                            <button class="act-btn b-let" onclick="handleAction(${i}, 'letFoul')"><span class="btn-t">让杆</span><span class="btn-s">${hintLet}</span></button>
+                            <button class="act-btn b-foul" style="background:#FFEAEA" ${dOpenFoul} onclick="handleAction(${i}, 'openFoul')"><span class="btn-t">开球犯规</span><span class="btn-s">${hintOpenFoul}</span></button>
+                        </div>
+                    `;
+                    box.appendChild(el);
+                });
+            }
+
+            syncSettingsUI();
+
+            const leaderId = getUniqueLeaderId(state.players);
+            if (leaderId && leaderId !== lastLeaderId) {
+                const card = box.querySelector(`.player-card[data-player-id="${leaderId}"]`);
+                if (card) {
+                    card.classList.remove('lead-flash');
+                    void card.offsetWidth;
+                    card.classList.add('lead-flash');
+                }
+            }
+            lastLeaderId = leaderId;
+
+            requestAnimationFrame(() => {
+                try { applyUIEffectsIfAny(); } catch(e) {}
+            });
+        }
+
+        window.openSettings = function() { SoundFX.click(); syncSettingsUI(); document.getElementById('settingsModal').style.display = 'flex'; setTimeout(() => document.getElementById('settingsModal').classList.add('show'), 10); };
+        window.closeSettings = function() { SoundFX.click(); document.getElementById('settingsModal').classList.remove('show'); setTimeout(() => document.getElementById('settingsModal').style.display = 'none', 200); };
+        window.openNameModal = function(i) { SoundFX.click(); currentEditIndex = i; document.getElementById('nameInput').value = ''; renderNameQuickList(); document.getElementById('nameModal').style.display = 'flex'; setTimeout(() => document.getElementById('nameModal').classList.add('show'), 10); setTimeout(() => document.getElementById('nameInput').focus(), 50); };
+        window.closeNameModal = function() { document.getElementById('nameModal').classList.remove('show'); setTimeout(() => { document.getElementById('nameModal').style.display = 'none'; document.getElementById('nameInput').blur(); }, 200); };
+        window.handleSettleNow = function() { SoundFX.click(); showSummary(); };
+        window.closeSummary = function() { SoundFX.click(); document.getElementById('summaryModal').classList.remove('show'); setTimeout(() => document.getElementById('summaryModal').style.display = 'none', 300); };
+
+        function deepClone(v) { return JSON.parse(JSON.stringify(v)); }
+
+        function uniqueNames(arr) {
+            const out = [];
+            const seen = new Set();
+            (arr || []).forEach(v => {
+                const s = (v || '').trim();
+                if (!s) return;
+                if (seen.has(s)) return;
+                seen.add(s);
+                out.push(s);
+            });
+            return out;
+        }
+
+        function escapeAttr(s) {
+            return String(s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function renderNameQuickList() {
+            const box = document.getElementById('nameQuickList');
+            if (!box) return;
+            const base = (state.namePool || []).concat((state.recentNames || []));
+            const now = state.players?.[currentEditIndex]?.name ? [state.players[currentEditIndex].name] : [];
+            const list = uniqueNames(now.concat(base)).slice(0, 10);
+            if (list.length === 0) { box.innerHTML = ''; return; }
+            box.innerHTML = list.map(n => {
+                const safe = escapeAttr(n);
+                return `<button class="name-chip" data-name="${safe}" onclick="pickNameChip(this.dataset.name)">${safe}</button>`;
+            }).join('');
+        }
+
+        window.pickNameChip = function(n) {
+            SoundFX.click();
+            const ipt = document.getElementById('nameInput');
+            if (ipt) ipt.value = (n || '').trim();
+            if (ipt) ipt.focus();
+        };
+
+        function getSessionKey(gameType, mode) {
+            if (gameType === 'cn8') return 'cn8';
+            return `chase_${mode}`;
+        }
+
+        function saveCurrentSessionToStore() {
+            if (!state.sessionStore) state.sessionStore = {};
+            const key = getSessionKey(state.gameType, state.mode);
+            state.sessionStore[key] = deepClone({
+                mode: state.mode,
+                round: state.round,
+                timerSeconds: state.timerSeconds,
+                timerRunning: state.timerRunning,
+                scoreMode: state.scoreMode,
+                players: state.players,
+                history: state.history,
+                logs: state.logs,
+                timeline: state.timeline
+            });
+        }
+
+        function loadSessionFromStore(key) {
+            if (!state.sessionStore) state.sessionStore = {};
+            const sess = state.sessionStore[key];
+            if (sess) {
+                state.mode = sess.mode;
+                state.round = sess.round;
+                state.timerSeconds = sess.timerSeconds;
+                state.timerRunning = sess.timerRunning;
+                state.scoreMode = sess.scoreMode;
+                state.players = sess.players;
+                state.history = sess.history || [];
+                state.logs = sess.logs || [];
+                state.timeline = sess.timeline || [];
+                return;
+            }
+
+            if (key === 'cn8') {
+                state.mode = 2;
+                state.round = 0;
+                state.timerSeconds = 0;
+                state.timerRunning = false;
+                state.history = [];
+                state.logs = [];
+                state.timeline = [];
+                state.players = [
+                    { id: 0, name: state.namePool?.[0] || '玩家 A', score: 0, stats: emptyStats() },
+                    { id: 1, name: state.namePool?.[1] || '玩家 B', score: 0, stats: emptyStats() }
+                ];
+                state.scoreMode = state.scoreMode || 'transfer';
+            } else {
+                const n = key.endsWith('_2') ? 2 : 3;
+                state.mode = n;
+                state.round = 0;
+                state.timerSeconds = 0;
+                state.timerRunning = false;
+                state.history = [];
+                state.logs = [];
+                state.timeline = [];
+                state.players = [];
+                const defs = ['玩家 A', '玩家 B', '玩家 C'];
+                for (let i = 0; i < n; i++) {
+                    state.players.push({ id: i, name: state.namePool?.[i] || defs[i], score: 0, stats: emptyStats() });
+                }
+                state.scoreMode = state.scoreMode || 'transfer';
+            }
+
+            saveCurrentSessionToStore();
+        }
+
+        function applyTimerFromState() {
+            updateTimerDisplay();
+            if (state.timerRunning) startTimerInterval();
+            else updateTimerBtnUI(false);
+        }
+
+        function ensureCurrentSessionKey() {
+            saveCurrentSessionToStore();
+        }
+
+        function getPlayerNameById(id) {
+            const p = (state.players || []).find(x => x && x.id === id);
+            return p ? p.name : '玩家';
+        }
+
+        function getScoreByIdFromSnapshot(snapshotScores, id) {
+            const f = (snapshotScores || []).find(s => s && s.playerId === id);
+            return f ? Number(f.score || 0) : 0;
+        }
+
+        function buildDeltasText(deltas) {
+            const arr = (deltas || []).filter(x => x && x.delta !== 0);
+            return arr.map(x => `${getPlayerNameById(x.playerId)} ${x.delta > 0 ? '+' : ''}${x.delta}`).join('，');
+        }
+
+        function getRoundEndTimeline() {
+            return (state.timeline || []).filter(e => e && e.roundEnd);
+        }
+
+        function buildTrendChartSvg() {
+            const ids = (state.players || []).map(p => p.id);
+            const series = [{ round: 0, scores: ids.map(id => ({ playerId: id, score: 0 })) }]
+                .concat(getRoundEndTimeline().map(e => ({ round: e.round || 0, scores: e.scores || [] })));
+
+            const w = 320;
+            const h = 140;
+            const padL = 30;
+            const padR = 10;
+            const padT = 12;
+            const padB = 22;
+            const innerW = w - padL - padR;
+            const innerH = h - padT - padB;
+
+            const all = [];
+            series.forEach(s => (s.scores || []).forEach(x => all.push(Number(x.score || 0))));
+            let minV = all.length ? Math.min(...all) : 0;
+            let maxV = all.length ? Math.max(...all) : 0;
+            if (minV === maxV) { minV -= 1; maxV += 1; }
+            const toX = (i) => padL + (series.length <= 1 ? 0 : (innerW * (i / (series.length - 1))));
+            const toY = (v) => padT + (innerH * (1 - ((v - minV) / (maxV - minV))));
+
+            const colors = ['#0A84FF', '#FF9F0A', '#BF5AF2'];
+
+            const gridYs = [0.0, 0.5, 1.0].map(r => padT + innerH * r);
+            const zeroY = (0 >= minV && 0 <= maxV) ? toY(0) : null;
+
+            const paths = ids.map((id, pi) => {
+                const d = series.map((s, i) => {
+                    const v = getScoreByIdFromSnapshot(s.scores, id);
+                    return `${i === 0 ? 'M' : 'L'} ${toX(i).toFixed(1)} ${toY(v).toFixed(1)}`;
+                }).join(' ');
+                return `<path d="${d}" fill="none" stroke="${colors[pi % colors.length]}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />`;
+            }).join('');
+
+            const dots = ids.map((id, pi) => {
+                const last = series[series.length - 1];
+                const v = getScoreByIdFromSnapshot(last.scores, id);
+                return `<circle cx="${toX(series.length - 1).toFixed(1)}" cy="${toY(v).toFixed(1)}" r="3.2" fill="${colors[pi % colors.length]}" />`;
+            }).join('');
+
+            const grid = gridYs.map(y => `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${(w - padR).toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(142,142,147,0.35)" stroke-width="1" />`).join('');
+            const zeroLine = zeroY !== null ? `<line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${(w - padR).toFixed(1)}" y2="${zeroY.toFixed(1)}" stroke="rgba(52,199,89,0.45)" stroke-width="1.2" />` : '';
+
+            return `
+                <svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="display:block;">
+                    <rect x="0" y="0" width="${w}" height="${h}" rx="14" fill="var(--bg-muted)" />
+                    ${grid}
+                    ${zeroLine}
+                    ${paths}
+                    ${dots}
+                </svg>
+            `;
+        }
+
+        function computeReportExtras() {
+            const players = state.players || [];
+            const rounds = Math.max(0, Number(state.round || 0));
+            const byScore = [...players].sort((a,b) => (b.score||0) - (a.score||0));
+            const bestScore = byScore[0]?.score ?? 0;
+            const mvpNet = byScore.find(p => p && (p.score === bestScore));
+
+            const wins = (p) => {
+                const st = p.stats || emptyStats();
+                return (st.bigGold||0) + (st.smallGold||0) + (st.gold9||0) + (st.normal||0);
+            };
+            const fouls = (p) => Number((p.stats || emptyStats()).fouls || 0);
+            const black = (p) => Number((p.stats || emptyStats()).blackGold || 0);
+
+            const mvpWins = [...players].sort((a,b) => wins(b) - wins(a))[0];
+            const mvpSteady = [...players].sort((a,b) => {
+                const ra = rounds > 0 ? fouls(a)/rounds : fouls(a);
+                const rb = rounds > 0 ? fouls(b)/rounds : fouls(b);
+                return ra - rb;
+            })[0];
+
+            const winTypes = new Set(['normal','smallGold','bigGold','gold9']);
+            const foulTypes = new Set(['foul','letFoul','openFoul']);
+
+            const streakWin = new Map();
+            const streakFoul = new Map();
+            const bestWin = { id: null, n: 0 };
+            const bestFoul = { id: null, n: 0 };
+
+            (state.timeline || []).forEach(e => {
+                if (!e || !e.actorId) return;
+                const aid = e.actorId;
+                if (winTypes.has(e.type) && e.roundEnd) {
+                    streakWin.set(aid, (streakWin.get(aid) || 0) + 1);
+                    streakFoul.set(aid, 0);
+                    const cur = streakWin.get(aid) || 0;
+                    if (cur > bestWin.n) { bestWin.id = aid; bestWin.n = cur; }
+                } else if (foulTypes.has(e.type)) {
+                    streakFoul.set(aid, (streakFoul.get(aid) || 0) + 1);
+                    streakWin.set(aid, 0);
+                    const cur = streakFoul.get(aid) || 0;
+                    if (cur > bestFoul.n) { bestFoul.id = aid; bestFoul.n = cur; }
+                } else {
+                    streakWin.set(aid, 0);
+                    streakFoul.set(aid, 0);
+                }
+            });
+
+            const rt = getRoundEndTimeline();
+            let turning = null;
+            for (let i = 1; i < rt.length; i++) {
+                const prev = rt[i-1];
+                const cur = rt[i];
+                const ids = (state.players || []).map(p => p.id);
+                const prevScores = ids.map(id => getScoreByIdFromSnapshot(prev.scores, id));
+                const curScores = ids.map(id => getScoreByIdFromSnapshot(cur.scores, id));
+                const prevRange = Math.max(...prevScores) - Math.min(...prevScores);
+                const curRange = Math.max(...curScores) - Math.min(...curScores);
+                const swing = Math.abs(curRange - prevRange);
+                if (!turning || swing > turning.swing) {
+                    turning = { swing, round: cur.round, actionName: cur.actionName, deltasText: buildDeltasText(cur.changes) };
+                }
+            }
+
+            const poke = new Map(players.map(p => [p.id, 0]));
+            (state.timeline || []).forEach(e => {
+                if (!e || !Array.isArray(e.orderBefore) || !e.actorId) return;
+                const order = e.orderBefore;
+                const n = order.length;
+                if (n < 2) return;
+                const ai = order.indexOf(e.actorId);
+                if (ai < 0) return;
+                const downId = order[(ai + 1) % n];
+                const goodTypes = new Set(['letFoul','openFoul','blackGold','openBlackGold']);
+                if (!goodTypes.has(e.type)) return;
+                const got = (e.changes || []).some(c => c && c.playerId === downId && Number(c.delta || 0) > 0);
+                if (got) poke.set(downId, (poke.get(downId) || 0) + 1);
+            });
+
+            const titles = new Map(players.map(p => [p.id, '']));
+            const used = new Set();
+            const pickUnique = (cands) => {
+                for (const c of cands) {
+                    if (!c || used.has(c.id)) continue;
+                    used.add(c.id);
+                    return c;
+                }
+                return null;
+            };
+            const topScore = [...players].sort((a,b) => (b.score||0) - (a.score||0));
+            const lowScore = [...players].sort((a,b) => (a.score||0) - (b.score||0));
+            const topBlack = [...players].sort((a,b) => black(b) - black(a));
+            const topFoul = [...players].sort((a,b) => fouls(b) - fouls(a));
+
+            const t1 = pickUnique(topScore); if (t1) titles.set(t1.id, 'MVP');
+            const t2 = pickUnique(lowScore); if (t2) titles.set(t2.id, '慈善家');
+            const t3 = pickUnique(topBlack); if (t3) titles.set(t3.id, '黑金王');
+            const t4 = pickUnique(topFoul); if (t4) titles.set(t4.id, '犯规王');
+            players.forEach(p => { if (p && !titles.get(p.id)) titles.set(p.id, '稳定输出'); });
+
+            const metrics = players.map(p => {
+                const st = p.stats || emptyStats();
+                const hard = rounds > 0 ? ((Number(st.normal||0) + Number(st.bigGold||0)) / rounds) : 0;
+                const luck = rounds > 0 ? ((Number(st.blackGold||0) + Number(st.gold9||0)) / rounds) : 0;
+                return {
+                    id: p.id,
+                    hard,
+                    luck,
+                    poked: poke.get(p.id) || 0,
+                    title: titles.get(p.id) || ''
+                };
+            });
+
+            return { rounds, mvpNet, mvpWins, mvpSteady, bestWin, bestFoul, turning, metrics };
+        }
+
+        function buildOverviewHtml(sortedPlayers, extra) {
+            const medals = ['🥇', '🥈', '🥉'];
+            let html = '';
+            sortedPlayers.forEach((p, idx) => {
+                const medal = medals[idx] || (idx + 1);
+                const color = p.score > 0 ? '#34C759' : (p.score < 0 ? '#FF3B30' : '#000');
+                const sign = p.score > 0 ? '+' : '';
+                const st = p.stats || emptyStats();
+                const totalWins = (st.bigGold||0) + (st.smallGold||0) + (st.gold9||0) + (st.normal||0);
+                const blackCount = (st.blackGold||0);
+                const foulCount = (st.fouls||0);
+                const actionCount = totalWins + blackCount + foulCount;
+                const foulRate = actionCount > 0 ? Math.round((foulCount / actionCount) * 100) : 0;
+                const avgPerRound = (state.round > 0) ? (p.score / state.round) : 0;
+                if (state.gameType === 'cn8') {
+                    html += `
+                        <div class="result-row">
+                            <div class="res-rank">${medal}</div>
+                            <div style="flex:1;">
+                                <div style="display:flex; justify-content:space-between;">
+                                    <span class="res-name">${p.name}</span>
+                                    <span class="res-score" style="color:${color}">${sign}${p.score}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    const m = (extra.metrics || []).find(x => x && x.id === p.id);
+                    const hard = m ? m.hard : 0;
+                    const luck = m ? m.luck : 0;
+                    const poked = m ? m.poked : 0;
+                    const title = m ? (m.title || '') : '';
+                    html += `
+                        <div class="result-row">
+                            <div class="res-rank">${medal}</div>
+                            <div style="flex:1;">
+                                <div style="display:flex; justify-content:space-between;">
+                                    <span class="res-name">${p.name}</span>
+                                    <span class="res-score" style="color:${color}">${sign}${p.score}</span>
+                                </div>
+                                <div class="res-stats-grid">
+                                    <span class="stat-badge sb-win">胜局:${totalWins}</span>
+                                    <span class="stat-badge sb-gold">大金:${st.bigGold||0}</span>
+                                    <span class="stat-badge sb-gold">小金:${st.smallGold||0}</span>
+                                    <span class="stat-badge sb-gold">黄金9:${st.gold9||0}</span>
+                                    <span class="stat-badge" style="background:#333;color:#fff">黑金:${st.blackGold||0}</span>
+                                    <span class="stat-badge sb-foul">犯规:${st.fouls||0}</span>
+                                    <span class="stat-badge" style="background:#E5E5EA;color:#333">操作:${actionCount}</span>
+                                    <span class="stat-badge" style="background:#E8FFF0;color:#0E7A2E">均分:${avgPerRound.toFixed(1)}</span>
+                                    <span class="stat-badge" style="background:#FFF0F0;color:#A60000">犯规率:${foulRate}%</span>
+                                    <span class="stat-badge" style="background:rgba(0,122,255,0.14);color:var(--c-primary)">硬度:${(hard*100).toFixed(0)}%</span>
+                                    <span class="stat-badge" style="background:rgba(255,149,0,0.16);color:var(--c-gold-s)">运气:${(luck*100).toFixed(0)}%</span>
+                                    <span class="stat-badge" style="background:rgba(142,142,147,0.18);color:var(--c-text)">被捅:${poked}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            return html;
+        }
+
+        function buildTitleHtml(extra) {
+            if (state.gameType === 'cn8') return '';
+            const players = state.players || [];
+            const byScoreDesc = [...players].sort((a,b)=> (b.score||0)-(a.score||0));
+            const byScoreAsc = [...players].sort((a,b)=> (a.score||0)-(b.score||0));
+            const byFoul = [...players].sort((a,b)=> ((b.stats?.fouls||0)-(a.stats?.fouls||0)));
+            const byBlack = [...players].sort((a,b)=> ((b.stats?.blackGold||0)-(a.stats?.blackGold||0)));
+            const metrics = extra.metrics || [];
+            const byHard = [...metrics].sort((a,b)=> (b.hard||0)-(a.hard||0));
+            const byLuck = [...metrics].sort((a,b)=> (b.luck||0)-(a.luck||0));
+
+            const pickName = (arr) => (arr[0]?.name) ? arr[0].name : '—';
+            const pickFoul = () => {
+                const p = byFoul[0];
+                return p ? `${p.name} (${p.stats?.fouls||0}次)` : '—';
+            };
+            const pickBlack = () => {
+                const p = byBlack[0];
+                return p ? `${p.name} (${p.stats?.blackGold||0}次)` : '—';
+            };
+            const pickHard = () => {
+                const m = byHard[0];
+                const p = players.find(pp => pp.id === m?.id);
+                return p ? `${p.name} (${(m.hard*100).toFixed(0)}%)` : '—';
+            };
+            const pickLuck = () => {
+                const m = byLuck[0];
+                const p = players.find(pp => pp.id === m?.id);
+                return p ? `${p.name} (${(m.luck*100).toFixed(0)}%)` : '—';
+            };
+
+            const maxScore = pickName(byScoreDesc);
+            const minScore = pickName(byScoreAsc);
+
+            const grid = `
+                <div class="ach-grid">
+                    <div class="ach-item"><span class="ach-icon">🏆</span><div><div class="ach-title">MVP</div><div class="ach-val">${escapeAttr(maxScore)}</div></div></div>
+                    <div class="ach-item"><span class="ach-icon">🤝</span><div><div class="ach-title">慈善家</div><div class="ach-val">${escapeAttr(minScore)}</div></div></div>
+                    <div class="ach-item"><span class="ach-icon">🤬</span><div><div class="ach-title">暴躁老哥</div><div class="ach-val">${escapeAttr(pickFoul())}</div></div></div>
+                    <div class="ach-item"><span class="ach-icon">🗿</span><div><div class="ach-title">硬汉</div><div class="ach-val">${escapeAttr(pickHard())}</div></div></div>
+                    <div class="ach-item"><span class="ach-icon">🍀</span><div><div class="ach-title">运气王</div><div class="ach-val">${escapeAttr(pickLuck())}</div></div></div>
+                    <div class="ach-item"><span class="ach-icon">🖤</span><div><div class="ach-title">黑金王</div><div class="ach-val">${escapeAttr(pickBlack())}</div></div></div>
+                </div>
+            `;
+            return grid;
+        }
+
+        function switchSummaryTab(tab) {
+            if (!summaryViews[tab]) tab = 'overview';
+            summaryActiveTab = tab;
+            const container = document.getElementById('summaryViewContainer');
+            if (container) container.innerHTML = summaryViews[tab] || '';
+            document.querySelectorAll('#summaryContent .tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tab);
+            });
+        }
+
+        function showSummary() {
+            summaryActiveTab = 'overview';
+            const timeText = document.getElementById('gameTimer').innerText;
+            if (state.gameType === 'cn8') {
+                const a = state.players?.[0]?.score ?? 0;
+                const b = state.players?.[1]?.score ?? 0;
+                document.getElementById('summaryTitle').innerText = `八球比分结算`;
+                document.getElementById('summaryTime').innerText = `比分 ${a}:${b} · 时长${timeText}`;
+            } else {
+                const rsName = (getActiveRuleSet()?.name) ? getActiveRuleSet().name : '规则';
+                document.getElementById('summaryTitle').innerText = `战局结算`;
+                document.getElementById('summaryTime').innerText = `共${state.round}回合 · 时长${timeText} · ${rsName}`;
+            }
+            const sortedPlayers = [...state.players].sort((a, b) => b.score - a.score);
+            const extra = computeReportExtras();
+            const overviewHtml = buildOverviewHtml(sortedPlayers, extra);
+            const titleHtml = buildTitleHtml(extra);
+
+            const tabs = (state.gameType === 'cn8') ? '' : `
+                <div class="summary-tabs">
+                    <button class="tab-btn active" data-tab="overview" onclick="switchSummaryTab('overview')">总览</button>
+                    <button class="tab-btn" data-tab="title" onclick="switchSummaryTab('title')">称号</button>
+                </div>
+                <div id="summaryViewContainer" class="summary-view"></div>
+            `;
+
+            if (state.gameType === 'cn8') {
+                document.getElementById('summaryContent').innerHTML = overviewHtml;
+            } else {
+                summaryViews = {
+                    overview: overviewHtml,
+                    title: titleHtml
+                };
+                document.getElementById('summaryContent').innerHTML = tabs;
+                switchSummaryTab(summaryActiveTab);
+            }
+            const modal = document.getElementById('summaryModal');
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('show'), 10);
+        }
+
+        function buildReportModel() {
+            const time = document.getElementById('gameTimer').innerText;
+            const now = new Date();
+            const stamp = now.toLocaleString('zh-CN', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+            const playersSorted = [...(state.players || [])].sort((a, b) => (b.score || 0) - (a.score || 0));
+            if (state.gameType === 'cn8') {
+                const a = state.players?.[0]?.score ?? 0;
+                const b = state.players?.[1]?.score ?? 0;
+                return {
+                    title: '中式八球战报',
+                    subtitle: `时长 ${time}  ·  比分 ${a}:${b}`,
+                    stamp,
+                    players: playersSorted.map(p => ({ name: p.name, score: p.score }))
+                };
+            }
+            const rsName = (getActiveRuleSet()?.name) ? getActiveRuleSet().name : '规则';
+            const tlCount = (state.timeline || []).length;
+            return {
+                title: '桌球追分战报',
+                subtitle: `回合 ${state.round}  ·  时长 ${time}  ·  ${rsName}  ·  事件 ${tlCount}`,
+                stamp,
+                players: playersSorted.map(p => {
+                    const st = p.stats || emptyStats();
+                    const totalWins = (st.bigGold||0) + (st.smallGold||0) + (st.gold9||0) + (st.normal||0);
+                    const blackCount = (st.blackGold||0);
+                    const foulCount = (st.fouls||0);
+                    const actionCount = totalWins + blackCount + foulCount;
+                    const foulRate = actionCount > 0 ? Math.round((foulCount / actionCount) * 100) : 0;
+                    const avgPerRound = (state.round > 0) ? (p.score / state.round) : 0;
+                    return {
+                        name: p.name,
+                        score: p.score,
+                        totalWins,
+                        bigGold: st.bigGold || 0,
+                        smallGold: st.smallGold || 0,
+                        gold9: st.gold9 || 0,
+                        blackGold: st.blackGold || 0,
+                        fouls: foulCount,
+                        actionCount,
+                        foulRate,
+                        avgPerRound
+                    };
+                })
+            };
+        }
+
+        window.generatePoster = async function() {
+            SoundFX.click();
+            try {
+                if (window.html2canvas) {
+                    await generatePosterFromSummary();
+                    return;
+                }
+            } catch (e) {}
+            await generatePosterFallback();
+        };
+
+        async function generatePosterFromSummary() {
+            const box = document.querySelector('#summaryModal .center-box');
+            const content = document.getElementById('summaryContent');
+            const actions = document.getElementById('summaryActionsRow');
+            if (!box || !content) {
+                await generatePosterFallback();
+                return;
+            }
+
+            const prevBoxMaxH = box.style.maxHeight;
+            const prevBoxOverflow = box.style.overflow;
+            const prevBoxTransform = box.style.transform;
+            const prevContentMaxH = content.style.maxHeight;
+            const prevContentOverflow = content.style.overflow;
+            const prevActionsDisplay = actions ? actions.style.display : '';
+
+            box.style.maxHeight = 'none';
+            box.style.overflow = 'visible';
+            box.style.transform = 'none';
+            content.style.maxHeight = 'none';
+            content.style.overflow = 'visible';
+            if (actions) actions.style.display = 'none';
+
+            const targetW = 1080;
+            const rect = box.getBoundingClientRect();
+            const rawScale = rect.width > 0 ? (targetW / rect.width) : 3;
+            const scale = Math.max(2, Math.min(4, rawScale));
+
+            const capCanvas = await window.html2canvas(box, {
+                backgroundColor: '#F2F2F7',
+                scale,
+                useCORS: true,
+                logging: false
+            });
+
+            box.style.maxHeight = prevBoxMaxH;
+            box.style.overflow = prevBoxOverflow;
+            box.style.transform = prevBoxTransform;
+            content.style.maxHeight = prevContentMaxH;
+            content.style.overflow = prevContentOverflow;
+            if (actions) actions.style.display = prevActionsDisplay;
+
+            const padding = 54;
+            const outCanvas = document.createElement('canvas');
+            outCanvas.width = targetW;
+            outCanvas.height = Math.max(1, capCanvas.height + padding * 2);
+            const outCtx = outCanvas.getContext('2d');
+            outCtx.fillStyle = '#F2F2F7';
+            outCtx.fillRect(0, 0, outCanvas.width, outCanvas.height);
+            const dx = Math.max(0, Math.round((targetW - capCanvas.width) / 2));
+            outCtx.drawImage(capCanvas, dx, padding);
+
+            const blob = await new Promise(res => outCanvas.toBlob(res, 'image/png', 1));
+            if (!blob) {
+                showToast('图片生成失败');
+                return;
+            }
+            posterBlob = blob;
+            if (posterObjectUrl) URL.revokeObjectURL(posterObjectUrl);
+            posterObjectUrl = URL.createObjectURL(blob);
+            const img = document.getElementById('posterImg');
+            if (img) img.src = posterObjectUrl;
+            const modal = document.getElementById('posterModal');
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('show'), 10);
+        }
+
+        async function generatePosterFallback() {
+            const m = buildReportModel();
+            const dpr = Math.max(2, Math.min(3, window.devicePixelRatio || 2));
+            const w = 1080;
+            const headerH = 260;
+            const rowH = state.gameType === 'cn8' ? 170 : 240;
+            const h = Math.min(1920, headerH + (m.players.length * rowH) + 220);
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.floor(w * dpr);
+            canvas.height = Math.floor(h * dpr);
+            canvas.style.width = w + 'px';
+            canvas.style.height = h + 'px';
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+
+            ctx.fillStyle = '#F2F2F7';
+            ctx.fillRect(0, 0, w, h);
+
+            const cardX = 54;
+            const cardY = 54;
+            const cardW = w - 108;
+            const cardH = h - 108;
+            const r = 42;
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.moveTo(cardX + r, cardY);
+            ctx.lineTo(cardX + cardW - r, cardY);
+            ctx.quadraticCurveTo(cardX + cardW, cardY, cardX + cardW, cardY + r);
+            ctx.lineTo(cardX + cardW, cardY + cardH - r);
+            ctx.quadraticCurveTo(cardX + cardW, cardY + cardH, cardX + cardW - r, cardY + cardH);
+            ctx.lineTo(cardX + r, cardY + cardH);
+            ctx.quadraticCurveTo(cardX, cardY + cardH, cardX, cardY + cardH - r);
+            ctx.lineTo(cardX, cardY + r);
+            ctx.quadraticCurveTo(cardX, cardY, cardX + r, cardY);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = '#1C1C1E';
+            ctx.font = '900 62px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+            ctx.fillText(m.title, cardX + 52, cardY + 98);
+
+            ctx.fillStyle = '#8E8E93';
+            ctx.font = '650 34px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+            ctx.fillText(m.subtitle, cardX + 52, cardY + 150);
+
+            ctx.fillStyle = '#C7C7CC';
+            ctx.font = '600 28px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+            ctx.fillText(m.stamp, cardX + 52, cardY + 196);
+
+            let y = cardY + 230;
+            const medals = ['🥇', '🥈', '🥉'];
+            m.players.forEach((p, i) => {
+                const rowY = y + (i * rowH);
+                ctx.fillStyle = '#F2F2F7';
+                ctx.fillRect(cardX + 32, rowY, cardW - 64, rowH - 26);
+
+                ctx.fillStyle = '#1C1C1E';
+                ctx.font = '900 44px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+                const rank = medals[i] || String(i + 1);
+                ctx.fillText(rank, cardX + 52, rowY + 74);
+
+                ctx.fillStyle = '#1C1C1E';
+                ctx.font = '800 44px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+                ctx.fillText(p.name, cardX + 150, rowY + 74);
+
+                const score = (p.score > 0 ? '+' : '') + String(p.score || 0);
+                ctx.textAlign = 'right';
+                ctx.fillStyle = (p.score > 0 ? '#34C759' : (p.score < 0 ? '#FF3B30' : '#1C1C1E'));
+                ctx.font = '950 56px "SF Mono", ui-monospace, Menlo, monospace';
+                ctx.fillText(score, cardX + cardW - 52, rowY + 78);
+                ctx.textAlign = 'left';
+
+                if (state.gameType !== 'cn8') {
+                    ctx.fillStyle = '#8E8E93';
+                    ctx.font = '650 30px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+                    const line1 = `胜局 ${p.totalWins}  ·  犯规 ${p.fouls}  ·  操作 ${p.actionCount}`;
+                    const line2 = `均分 ${Number(p.avgPerRound || 0).toFixed(1)}  ·  犯规率 ${p.foulRate}%  ·  黑金 ${p.blackGold}`;
+                    ctx.fillText(line1, cardX + 150, rowY + 124);
+                    ctx.fillText(line2, cardX + 150, rowY + 166);
+                }
+            });
+
+            ctx.fillStyle = '#8E8E93';
+            ctx.font = '650 28px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+            ctx.fillText('桌球追分 (Pro Max)', cardX + 52, cardY + cardH - 52);
+            ctx.textAlign = 'right';
+            ctx.fillText('复制/分享来自本地计分器', cardX + cardW - 52, cardY + cardH - 52);
+            ctx.textAlign = 'left';
+
+            const blob = await new Promise(res => canvas.toBlob(res, 'image/png', 1));
+            if (!blob) {
+                showToast('图片生成失败');
+                return;
+            }
+            posterBlob = blob;
+            if (posterObjectUrl) URL.revokeObjectURL(posterObjectUrl);
+            posterObjectUrl = URL.createObjectURL(blob);
+            const img = document.getElementById('posterImg');
+            if (img) img.src = posterObjectUrl;
+            const modal = document.getElementById('posterModal');
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('show'), 10);
+        }
+
+        window.closePosterModal = function() {
+            SoundFX.click();
+            const modal = document.getElementById('posterModal');
+            modal.classList.remove('show');
+            setTimeout(() => modal.style.display = 'none', 200);
+        };
+
+        window.savePosterImage = function() {
+            SoundFX.click();
+            if (!posterBlob) return showToast('请先生成图片');
+            const a = document.createElement('a');
+            const url = posterObjectUrl || URL.createObjectURL(posterBlob);
+            a.href = url;
+            a.download = `桌球战报_${Date.now()}.png`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            showToast('已触发保存/下载');
+        };
+
+        window.sharePosterImage = async function() {
+            SoundFX.click();
+            if (!posterBlob) return showToast('请先生成图片');
+            try {
+                const file = new File([posterBlob], `桌球战报_${Date.now()}.png`, { type: 'image/png' });
+                if (navigator.canShare && navigator.share && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: '图片战报' });
+                    showToast('已打开分享');
+                } else {
+                    savePosterImage();
+                }
+            } catch (e) {
+                savePosterImage();
+            }
+        };
+
+        window.copyReport = function() {
+            SoundFX.click();
+            const time = document.getElementById('gameTimer').innerText;
+            let text = '';
+            if (state.gameType === 'cn8') {
+                const a = state.players?.[0]?.score ?? 0;
+                const b = state.players?.[1]?.score ?? 0;
+                text = `🎱 中式八球战报\n⏱️ 时长: ${time} | 比分: ${a}:${b}\n------------------\n`;
+            } else {
+                const rsName = (getActiveRuleSet()?.name) ? getActiveRuleSet().name : '规则';
+                text = `🎱 桌球追分战报\n⏱️ 时长: ${time} | 回合: ${state.round} | 规则: ${rsName}\n------------------\n`;
+            }
+            
+            const sortedPlayers = [...state.players].sort((a, b) => b.score - a.score);
+            sortedPlayers.forEach((p, i) => {
+                const sign = p.score > 0 ? '+' : '';
+                const rank = i===0?'🥇':(i===1?'🥈':'🥉');
+                text += `${rank} ${p.name}: ${sign}${p.score}\n`;
+            });
+            text += `------------------\n`;
+            
+            if (state.gameType !== 'cn8') {
+                try {
+                    const extra = computeReportExtras();
+                    const turningText = extra.turning ? (`第${extra.turning.round}回合 ${extra.turning.actionName}（${extra.turning.deltasText}）`) : '-';
+                    text += `⭐ 亮点:\n`;
+                    text += `   MVP: ${(extra.mvpNet && extra.mvpNet.name) ? extra.mvpNet.name : '-'}\n`;
+                    text += `   转折点: ${turningText}\n`;
+                    text += `   连胜: ${extra.bestWin.id ? (getPlayerNameById(extra.bestWin.id) + ' x' + extra.bestWin.n) : '-'}\n`;
+                    text += `   连犯: ${extra.bestFoul.id ? (getPlayerNameById(extra.bestFoul.id) + ' x' + extra.bestFoul.n) : '-'}\n`;
+                    text += `------------------\n`;
+                } catch(e) {}
+                text += `📊 详细数据:\n`;
+                sortedPlayers.forEach(p => {
+                    const st = p.stats || emptyStats();
+                    const totalWins = (st.bigGold||0) + (st.smallGold||0) + (st.gold9||0) + (st.normal||0);
+                    const blackCount = (st.blackGold||0);
+                    const foulCount = (st.fouls||0);
+                    const actionCount = totalWins + blackCount + foulCount;
+                    const foulRate = actionCount > 0 ? Math.round((foulCount / actionCount) * 100) : 0;
+                    const avgPerRound = (state.round > 0) ? (p.score / state.round) : 0;
+                    
+                    text += `👤 ${p.name}\n`;
+                    text += `   胜局: ${totalWins} | 犯规: ${foulCount} | 操作: ${actionCount}\n`;
+                    text += `   均分: ${avgPerRound.toFixed(1)} | 犯规率: ${foulRate}% | 黑金: ${blackCount}\n`;
+                    const specials = [];
+                    if(st.bigGold > 0) specials.push(`大金x${st.bigGold}`);
+                    if(st.smallGold > 0) specials.push(`小金x${st.smallGold}`);
+                    if(st.gold9 > 0) specials.push(`黄金9x${st.gold9}`);
+                    if(st.blackGold > 0) specials.push(`黑金x${st.blackGold}`);
+                    
+                    if(specials.length > 0) {
+                        text += `   ${specials.join(' ')}\n`;
+                    }
+                    text += `\n`;
+                });
+
+                const tl = (state.timeline || []).slice(-12).reverse();
+                if (tl.length > 0) {
+                    text += `🧾 时间线(最近${tl.length}条):\n`;
+                    tl.forEach(e => {
+                        const r = e.roundEnd ? `R${e.round}` : '-';
+                        const deltaText = buildDeltasText(e.changes || []);
+                        text += `   ${r} ${e.time} ${e.actionName} | ${deltaText}\n`;
+                    });
+                    text += `\n`;
+                }
+            }
+            
+            navigator.clipboard.writeText(text).then(() => showToast("已复制到剪贴板"));
+        };
     </script>
 </body>
 </html>
