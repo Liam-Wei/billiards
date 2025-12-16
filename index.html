@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#F2F2F7">
-    <title>桌球追分 (Pro Max)</title>
+    <title>桌球记分</title>
     <style>
         :root {
             --bg-body: #F2F2F7; --bg-card: #FFFFFF;
@@ -334,27 +334,64 @@
             background: var(--bg-muted);
             border-radius: 14px;
             padding: 12px;
-            display: grid;
-            grid-template-columns: 36px 1fr;
-            column-gap: 10px;
+            display: flex;
+            flex-direction: row;
             align-items: center;
+            gap: 12px;
         }
         .ach-icon {
             font-size: 22px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            width: 32px;
+            height: 32px;
         }
         .ach-title {
             font-size: 12px;
             color: var(--c-text-muted);
             margin-bottom: 2px;
             font-weight: 700;
+            line-height: 1.2;
         }
         .ach-val {
             font-size: 15px;
             font-weight: 900;
             color: var(--c-text);
+        }
+        .ach-left {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 48px;
+            gap: 4px;
+        }
+        .ach-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .help-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 8px;
+            gap: 8px;
+        }
+        .help-btn {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 1px solid #E5E5EA;
+            background: #F6F6F8;
+            color: #555;
+            font-weight: 800;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         #toast {
@@ -564,6 +601,14 @@
                 <button style="flex:1; padding:12px; border:none; border-radius:12px; background:#F2F2F7; color:#8E8E93; font-weight:600;" onclick="closeConfirmModal()">取消</button>
                 <button id="realConfirmBtn" class="btn-confirm" onclick="confirmPendingAction()" disabled>确定 (0.5s)</button>
             </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="helpModal" style="z-index: 190;">
+        <div class="center-box" style="width:320px;">
+            <div id="helpTitle" style="font-size:18px; font-weight:800; margin-bottom:10px;">说明</div>
+            <div id="helpBody" style="font-size:13px; color:#333; text-align:left; line-height:1.6; white-space:pre-line; margin-bottom:16px;"></div>
+            <button style="width:100%; padding:12px; background:#F2F2F7; color:#333; border:none; border-radius:12px; font-weight:700;" onclick="closeHelpModal()">关闭</button>
         </div>
     </div>
 
@@ -2482,7 +2527,11 @@
 
         function buildOverviewHtml(sortedPlayers, extra) {
             const medals = ['🥇', '🥈', '🥉'];
-            let html = '';
+            let html = `
+                <div class="help-row">
+                    <button class="help-btn" onclick="showOverviewHelp()">?</button>
+                </div>
+            `;
             sortedPlayers.forEach((p, idx) => {
                 const medal = medals[idx] || (idx + 1);
                 const color = p.score > 0 ? '#34C759' : (p.score < 0 ? '#FF3B30' : '#000');
@@ -2577,17 +2626,76 @@
             const minScore = pickName(byScoreAsc);
 
             const grid = `
+                <div class="help-row">
+                    <button class="help-btn" onclick="showTitleHelp()">?</button>
+                </div>
                 <div class="ach-grid">
-                    <div class="ach-item"><span class="ach-icon">🏆</span><div><div class="ach-title">MVP</div><div class="ach-val">${escapeAttr(maxScore)}</div></div></div>
-                    <div class="ach-item"><span class="ach-icon">🤝</span><div><div class="ach-title">慈善家</div><div class="ach-val">${escapeAttr(minScore)}</div></div></div>
-                    <div class="ach-item"><span class="ach-icon">🤬</span><div><div class="ach-title">暴躁老哥</div><div class="ach-val">${escapeAttr(pickFoul())}</div></div></div>
-                    <div class="ach-item"><span class="ach-icon">🗿</span><div><div class="ach-title">硬汉</div><div class="ach-val">${escapeAttr(pickHard())}</div></div></div>
-                    <div class="ach-item"><span class="ach-icon">🍀</span><div><div class="ach-title">运气王</div><div class="ach-val">${escapeAttr(pickLuck())}</div></div></div>
-                    <div class="ach-item"><span class="ach-icon">🖤</span><div><div class="ach-title">黑金王</div><div class="ach-val">${escapeAttr(pickBlack())}</div></div></div>
+                    <div class="ach-item">
+                        <div class="ach-left"><div class="ach-title">MVP</div><span class="ach-icon">🏆</span></div>
+                        <div class="ach-val">${escapeAttr(maxScore)}</div>
+                    </div>
+                    <div class="ach-item">
+                        <div class="ach-left"><div class="ach-title">慈善家</div><span class="ach-icon">🤝</span></div>
+                        <div class="ach-val">${escapeAttr(minScore)}</div>
+                    </div>
+                    <div class="ach-item">
+                        <div class="ach-left"><div class="ach-title">暴躁老哥</div><span class="ach-icon">🤬</span></div>
+                        <div class="ach-val">${escapeAttr(pickFoul())}</div>
+                    </div>
+                    <div class="ach-item">
+                        <div class="ach-left"><div class="ach-title">硬汉</div><span class="ach-icon">🗿</span></div>
+                        <div class="ach-val">${escapeAttr(pickHard())}</div>
+                    </div>
+                    <div class="ach-item">
+                        <div class="ach-left"><div class="ach-title">运气王</div><span class="ach-icon">🍀</span></div>
+                        <div class="ach-val">${escapeAttr(pickLuck())}</div>
+                    </div>
+                    <div class="ach-item">
+                        <div class="ach-left"><div class="ach-title">黑金王</div><span class="ach-icon">🖤</span></div>
+                        <div class="ach-val">${escapeAttr(pickBlack())}</div>
+                    </div>
                 </div>
             `;
             return grid;
         }
+
+        window.showTitleHelp = function() {
+            const modal = document.getElementById('helpModal');
+            const title = document.getElementById('helpTitle');
+            const body = document.getElementById('helpBody');
+            if (title) title.innerText = '称号说明';
+            if (body) body.innerText = `MVP：净分最高
+慈善家：净分最低
+暴躁老哥：犯规次数最多
+硬汉：硬度最高（普胜+大金占回合比）
+运气王：运气最高（黑金+黄金9占回合比）
+黑金王：黑金次数最多`;
+            if (modal) { modal.style.display = 'flex'; setTimeout(() => modal.classList.add('show'), 10); }
+        };
+
+        window.showOverviewHelp = function() {
+            const modal = document.getElementById('helpModal');
+            const title = document.getElementById('helpTitle');
+            const body = document.getElementById('helpBody');
+            if (title) title.innerText = '统计说明';
+            if (body) body.innerText = `胜局：普胜+小金+大金+黄金9
+大金/小金/黄金9/黑金：各自次数
+犯规：犯规总次数
+操作：胜局+黑金+犯规总数
+均分：总分 / 回合数
+犯规率：犯规 / 操作
+硬度：(普胜+大金) / 回合
+运气：(黑金+黄金9) / 回合
+被捅：被对手让杆/开球犯规等导致得分的次数`;
+            if (modal) { modal.style.display = 'flex'; setTimeout(() => modal.classList.add('show'), 10); }
+        };
+
+        window.closeHelpModal = function() {
+            const modal = document.getElementById('helpModal');
+            if (!modal) return;
+            modal.classList.remove('show');
+            setTimeout(() => modal.style.display = 'none', 200);
+        };
 
         function switchSummaryTab(tab) {
             if (!summaryViews[tab]) tab = 'overview';
