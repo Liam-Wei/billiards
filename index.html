@@ -74,7 +74,7 @@
 
         /* --- 顶部信息栏 --- */
         .info-bar {
-            flex-shrink: 0; height: 85px; 
+            flex-shrink: 0; height: 100px; 
             margin: 4px 12px;
             display: grid; 
             grid-template-columns: 1.2fr 0.6fr 1.2fr;
@@ -95,32 +95,33 @@
         .log-line.latest { color: var(--c-primary); font-weight: 600; font-size: 11.5px; }
 
         .round-area {
-            text-align: center; font-size: 26px; font-weight: 800; color: #333;
+            text-align: center; font-size: 40px; font-weight: 800; color: #333;
             display: flex; flex-direction: column; justify-content: center; align-items: center; 
             line-height: 1; height: 100%;
         }
-        .round-area small { font-size: 10px; font-weight: 500; color: #8E8E93; margin-top: 2px; }
+        .round-area small { font-size: 15px; font-weight: 500; color: #8E8E93; margin-top: 2px; }
 
         .leaderboard-area {
             display: flex; flex-direction: column; justify-content: center;
             font-size: 12px; color: #333; gap: 3px;
         }
         .lb-row { display: grid; grid-template-columns: 18px minmax(0, 40px) 48px; align-items: center; column-gap: 1px; justify-content: end; }
-        .lb-rank { width: auto; text-align: left; font-size: 12px; }
+        .lb-rank { width: auto; text-align: left; font-size: 13px; }
         .lb-name { font-weight: 700; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #333; text-align: left; }
-        .lb-score { font-family: monospace; font-weight: 900; font-size: 14px; color: #000; text-align: right; font-variant-numeric: tabular-nums; }
+        .lb-score { font-family: monospace; font-weight: 900; font-size: 13px; color: #000; text-align: right; font-variant-numeric: tabular-nums; }
 
         /* --- 主区域 --- */
         main {
-            flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; 
-            padding: 2px 12px; overflow: hidden; gap: 6px;
+            flex: 1; display: flex; flex-direction: column; 
+            padding: 6px 12px; overflow: hidden; gap: 10px;
         }
 
         .player-card {
             background: var(--bg-card); border-radius: 16px; 
             padding: 8px 14px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-            display: flex; flex-direction: column; justify-content: center; transition: all 0.3s;
+            display: flex; flex-direction: column; justify-content: flex-start; transition: all 0.3s;
+            flex: 1; min-height: 0;
         }
         
         /* 1. 庄家 (第一张卡片) 样式 */
@@ -151,10 +152,12 @@
         .p-score { font-size: 28px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
         .score-p { color: #34C759; } .score-n { color: #FF3B30; } .score-z { color: #1C1C1E; }
 
-        .btn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 2px;}
+        .btn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: auto; }
         .act-btn {
             border: none; border-radius: 9px; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; cursor: pointer; padding: 7px 0;
+            align-items: center; justify-content: center; cursor: pointer; 
+            padding: clamp(6px, 1.6vh, 12px) 0;
+            min-height: clamp(44px, 9vh, 60px);
             background: #F2F2F7; position: relative; overflow: hidden;
         }
         .act-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
@@ -165,8 +168,8 @@
         }
         .act-btn:active::after { opacity: 1; }
 
-        .btn-t { font-size: 13px; font-weight: 600; margin-bottom: 0px; white-space: nowrap;}
-        .btn-s { font-size: 9px; opacity: 0.7; font-weight: 500; letter-spacing: -0.2px; white-space: nowrap; transform: scale(0.95); }
+        .btn-t { font-size: clamp(12px, 1.8vh, 15px); font-weight: 600; margin-bottom: 0px; white-space: nowrap;}
+        .btn-s { font-size: clamp(9px, 1.4vh, 12px); opacity: 0.7; font-weight: 500; letter-spacing: -0.2px; white-space: nowrap; transform: scale(0.95); }
 
         .b-norm { background: #E1F0FF; color: var(--c-primary); }
         .b-sgold { background: #FFF3DC; color: var(--c-gold-s); }
