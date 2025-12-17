@@ -54,11 +54,20 @@
         }
         .timer-paused { color: #8E8E93; background: #F2F2F7; border: 1px solid #E5E5EA; }
 
-        .header-right { display: flex; justify-content: flex-end; }
+        .header-right { display: flex; justify-content: flex-end; gap: 8px; }
         .reset-btn { 
             border: none; background: none; color: var(--c-foul); font-size: 15px; font-weight: 600; 
             cursor: pointer;
         }
+        .rand-btn {
+            border: none; background: none; color: var(--c-primary); font-size: 15px; font-weight: 700;
+            cursor: pointer;
+        }
+        .dice-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+        .dice-card { background: #F2F2F7; border-radius: 10px; padding: 10px 12px; min-width: 90px; text-align: center; }
+        .dice-name { font-size: 14px; font-weight: 700; color: #333; margin-bottom: 6px; }
+        .dice-face { font-size: 28px; }
+        .dice-num { font-size: 12px; color: #888; margin-top: 4px; }
 
         /* --- 顶部信息栏 --- */
         .info-bar {
@@ -569,6 +578,7 @@
         </div>
 
         <div class="header-right">
+            <button class="rand-btn" onclick="openDiceModal()">随机开局</button>
             <button class="reset-btn" onclick="openResetModal()">重置</button>
         </div>
     </header>
@@ -620,6 +630,17 @@
                 <button style="width:100%; padding:12px; border:none; border-radius:12px; background:#1C1C1E; color:#FFF; font-weight:700;" onclick="resetCurrentSession()">新开一局（仅当前模式）</button>
                 <button style="width:100%; padding:12px; border:none; border-radius:12px; background:#FFEEEE; color:var(--c-foul); font-weight:800;" onclick="clearAllData()">彻底清空（所有模式）</button>
                 <button style="width:100%; padding:12px; border:none; border-radius:12px; background:#F2F2F7; color:#333; font-weight:650;" onclick="closeResetModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="diceModal" style="z-index: 170;">
+        <div class="center-box" style="width:320px;">
+            <div style="font-size:18px; font-weight:800; margin-bottom:10px;">随机开局</div>
+            <div id="diceBody" style="margin-bottom:12px; font-size:13px; color:#333; min-height:80px; display:flex; flex-direction:column; gap:8px; align-items:center; justify-content:center;">即将掷骰...</div>
+            <div style="display:flex; gap:10px;">
+                <button id="diceRollBtn" style="flex:1; padding:12px; border:none; border-radius:12px; background:#1C1C1E; color:#FFF; font-weight:700;" onclick="rollDiceAndApply()">投掷</button>
+                <button style="width:110px; padding:12px; border:none; border-radius:12px; background:#F2F2F7; color:#333; font-weight:650;" onclick="closeDiceModal()">关闭</button>
             </div>
         </div>
     </div>
@@ -1909,6 +1930,118 @@
             const modal = document.getElementById('resetModal');
             modal.classList.remove('show');
             setTimeout(() => modal.style.display = 'none', 200);
+        };
+
+        window.openDiceModal = function() {
+            SoundFX.click();
+            const modal = document.getElementById('diceModal');
+            const body = document.getElementById('diceBody');
+            if (body) body.innerHTML = '即将掷骰...';
+            if (modal) {
+                modal.style.display = 'flex';
+                setTimeout(() => modal.classList.add('show'), 10);
+            }
+        };
+
+        window.closeDiceModal = function() {
+            const modal = document.getElementById('diceModal');
+            if (!modal) return;
+            modal.classList.remove('show');
+            setTimeout(() => modal.style.display = 'none', 200);
+        };
+
+        function renderDiceResult(arr) {
+            const body = document.getElementById('diceBody');
+            if (!body) return;
+            if (!arr || arr.length === 0) {
+                body.innerText = '没有可用的玩家';
+                return;
+            }
+            const orderText = arr.map(x => x.name).join(' → ');
+            let html = `<div style="font-size:14px; font-weight:700;">开局顺序：${escapeAttr(orderText)}</div>`;
+            html += `<div class="dice-row">`;
+            arr.forEach(p => {
+                html += `
+                    <div class="dice-card">
+                        <div class="dice-name">${escapeAttr(p.name)}</div>
+                        <div class="dice-face">🎲 ${p.roll}</div>
+                        <div class="dice-num">点数</div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+            body.innerHTML = html;
+        }
+
+        function setDiceRolling(rolling) {
+            const btn = document.getElementById('diceRollBtn');
+            if (!btn) return;
+            btn.disabled = rolling;
+            btn.innerText = rolling ? '投掷中...' : '投掷';
+            btn.style.opacity = rolling ? 0.65 : 1;
+        }
+
+        function genUniqueRolls(n) {
+            const base = [1,2,3,4,5,6];
+            const pool = [...base];
+            const res = [];
+            for (let i = 0; i < n; i++) {
+                if (pool.length === 0) pool.push(...base);
+                const idx = Math.floor(Math.random() * pool.length);
+                res.push(pool.splice(idx, 1)[0]);
+            }
+            return res;
+        }
+
+        window.rollDiceAndApply = function() {
+            SoundFX.click();
+            const ps = [...(state.players || [])];
+            if (ps.length === 0) {
+                renderDiceResult([]);
+                return;
+            }
+            setDiceRolling(true);
+            let tickTimer = null;
+            const spinOnce = () => {
+                const rolls = genUniqueRolls(ps.length);
+                const tmp = ps.map((p, idx) => ({
+                    ...p,
+                    roll: rolls[idx],
+                    _origOrder: idx
+                }));
+                tmp.sort((a, b) => {
+                    if (b.roll !== a.roll) return b.roll - a.roll;
+                    return a._origOrder - b._origOrder;
+                });
+                renderDiceResult(tmp);
+            };
+            spinOnce();
+            tickTimer = setInterval(spinOnce, 120);
+
+            setTimeout(() => {
+                clearInterval(tickTimer);
+                const finalRolls = genUniqueRolls(ps.length);
+                const rolled = ps.map((p, idx) => ({
+                    ...p,
+                    roll: finalRolls[idx],
+                    _origOrder: idx
+                }));
+                rolled.sort((a, b) => {
+                    if (b.roll !== a.roll) return b.roll - a.roll;
+                    return a._origOrder - b._origOrder;
+                });
+                state.players = rolled.map(p => {
+                    const { _origOrder, ...rest } = p;
+                    return rest;
+                });
+                state.round = 0;
+                state.history = [];
+                saveData();
+                updateUI();
+                renderDiceResult(rolled);
+                showToast('已按掷骰排序开局顺序');
+                setDiceRolling(false);
+            }, 1000);
         };
 
         window.resetCurrentSession = function() {
