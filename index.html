@@ -63,6 +63,9 @@
             border: none; background: none; color: var(--c-primary); font-size: 15px; font-weight: 700;
             cursor: pointer;
         }
+        .rand-btn:disabled {
+            opacity: 0.35; cursor: not-allowed;
+        }
         .dice-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
         .dice-card { background: #F2F2F7; border-radius: 10px; padding: 10px 12px; min-width: 90px; text-align: center; }
         .dice-name { font-size: 14px; font-weight: 700; color: #333; margin-bottom: 6px; }
@@ -578,7 +581,7 @@
         </div>
 
         <div class="header-right">
-            <button class="rand-btn" onclick="openDiceModal()">随机开局</button>
+            <button class="rand-btn" id="randBtn" onclick="openDiceModal()">随机开局</button>
             <button class="reset-btn" onclick="openResetModal()">重置</button>
         </div>
     </header>
@@ -640,7 +643,7 @@
             <div id="diceBody" style="margin-bottom:12px; font-size:13px; color:#333; min-height:80px; display:flex; flex-direction:column; gap:8px; align-items:center; justify-content:center;">即将掷骰...</div>
             <div style="display:flex; gap:10px;">
                 <button id="diceRollBtn" style="flex:1; padding:12px; border:none; border-radius:12px; background:#1C1C1E; color:#FFF; font-weight:700;" onclick="rollDiceAndApply()">投掷</button>
-                <button style="width:110px; padding:12px; border:none; border-radius:12px; background:#F2F2F7; color:#333; font-weight:650;" onclick="closeDiceModal()">关闭</button>
+                <button style="flex:1; padding:12px; border:none; border-radius:12px; background:#F2F2F7; color:#333; font-weight:650;" onclick="closeDiceModal()">关闭</button>
             </div>
         </div>
     </div>
@@ -1074,50 +1077,41 @@
                 { k: 'openFoul', n: '开球犯规' }
             ];
 
-            const dealerOnly = new Set(ruleEditorDraft?.chase?.dealerOnlyActions || []);
             const act = ruleEditorDraft?.chase?.actions || {};
-            const get3 = (k, f) => Number(act?.[k]?.points3?.[f] ?? 0);
-            const get2 = (k, m, f) => Number(act?.[k]?.points2?.[m]?.[f] ?? 0);
+            const getBase = (k) => Number(act?.[k]?.points3?.self ?? 0);
 
             body.innerHTML = `
                 <div style="margin-bottom:10px;">
                     <div style="font-size:12px; color:#8E8E93; margin-bottom:6px;">规则名称</div>
                     <input id="re_name" class="modal-input" style="margin:0; text-align:left;" value="${escapeAttr(ruleEditorDraft.name || '')}" />
                 </div>
-                <div style="font-size:12px; color:#8E8E93; margin-bottom:6px;">仅开球者可点</div>
-                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-bottom:12px;">
+                <div style="display:flex; flex-direction:column; gap:10px;">
                     ${meta.map(m => {
-                        const checked = dealerOnly.has(m.k) ? 'checked' : '';
-                        return `<label style="display:flex; align-items:center; gap:6px; background:#F2F2F7; padding:8px; border-radius:10px; font-size:12px; font-weight:700;">
-                            <input type="checkbox" id="re_dealer_${escapeAttr(m.k)}" ${checked} />${escapeAttr(m.n)}
-                        </label>`;
+                        return `
+                            <div style="padding:10px; border-radius:14px; background:#F2F2F7;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                                    <div style="font-weight:900; font-size:14px;">${escapeAttr(m.n)}</div>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <button style="width:32px; height:32px; border:none; border-radius:10px; background:#E5E5EA; font-weight:900; font-size:16px; cursor:pointer;" onclick="adjustRuleBase('${escapeAttr(m.k)}', -1)">-</button>
+                                        <div id="re_${escapeAttr(m.k)}_base" style="min-width:32px; text-align:center; font-weight:800; font-size:16px;">${getBase(m.k)}</div>
+                                        <button style="width:32px; height:32px; border:none; border-radius:10px; background:#E5E5EA; font-weight:900; font-size:16px; cursor:pointer;" onclick="adjustRuleBase('${escapeAttr(m.k)}', 1)">+</button>
+                                    </div>
+                                </div>
+                                <div style="font-size:12px; color:#8E8E93; margin-top:6px;">基础分，按默认比例分配（3人/2人各模式自动更新）</div>
+                            </div>
+                        `;
                     }).join('')}
                 </div>
-                ${meta.map(m => {
-                    return `
-                        <div style="padding:10px; border-radius:14px; background:#F2F2F7; margin-bottom:10px;">
-                            <div style="font-weight:900; font-size:14px; margin-bottom:8px;">${escapeAttr(m.n)}</div>
-                            <div style="font-size:12px; color:#8E8E93; margin-bottom:6px;">3人局（自/上/下）</div>
-                            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-bottom:10px;">
-                                <input type="number" id="re_${escapeAttr(m.k)}_3_self" class="modal-input" style="margin:0;" value="${get3(m.k, 'self')}" />
-                                <input type="number" id="re_${escapeAttr(m.k)}_3_up" class="modal-input" style="margin:0;" value="${get3(m.k, 'up')}" />
-                                <input type="number" id="re_${escapeAttr(m.k)}_3_down" class="modal-input" style="margin:0;" value="${get3(m.k, 'down')}" />
-                            </div>
-                            <div style="font-size:12px; color:#8E8E93; margin-bottom:6px;">2人局（给付制：自/他）</div>
-                            <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:8px; margin-bottom:10px;">
-                                <input type="number" id="re_${escapeAttr(m.k)}_2_transfer_self" class="modal-input" style="margin:0;" value="${get2(m.k, 'transfer', 'self')}" />
-                                <input type="number" id="re_${escapeAttr(m.k)}_2_transfer_opp" class="modal-input" style="margin:0;" value="${get2(m.k, 'transfer', 'opp')}" />
-                            </div>
-                            <div style="font-size:12px; color:#8E8E93; margin-bottom:6px;">2人局（抢分制：自/他）</div>
-                            <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:8px;">
-                                <input type="number" id="re_${escapeAttr(m.k)}_2_race_self" class="modal-input" style="margin:0;" value="${get2(m.k, 'race', 'self')}" />
-                                <input type="number" id="re_${escapeAttr(m.k)}_2_race_opp" class="modal-input" style="margin:0;" value="${get2(m.k, 'race', 'opp')}" />
-                            </div>
-                        </div>
-                    `;
-                }).join('')}
             `;
         }
+
+        window.adjustRuleBase = function(key, delta) {
+            if (!ruleEditorDraft) return;
+            const el = document.getElementById(`re_${key}_base`);
+            if (!el) return;
+            const cur = Number(el.innerText) || 0;
+            el.innerText = cur + delta;
+        };
 
         window.saveRuleEditor = function() {
             SoundFX.click();
@@ -1132,37 +1126,48 @@
                 { k: 'openBlackGold' }, { k: 'foul' }, { k: 'letFoul' }, { k: 'openFoul' }
             ];
 
-            const dealerOnly = [];
-            meta.forEach(m => {
-                const ck = document.getElementById(`re_dealer_${m.k}`);
-                if (ck && ck.checked) dealerOnly.push(m.k);
-            });
             if (!ruleEditorDraft.chase) ruleEditorDraft.chase = {};
-            ruleEditorDraft.chase.dealerOnlyActions = dealerOnly;
+            ruleEditorDraft.chase.dealerOnlyActions = [];
             if (!ruleEditorDraft.chase.actions) ruleEditorDraft.chase.actions = {};
 
-            const readNum = (id) => {
-                const el = document.getElementById(id);
-                const v = el ? Number(el.value) : 0;
+            const readBase = (k) => {
+                const el = document.getElementById(`re_${k}_base`);
+                const v = el ? Number(el.innerText) : 0;
                 return Number.isFinite(v) ? v : 0;
             };
+
+            const ratio = {
+                normal:       { p3:{up:-1, down:0},      p2t:{opp:-1}, p2r:{opp:0} },
+                smallGold:    { p3:{up:-1, down:0},      p2t:{opp:-1}, p2r:{opp:0} },
+                bigGold:      { p3:{up:-0.5, down:-0.5}, p2t:{opp:-1}, p2r:{opp:0} },
+                gold9:        { p3:{up:-0.5, down:-0.5}, p2t:{opp:-1}, p2r:{opp:0} },
+                foul:         { p3:{up:-1, down:0},      p2t:{opp:-1}, p2r:{opp:0} },
+                letFoul:      { p3:{up:0, down:-1},      p2t:{opp:-1}, p2r:{opp:0} },
+                openFoul:     { p3:{up:0, down:-1},      p2t:{opp:-1}, p2r:{opp:0} },
+                blackGold:    { p3:{up:-0.2, down:-0.8}, p2t:{opp:-1}, p2r:{opp:0} },
+                openBlackGold:{ p3:{up:-0.5, down:-0.5}, p2t:{opp:-1}, p2r:{opp:0} }
+            };
+
+            const calc = (base, mul) => Math.round(base * mul);
 
             meta.forEach(m => {
                 const k = m.k;
                 const prev = ruleEditorDraft.chase.actions[k] || {};
                 const keepRoundEnd = prev.roundEnd !== undefined ? prev.roundEnd : ['normal','smallGold','bigGold','gold9','blackGold','openBlackGold'].includes(k);
                 const keepRotate = prev.rotate !== undefined ? prev.rotate : ['normal','smallGold','blackGold','openBlackGold'].includes(k);
+                const base = readBase(k);
+                const r = ratio[k] || ratio.normal;
                 ruleEditorDraft.chase.actions[k] = {
                     roundEnd: keepRoundEnd,
                     rotate: keepRotate,
                     points3: {
-                        self: readNum(`re_${k}_3_self`),
-                        up: readNum(`re_${k}_3_up`),
-                        down: readNum(`re_${k}_3_down`)
+                        self: base,
+                        up: calc(base, r.p3?.up ?? -1),
+                        down: calc(base, r.p3?.down ?? 0)
                     },
                     points2: {
-                        transfer: { self: readNum(`re_${k}_2_transfer_self`), opp: readNum(`re_${k}_2_transfer_opp`) },
-                        race: { self: readNum(`re_${k}_2_race_self`), opp: readNum(`re_${k}_2_race_opp`) }
+                        transfer: { self: base, opp: calc(base, r.p2t?.opp ?? -1) },
+                        race: { self: base, opp: calc(base, r.p2r?.opp ?? 0) }
                     }
                 };
             });
@@ -1934,6 +1939,10 @@
 
         window.openDiceModal = function() {
             SoundFX.click();
+            if ((state.round || 0) > 0 || (state.logs && state.logs.length > 0)) {
+                showToast('进行中不可再次随机，请重置后再试');
+                return;
+            }
             const modal = document.getElementById('diceModal');
             const body = document.getElementById('diceBody');
             if (body) body.innerHTML = '即将掷骰...';
@@ -2191,6 +2200,10 @@
             const roundValue = state.gameType === 'cn8' ? (state.round || 0) : state.round;
             document.getElementById('roundBigDisplay').innerHTML = `${roundValue}<small>${roundLabel}</small>`;
             
+            const randBtn = document.getElementById('randBtn');
+            const playing = (state.round || 0) > 0 || (state.logs && state.logs.length > 0);
+            if (randBtn) randBtn.disabled = playing;
+            
             const logBox = document.getElementById('logsArea');
             const recentLogs = state.logs ? state.logs.slice(0, 5) : [];
             if (recentLogs.length === 0) {
@@ -2286,10 +2299,11 @@
                     if (maxCount === 1 && p.score === maxScore) roleBadges += '<span class="role-badge rb-lead">领先</span>';
                     if (minCount === 1 && p.score === minScore) roleBadges += '<span class="role-badge rb-low">暂负</span>';
 
-                    const dBig = (isDealerOnlyAction('bigGold') && !isDealer) ? 'disabled' : '';
-                    const dG9 = (isDealerOnlyAction('gold9') && !isDealer) ? 'disabled' : '';
-                    const dOpenBlack = (isDealerOnlyAction('openBlackGold') && !isDealer) ? 'disabled' : '';
-                    const dOpenFoul = (isDealerOnlyAction('openFoul') && !isDealer) ? 'disabled' : '';
+                    const isNonDealer = i > 0;
+                    const dBig = isNonDealer ? 'disabled' : '';
+                    const dG9 = isNonDealer ? 'disabled' : '';
+                    const dOpenBlack = isNonDealer ? 'disabled' : '';
+                    const dOpenFoul = isNonDealer ? 'disabled' : '';
                     
                     const el = document.createElement('div');
                     el.className = cardClass;
