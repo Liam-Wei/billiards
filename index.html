@@ -2315,7 +2315,7 @@
                 ], { duration: life * 1.25, easing: 'cubic-bezier(.18,.9,.3,1)', fill: 'forwards' }).onfinish = () => { try { ring.remove(); } catch(e) {} };
             };
             const scale = 1.8; // 放大范围
-            burst(210 * scale, 1250 * scale, 150); // 单次强烈爆炸
+            burst(210 * scale, 1250 * scale, 100); // 单次强烈爆炸
         }
 
         function spawnConfettiAroundElement(el, winClass = 'gold9') {
