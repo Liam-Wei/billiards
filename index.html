@@ -107,11 +107,15 @@
             font-size: clamp(15px, 2.5vh, 18px); color: #333; gap: 3px; align-items: stretch;
             width: 90%; justify-self: end;
         }
-        .lb-row { display: flex; align-items: center; height: 100%; column-gap: 6px; width: 100%; justify-content: space-between; }
-        .lb-left { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1; }
-        .lb-rank { width: 1.6em; text-align: center; font-size: 1em; flex: none; }
-        .lb-name { font-weight: 700; font-size: 1em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #333; text-align: left; min-width: 0; }
-        .lb-score { font-family: monospace; font-weight: 900; font-size: 0.96em; color: #000; text-align: right; font-variant-numeric: tabular-nums; }
+        .lb-row { display: flex; align-items: center; height: 100%; width: 100%; }
+        .lb-line {
+            font-family: "SF Mono", ui-monospace, Menlo, monospace;
+            font-weight: 800;
+            white-space: pre;
+            width: 100%;
+            display: block;
+            text-align: right;
+        }
 
         /* --- 主区域 --- */
         main {
@@ -1258,6 +1262,23 @@
             const anyScoreChange = (state.players || []).some(p => Number(p?.score || 0) !== 0);
             const anyAction = (state.timeline || []).length > 0 || (state.logs || []).length > 0;
             return rounds > 0 || anyScoreChange || anyAction;
+        };
+
+        const compareByRank = (a, b) => {
+            const sa = Number(a?.score || 0);
+            const sb = Number(b?.score || 0);
+            if (sb !== sa) return sb - sa;
+            const sta = a?.stats || emptyStats();
+            const stb = b?.stats || emptyStats();
+            const bigA = Number(sta.bigGold || 0), bigB = Number(stb.bigGold || 0);
+            if (bigB !== bigA) return bigB - bigA;
+            const smallA = Number(sta.smallGold || 0), smallB = Number(stb.smallGold || 0);
+            if (smallB !== smallA) return smallB - smallA;
+            const normA = Number(sta.normal || 0), normB = Number(stb.normal || 0);
+            if (normB !== normA) return normB - normA;
+            const foulA = Number(sta.fouls || 0), foulB = Number(stb.fouls || 0);
+            if (foulA !== foulB) return foulA - foulB; // 少犯规优先
+            return String(a?.id || '').localeCompare(String(b?.id || ''));
         };
 
         // --- 核心逻辑 ---
@@ -2728,18 +2749,26 @@
             }
 
             const lbBox = document.getElementById('leaderboardArea');
-            const sortedP = [...state.players].sort((a,b) => b.score - a.score);
+            const sortedP = [...state.players].sort(compareByRank);
             const medals = ['🥇','🥈','🥉'];
+            const padRight = (str, len) => {
+                const s = String(str || '');
+                if (s.length >= len) return s;
+                return s + ' '.repeat(len - s.length);
+            };
+            const padLeft = (str, len) => {
+                const s = String(str || '');
+                if (s.length >= len) return s;
+                return ' '.repeat(len - s.length) + s;
+            };
+            const nameWidth = 3; // 支持2~3字名，缺少的补空格
+            const scoreWidth = 4; // 支持 -99~999
             lbBox.innerHTML = sortedP.map((p, i) => {
                 if(i > 2) return '';
-                return `
-                <div class="lb-row">
-                    <div class="lb-left">
-                        <div class="lb-rank">${medals[i]||(i+1)}</div>
-                        <div class="lb-name">${p.name}</div>
-                    </div>
-                    <div class="lb-score">${p.score}</div>
-                </div>`;
+                const rank = medals[i] || (i+1);
+                const name = padRight(p.name || '', nameWidth);
+                const score = padLeft(p.score || 0, scoreWidth);
+                return `<div class="lb-row"><span class="lb-line">${rank} ${name} ${score}</span></div>`;
             }).join('');
 
             const box = document.getElementById('container');
@@ -3074,23 +3103,6 @@
                 </svg>
             `;
         }
-
-        const compareByRank = (a, b) => {
-            const sa = Number(a?.score || 0);
-            const sb = Number(b?.score || 0);
-            if (sb !== sa) return sb - sa;
-            const sta = a?.stats || emptyStats();
-            const stb = b?.stats || emptyStats();
-            const bigA = Number(sta.bigGold || 0), bigB = Number(stb.bigGold || 0);
-            if (bigB !== bigA) return bigB - bigA;
-            const smallA = Number(sta.smallGold || 0), smallB = Number(stb.smallGold || 0);
-            if (smallB !== smallA) return smallB - smallA;
-            const normA = Number(sta.normal || 0), normB = Number(stb.normal || 0);
-            if (normB !== normA) return normB - normA;
-            const foulA = Number(sta.fouls || 0), foulB = Number(stb.fouls || 0);
-            if (foulA !== foulB) return foulA - foulB; // 少犯规优先
-            return String(a?.id || '').localeCompare(String(b?.id || ''));
-        };
 
         function computeReportExtras() {
             const players = state.players || [];
