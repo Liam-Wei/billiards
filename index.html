@@ -897,12 +897,12 @@
             background: radial-gradient(circle at 30% 30%, #FFF3B0, #FFD60A);
             box-shadow: 0 6px 14px rgba(0,0,0,0.22);
             pointer-events: none;
-            animation: coinFall 900ms ease-in forwards;
+            animation: coinFall 1400ms ease-in forwards;
         }
         @keyframes coinFall {
-            0% { transform: translateY(-40px) rotate(0deg); opacity: 0; }
+            0% { transform: translateY(-60px) rotate(0deg); opacity: 0; }
             15% { opacity: 1; }
-            100% { transform: translateY(240px) rotate(260deg); opacity: 0; }
+            100% { transform: translateY(360px) rotate(320deg); opacity: 0; }
         }
 
         .confetti-star {
@@ -2256,16 +2256,16 @@
         }
 
         function spawnCoins(count) {
-            const n = Math.max(6, Math.min(28, Number(count || 16)));
+            const n = Math.max(12, Math.min(60, Number(count || 24))); // 数量提升
             const w = window.innerWidth;
             for (let i = 0; i < n; i++) {
                 const el = document.createElement('div');
                 el.className = 'coin';
-                el.style.left = Math.round((w * 0.2) + Math.random() * (w * 0.6)) + 'px';
-                el.style.top = Math.round(20 + Math.random() * 30) + 'px';
-                el.style.animationDelay = Math.round(Math.random() * 180) + 'ms';
+                el.style.left = Math.round((w * 0.1) + Math.random() * (w * 0.8)) + 'px';
+                el.style.top = Math.round(10 + Math.random() * 20) + 'px';
+                el.style.animationDelay = Math.round(Math.random() * 220) + 'ms';
                 document.body.appendChild(el);
-                setTimeout(() => { try { el.remove(); } catch(e) {} }, 1200);
+                setTimeout(() => { try { el.remove(); } catch(e) {} }, 1700);
             }
         }
 
@@ -2281,14 +2281,14 @@
                 gold9: ['#FFD60A', '#FFC300', '#F4C430']
             }[winClass] || ['#FFD60A', '#FFC94A'];
             const centerX = window.innerWidth * 0.5;
-            const centerY = window.innerHeight * 0.18;
-            const burst = (spread, life) => {
-                const n = 18;
+            const centerY = window.innerHeight * 0.5;
+            const burst = (spread, life, count = 26) => {
+                const n = count;
                 for (let i = 0; i < n; i++) {
                     const el = document.createElement('div');
                     el.className = 'confetti-star';
-                    const angle = (Math.PI * 2 * i / n) + Math.random() * 0.6;
-                    const radius = spread * (0.6 + Math.random() * 0.7);
+                    const angle = (Math.PI * 2 * i / n) + Math.random() * 0.5;
+                    const radius = spread * (0.7 + Math.random() * 0.8);
                     const dx = Math.cos(angle) * radius;
                     const dy = Math.sin(angle) * radius;
                     el.style.left = `${centerX}px`;
@@ -2298,9 +2298,9 @@
                     el.style.background = palette[i % palette.length];
                     document.body.appendChild(el);
                     el.animate([
-                        { opacity: 1, transform: 'translate(-50%, -50%) scale(0.25) rotate(0deg)' },
-                        { opacity: 1, offset: 0.6 },
-                        { opacity: 0, transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.8) rotate(340deg)` }
+                        { opacity: 1, transform: 'translate(-50%, -50%) scale(0.3) rotate(0deg)' },
+                        { opacity: 1, offset: 0.5 },
+                        { opacity: 0, transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.9) rotate(380deg)` }
                     ], { duration: life, easing: 'cubic-bezier(.18,.9,.3,1)', fill: 'forwards' }).onfinish = () => { try { el.remove(); } catch(e) {} };
                 }
                 const ring = document.createElement('div');
@@ -2309,13 +2309,18 @@
                 ring.style.top = `${centerY}px`;
                 document.body.appendChild(ring);
                 ring.animate([
-                    { opacity: 0.7, transform: 'translate(-50%, -50%) scale(1)' },
-                    { opacity: 0.2, offset: 0.8 },
-                    { opacity: 0, transform: 'translate(-50%, -50%) scale(18)' }
-                ], { duration: life * 1.2, easing: 'cubic-bezier(.18,.9,.3,1)', fill: 'forwards' }).onfinish = () => { try { ring.remove(); } catch(e) {} };
+                    { opacity: 0.8, transform: 'translate(-50%, -50%) scale(1)' },
+                    { opacity: 0.25, offset: 0.75 },
+                    { opacity: 0, transform: 'translate(-50%, -50%) scale(22)' }
+                ], { duration: life * 1.25, easing: 'cubic-bezier(.18,.9,.3,1)', fill: 'forwards' }).onfinish = () => { try { ring.remove(); } catch(e) {} };
             };
-            burst(110, 950);
-            setTimeout(() => burst(190, 1150), 180);
+            const scale = 1.8; // 放大范围
+            const bursts = [
+                { delay: 0, spread: 140 * scale, life: 1100 * scale, count: 100 },
+                { delay: 700, spread: 210 * scale, life: 1250 * scale, count: 150 },
+                { delay: 1400, spread: 280 * scale, life: 1400 * scale, count: 180 }
+            ];
+            bursts.forEach(b => setTimeout(() => burst(b.spread, b.life, b.count), b.delay));
         }
 
         function spawnConfettiAroundElement(el, winClass = 'gold9') {
@@ -2453,7 +2458,7 @@
                 bumpScore(el);
             });
 
-            if (eff.type === 'bigGold') spawnCoins(18);
+            if (['bigGold','normal'].includes(eff.winClass)) spawnCoins(18);
             if (['bigGold','smallGold','gold9'].includes(eff.winClass)) spawnConfettiBurst(eff.winClass);
         }
 
