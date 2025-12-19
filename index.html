@@ -108,9 +108,8 @@
         }
         .lb-row { display: flex; align-items: center; height: 100%; column-gap: 6px; width: fit-content; justify-self: end; }
         .lb-left { display: flex; align-items: center; gap: 6px; min-width: 0; flex-shrink: 1; }
-        .lb-rank { width: auto; text-align: left; font-size: 1em; }
+        .lb-rank { width: 1.6em; text-align: center; font-size: 1em; flex: none; }
         .lb-name { font-weight: 700; font-size: 1em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #333; text-align: left; min-width: 0; }
-        .lb-spacer { width: calc(var(--lb-spacer-mul) * 1ch); flex-shrink: 0; }
         .lb-score { font-family: monospace; font-weight: 900; font-size: 0.96em; color: #000; text-align: right; font-variant-numeric: tabular-nums; }
 
         /* --- 主区域 --- */
@@ -461,17 +460,95 @@
             padding-bottom: 32px;
             box-shadow: 0 20px 44px rgba(0,0,0,0.22);
             transform-origin: top center;
-            width: calc(100vw - 24px);
-            max-width: none;
+            width: min(480px, calc(100vw - 24px));
+            max-width: 480px;
         }
         #summaryModal .center-box::after,
         #summaryModal .center-box::before {
             content: none;
         }
-        #summaryModal .result-row { padding: 18px 0; }
-        #summaryModal .res-name { font-size: 18px; font-weight: 900; }
+        #summaryModal .result-row {
+            padding: 14px 14px;
+            margin: 10px 0;
+            border-bottom: none;
+            background: #F2F2F7;
+            border: 1px solid rgba(229,229,234,0.75);
+            border-radius: 16px;
+            box-shadow: 0 10px 22px rgba(0,0,0,0.05);
+            display: grid;
+            grid-template-rows: 1fr 1fr;
+            gap: 10px;
+            min-height: 180px;
+        }
+        #summaryModal .res-medal {
+            width: 30px;
+            height: 30px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #F2F2F7;
+            border: none;
+            font-size: 16px;
+            font-weight: 900;
+            flex: none;
+        }
+        #summaryModal .res-name { font-size: 18px; font-weight: 900; line-height: 1.1; }
         #summaryModal .res-score { font-size: 22px; font-weight: 950; }
-        #summaryModal .stat-badge { font-size: 12px; padding: 6px 5px; border-radius: 8px; }
+        #summaryModal .res-head { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+        #summaryModal .res-left { display:flex; flex-direction: column; align-items:flex-start; gap:6px; min-width:0; flex:1; }
+        #summaryModal .res-left-top { display:flex; align-items:center; gap:8px; min-width:0; flex-wrap:nowrap; }
+        #summaryModal .res-left-bottom { display:flex; align-items:center; gap:6px; padding-left: 38px; }
+        #summaryModal .res-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #summaryModal .title-tags-row { display:flex; align-items:center; gap:6px; }
+        #summaryModal .title-tag { display:inline-flex; align-items:center; gap:6px; padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 900; line-height: 1; white-space: nowrap; justify-content: center; min-width: 78px; box-sizing: border-box; }
+        #summaryModal .tt-more { background: rgba(142,142,147,0.16); color: #666; }
+        /* 提升与获胜卡片的对比：更饱和的金色 */
+        #summaryModal .tt-mvp { background: #FFE19C; color: #A45A00; }
+        /* 与卡片背景拉开：偏冷蓝灰 */
+        #summaryModal .tt-loser { background: #D7E3FF; color: #2E5AA7; }
+        /* 与背景区分：淡紫色 */
+        #summaryModal .tt-empty { background: #E9E3FF; color: #5B4ACB; }
+        #summaryModal .tt-hot { background: #FFEEEE; color: var(--c-foul); }
+        #summaryModal .tt-streak { background: #E1F0FF; color: var(--c-primary); }
+        #summaryModal .tt-bounty { background: #F3E5F5; color: var(--c-gold-b); }
+        #summaryModal .tt-steady { background: rgba(52,199,89,0.12); color: #248A45; }
+        #summaryModal .tt-comeback { background: rgba(10,132,255,0.10); color: #0A84FF; }
+        #summaryModal .stat-badge { font-size: 12px; padding: 5px 8px; border-radius: 999px; font-variant-numeric: tabular-nums; width: 100%; box-sizing: border-box; }
+
+        #summaryModal .res-top {
+            display: grid;
+            grid-template-columns: minmax(0, 0.5fr) minmax(0, 1.4fr) auto;
+            align-items: center;
+            gap: 8px;
+            height: 100%;
+        }
+        #summaryModal .res-top-left { display:flex; align-items:center; gap:8px; min-width:0; }
+        #summaryModal .res-top-mid { min-width:0; }
+        #summaryModal .res-top-right { display:flex; align-items:center; justify-content:flex-end; }
+        #summaryModal .res-title-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-auto-rows: auto;
+            width: 100%;
+            gap: 6px;
+        }
+        #summaryModal .res-title-grid .title-tag {
+            width: 100%;
+            justify-content: center;
+            padding: 6px 8px;
+            font-size: 11px;
+            box-sizing: border-box;
+        }
+        #summaryModal .title-slot { width: 100%; min-height: 22px; }
+        #summaryModal .res-bottom { margin-top: 0; padding-top: 0; border-top: none; height: 100%; display:flex; align-items:center; }
+
+        #summaryModal .result-row.is-top {
+            background: #FFF4D6;
+            border-color: rgba(255,149,0,0.42);
+            box-shadow: 0 14px 30px rgba(255,149,0,0.16);
+        }
+        #summaryModal .result-row.is-top .res-medal { background: #FFF4D6; }
 
         .btn-confirm { flex:1; padding:12px; border:none; border-radius:12px; background:var(--c-primary); color:#FFF; font-weight:600; transition: all 0.2s; }
         .btn-confirm:disabled { background: #CCC; cursor: not-allowed; opacity: 0.7; }
@@ -479,11 +556,21 @@
         /* Summary Receipt Style */
         .receipt-header { border-bottom: none; padding-bottom: 6px; margin-bottom: 6px; position: relative; }
         .receipt-header::after { content: none; }
-        .res-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 6px; }
+        .res-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-auto-rows: 1fr;
+            gap: 8px 8px;
+            margin-top: 0;
+            justify-content: flex-start;
+            width: 100%;
+            height: 100%;
+        }
         .stat-badge {
             display: flex; align-items: center; justify-content: center;
-            font-size: 9px; padding: 3px 2px; border-radius: 4px; 
-            font-weight: 600; margin: 0; white-space: nowrap;
+            font-size: 11px; padding: 6px 4px; border-radius: 10px; 
+            font-weight: 700; margin: 0; white-space: nowrap;
+            height: 100%; box-sizing: border-box;
         }
         .sb-gold { background: #F3E5F5; color: var(--c-gold-b); }
         .sb-win { background: #E1F0FF; color: var(--c-primary); }
@@ -583,6 +670,15 @@
             align-items: center;
             justify-content: center;
         }
+
+        #helpModal .help-box { width: min(420px, calc(100vw - 24px)); padding: 16px; }
+        #helpModal .help-title { font-size: 18px; font-weight: 900; margin-bottom: 10px; }
+        #helpModal .help-body { font-size: 13px; color: #333; text-align: left; line-height: 1.6; margin-bottom: 14px; }
+        #helpModal .help-sec { background: #F2F2F7; border-radius: 14px; padding: 12px; margin-bottom: 10px; }
+        #helpModal .help-sec-title { font-size: 12px; font-weight: 950; color: #555; margin-bottom: 8px; letter-spacing: -0.01em; }
+        #helpModal .help-line { display: flex; align-items: flex-start; gap: 8px; margin: 6px 0; }
+        #helpModal .help-emoji { width: 1.2em; text-align: center; flex: none; }
+        #helpModal .help-close-btn { width: 100%; padding: 12px; background: #F2F2F7; color: #333; border: none; border-radius: 12px; font-weight: 800; }
 
         #toast {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -736,6 +832,22 @@
             .result-row { border-bottom: 1px solid rgba(255,255,255,0.06); }
             .receipt-header { border-bottom: 2px dashed rgba(255,255,255,0.18); }
             #posterImg { background: var(--bg-muted); }
+            #summaryModal .result-row {
+                background: rgba(44,44,46,0.72);
+                border-color: rgba(255,255,255,0.08);
+                box-shadow: none;
+            }
+            #summaryModal .res-medal { background: rgba(44,44,46,0.72); border: none; }
+            #summaryModal .res-bottom { border-top-color: rgba(255,255,255,0.10); }
+            #summaryModal .result-row.is-top {
+                background: rgba(255,204,0,0.16);
+                border-color: rgba(255,204,0,0.22);
+            }
+            #summaryModal .result-row.is-top .res-medal { background: rgba(255,204,0,0.16); }
+            /* 暗色模式下保证称号对比度 */
+            #summaryModal .tt-mvp { background: rgba(255,201,71,0.30); color: #FFD36A; }
+            #summaryModal .tt-loser { background: rgba(90,138,255,0.22); color: #BCD4FF; }
+            #summaryModal .tt-empty { background: rgba(150,132,255,0.22); color: #E1D8FF; }
         }
     </style>
 </head>
@@ -797,10 +909,10 @@
     </div>
 
     <div class="modal-overlay" id="helpModal" style="z-index: 190;">
-        <div class="center-box" style="width:320px;">
-            <div id="helpTitle" style="font-size:18px; font-weight:800; margin-bottom:10px;">说明</div>
-            <div id="helpBody" style="font-size:13px; color:#333; text-align:left; line-height:1.6; white-space:pre-line; margin-bottom:16px;"></div>
-            <button style="width:100%; padding:12px; background:#F2F2F7; color:#333; border:none; border-radius:12px; font-weight:700;" onclick="closeHelpModal()">关闭</button>
+        <div class="center-box help-box">
+            <div id="helpTitle" class="help-title">说明</div>
+            <div id="helpBody" class="help-body"></div>
+            <button class="help-close-btn" onclick="closeHelpModal()">关闭</button>
         </div>
     </div>
 
@@ -937,7 +1049,7 @@
     </div>
 
     <div class="modal-overlay" id="summaryModal">
-        <div class="center-box" style="width: calc(100vw - 24px);">
+        <div class="center-box">
             <div class="receipt-header">
                 <div id="summaryTitle" style="font-size:20px; font-weight:800;">战局结算</div>
                 <div id="summaryTime" style="font-size:12px; color:#8E8E93; margin-top:4px;"></div>
@@ -1004,6 +1116,7 @@
         // --- 核心逻辑 ---
         const DB_KEY = 'billiards_pro_max_v2';
         let pendingAction = null;
+        let confirmCountdownTimer = null;
         let currentEditIndex = -1;
         let timerInterval = null;
         let posterBlob = null;
@@ -1244,11 +1357,11 @@
             if (!titleEl || !body || !ruleEditorDraft) return;
             titleEl.innerText = ruleEditorDraft.name || '未命名规则';
 
-            const meta = [
+            const actionArr = [
                 { k: 'normal', n: '普胜' },
                 { k: 'smallGold', n: '小金' },
                 { k: 'bigGold', n: '大金' },
-                { k: 'gold9', n: '黄金9' },
+                { k: 'gold9', n: '黄金九' },
                 { k: 'blackGold', n: '黑金' },
                 { k: 'openBlackGold', n: '开球黑金' },
                 { k: 'foul', n: '犯规' },
@@ -1663,7 +1776,7 @@
         }
 
         const actionNames = {
-            'normal': '普胜', 'smallGold': '小金', 'bigGold': '大金', 'gold9': '黄金9',
+            'normal': '普胜', 'smallGold': '小金', 'bigGold': '大金', 'gold9': '黄金九',
             'blackGold': '黑金', 'openBlackGold': '开球黑金', 'foul': '犯规', 'letFoul': '让杆', 'openFoul': '开球犯规'
         };
 
@@ -1831,11 +1944,16 @@
             modal.style.display = 'flex';
             setTimeout(() => modal.classList.add('show'), 10);
 
+            if (confirmCountdownTimer) {
+                clearInterval(confirmCountdownTimer);
+                confirmCountdownTimer = null;
+            }
             let cd = 5;
-            const cdTimer = setInterval(() => {
+            confirmCountdownTimer = setInterval(() => {
                 cd--;
                 if(cd <= 0) {
-                    clearInterval(cdTimer);
+                    clearInterval(confirmCountdownTimer);
+                    confirmCountdownTimer = null;
                     btn.disabled = false;
                     btn.innerText = "确定";
                     btn.style.opacity = 1;
@@ -1850,6 +1968,10 @@
         }
 
         window.closeConfirmModal = function() {
+            if (confirmCountdownTimer) {
+                clearInterval(confirmCountdownTimer);
+                confirmCountdownTimer = null;
+            }
             document.getElementById('confirmModal').classList.remove('show');
             setTimeout(() => document.getElementById('confirmModal').style.display = 'none', 200);
             pendingAction = null;
@@ -2416,7 +2538,8 @@
             if (state.history.length > 20) state.history.shift();
             state.history.push(JSON.parse(JSON.stringify({
                 mode: state.mode, round: state.round, scoreMode: state.scoreMode,
-                players: state.players, logs: state.logs, timerSeconds: state.timerSeconds
+                players: state.players, logs: state.logs, timerSeconds: state.timerSeconds, timerRunning: state.timerRunning,
+                timeline: state.timeline
             })));
 
             if(!state.timerRunning) toggleTimer();
@@ -2460,30 +2583,14 @@
             const lbBox = document.getElementById('leaderboardArea');
             const sortedP = [...state.players].sort((a,b) => b.score - a.score);
             const medals = ['🥇','🥈','🥉'];
-            const measureNameWidth = (() => {
-                let canvas = null, ctx = null;
-                return (txt) => {
-                    if (!canvas) { canvas = document.createElement('canvas'); ctx = canvas.getContext('2d'); }
-                    if (!ctx) return 0;
-                    const lbEl = document.querySelector('.leaderboard-area');
-                    const fs = lbEl ? getComputedStyle(lbEl).fontSize : '16px';
-                    ctx.font = `700 ${fs} -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif`;
-                    return ctx.measureText(String(txt || '')).width;
-                };
-            })();
             lbBox.innerHTML = sortedP.map((p, i) => {
                 if(i > 2) return '';
-                const mulRaw = (getComputedStyle(document.documentElement).getPropertyValue('--lb-spacer-mul') || '').trim();
-                const parsed = parseFloat(mulRaw);
-                const mul = Number.isFinite(parsed) ? Math.max(0, parsed) : 0.5; // 允许 0 缩到最小，默认 0.5
-                const spacerW = Math.round((measureNameWidth(p.name || '') || 0) * mul);
                 return `
                 <div class="lb-row">
                     <div class="lb-left">
                         <div class="lb-rank">${medals[i]||(i+1)}</div>
                         <div class="lb-name">${p.name}</div>
                     </div>
-                    <div class="lb-spacer" style="width:${spacerW}px"></div>
                     <div class="lb-score">${p.score}</div>
                 </div>`;
             }).join('');
@@ -2580,7 +2687,7 @@
                             <div class="btn-row">
                                 <button class="act-btn b-bgold" ${dBig} onclick="handleAction(${i}, 'bigGold')"><span class="btn-t">大金</span></button>
                                 <button class="act-btn b-sgold" onclick="handleAction(${i}, 'smallGold')"><span class="btn-t">小金</span></button>
-                                <button class="act-btn b-gold9" ${dG9} onclick="handleAction(${i}, 'gold9')"><span class="btn-t">黄金9</span></button>
+                                <button class="act-btn b-gold9" ${dG9} onclick="handleAction(${i}, 'gold9')"><span class="btn-t">黄金九</span></button>
                             </div>
                             <div class="btn-row">
                                 <button class="act-btn b-black" onclick="handleAction(${i}, 'blackGold')"><span class="btn-t">黑金</span></button>
@@ -2824,57 +2931,30 @@
         function computeReportExtras() {
             const players = state.players || [];
             const rounds = Math.max(0, Number(state.round || 0));
-            const byScore = [...players].sort((a,b) => (b.score||0) - (a.score||0));
-            const bestScore = byScore[0]?.score ?? 0;
-            const mvpNet = byScore.find(p => p && (p.score === bestScore));
+            const ids = (players || []).map(p => p.id);
+            const rt = getRoundEndTimeline();
 
-            const wins = (p) => {
-                const st = p.stats || emptyStats();
-                return (st.bigGold||0) + (st.smallGold||0) + (st.gold9||0) + (st.normal||0);
-            };
-            const fouls = (p) => Number((p.stats || emptyStats()).fouls || 0);
-            const black = (p) => Number((p.stats || emptyStats()).blackGold || 0);
-
-            const mvpWins = [...players].sort((a,b) => wins(b) - wins(a))[0];
-            const mvpSteady = [...players].sort((a,b) => {
-                const ra = rounds > 0 ? fouls(a)/rounds : fouls(a);
-                const rb = rounds > 0 ? fouls(b)/rounds : fouls(b);
-                return ra - rb;
-            })[0];
-
-            const winTypes = new Set(['normal','smallGold','bigGold','gold9']);
             const foulTypes = new Set(['foul','letFoul','openFoul']);
 
-            const streakWin = new Map();
             const streakFoul = new Map();
-            const bestWin = { id: null, n: 0 };
             const bestFoul = { id: null, n: 0 };
 
             (state.timeline || []).forEach(e => {
                 if (!e || !e.actorId) return;
                 const aid = e.actorId;
-                if (winTypes.has(e.type) && e.roundEnd) {
-                    streakWin.set(aid, (streakWin.get(aid) || 0) + 1);
-                    streakFoul.set(aid, 0);
-                    const cur = streakWin.get(aid) || 0;
-                    if (cur > bestWin.n) { bestWin.id = aid; bestWin.n = cur; }
-                } else if (foulTypes.has(e.type)) {
+                if (foulTypes.has(e.type)) {
                     streakFoul.set(aid, (streakFoul.get(aid) || 0) + 1);
-                    streakWin.set(aid, 0);
                     const cur = streakFoul.get(aid) || 0;
                     if (cur > bestFoul.n) { bestFoul.id = aid; bestFoul.n = cur; }
                 } else {
-                    streakWin.set(aid, 0);
                     streakFoul.set(aid, 0);
                 }
             });
 
-            const rt = getRoundEndTimeline();
             let turning = null;
             for (let i = 1; i < rt.length; i++) {
                 const prev = rt[i-1];
                 const cur = rt[i];
-                const ids = (state.players || []).map(p => p.id);
                 const prevScores = ids.map(id => getScoreByIdFromSnapshot(prev.scores, id));
                 const curScores = ids.map(id => getScoreByIdFromSnapshot(cur.scores, id));
                 const prevRange = Math.max(...prevScores) - Math.min(...prevScores);
@@ -2885,60 +2965,178 @@
                 }
             }
 
-            const poke = new Map(players.map(p => [p.id, 0]));
-            (state.timeline || []).forEach(e => {
+            const byScoreDesc = [...players].sort((a,b) => (b.score||0) - (a.score||0));
+            const byScoreAsc = [...players].sort((a,b) => (a.score||0) - (b.score||0));
+            const mvp = byScoreDesc[0] || null;
+            const loser = byScoreAsc[0] || null;
+            const byFoulTotal = [...players].sort((a,b) => ((b.stats?.fouls||0) - (a.stats?.fouls||0)));
+            const hotHead = byFoulTotal[0] || null;
+
+            const bestWin = { id: null, n: 0 };
+            const streakScore = new Map(ids.map(id => [id, 0]));
+            (rt || []).forEach(e => {
                 if (!e || !Array.isArray(e.orderBefore) || !e.actorId) return;
                 const order = e.orderBefore;
                 const n = order.length;
                 if (n < 2) return;
-                const ai = order.indexOf(e.actorId);
-                if (ai < 0) return;
-                const downId = order[(ai + 1) % n];
-                const goodTypes = new Set(['letFoul','openFoul','blackGold','openBlackGold']);
-                if (!goodTypes.has(e.type)) return;
-                const got = (e.changes || []).some(c => c && c.playerId === downId && Number(c.delta || 0) > 0);
-                if (got) poke.set(downId, (poke.get(downId) || 0) + 1);
-            });
 
-            const titles = new Map(players.map(p => [p.id, '']));
-            const used = new Set();
-            const pickUnique = (cands) => {
-                for (const c of cands) {
-                    if (!c || used.has(c.id)) continue;
-                    used.add(c.id);
-                    return c;
+                const deltaById = new Map(order.map(id => [id, 0]));
+                (e.changes || []).forEach(c => {
+                    if (!c) return;
+                    deltaById.set(c.playerId, (deltaById.get(c.playerId) || 0) + Number(c.delta || 0));
+                });
+
+                const scored = new Set();
+                if (['normal','smallGold','bigGold','gold9'].includes(e.type)) {
+                    const d = Number(deltaById.get(e.actorId) || 0);
+                    if (d > 0) scored.add(e.actorId);
+                } else if (e.type === 'blackGold') {
+                    const ai = order.indexOf(e.actorId);
+                    if (ai >= 0) {
+                        const upId = order[(ai - 1 + n) % n];
+                        const d = Number(deltaById.get(upId) || 0);
+                        if (d > 0) scored.add(upId);
+                    }
                 }
-                return null;
-            };
-            const topScore = [...players].sort((a,b) => (b.score||0) - (a.score||0));
-            const lowScore = [...players].sort((a,b) => (a.score||0) - (b.score||0));
-            const topBlack = [...players].sort((a,b) => black(b) - black(a));
-            const topFoul = [...players].sort((a,b) => fouls(b) - fouls(a));
 
-            const t1 = pickUnique(topScore); if (t1) titles.set(t1.id, 'MVP');
-            const t2 = pickUnique(lowScore); if (t2) titles.set(t2.id, '慈善家');
-            const t3 = pickUnique(topBlack); if (t3) titles.set(t3.id, '黑金王');
-            const t4 = pickUnique(topFoul); if (t4) titles.set(t4.id, '犯规王');
-            players.forEach(p => { if (p && !titles.get(p.id)) titles.set(p.id, '稳定输出'); });
-
-            const metrics = players.map(p => {
-                const st = p.stats || emptyStats();
-                const hard = rounds > 0 ? ((Number(st.normal||0) + Number(st.bigGold||0)) / rounds) : 0;
-                const luck = rounds > 0 ? ((Number(st.blackGold||0) + Number(st.gold9||0)) / rounds) : 0;
-                return {
-                    id: p.id,
-                    hard,
-                    luck,
-                    poked: poke.get(p.id) || 0,
-                    title: titles.get(p.id) || ''
-                };
+                ids.forEach(id => {
+                    const cur = scored.has(id) ? ((streakScore.get(id) || 0) + 1) : 0;
+                    streakScore.set(id, cur);
+                    if (cur > bestWin.n) { bestWin.id = id; bestWin.n = cur; }
+                });
             });
 
-            return { rounds, mvpNet, mvpWins, mvpSteady, bestWin, bestFoul, turning, metrics };
+            const emptyAll = players.filter(p => {
+                const st = p.stats || emptyStats();
+                return (Number(st.bigGold||0) === 0) && (Number(st.smallGold||0) === 0) && (Number(st.gold9||0) === 0);
+            });
+
+            const totals = {
+                big: players.reduce((s, p) => s + Number(p?.stats?.bigGold || 0), 0),
+                small: players.reduce((s, p) => s + Number(p?.stats?.smallGold || 0), 0),
+                nine: players.reduce((s, p) => s + Number(p?.stats?.gold9 || 0), 0)
+            };
+            const weights = { big: 5, small: 2, nine: 10 };
+            const calcBounty = (st) => {
+                const c = { big: Number(st?.bigGold || 0), small: Number(st?.smallGold || 0), nine: Number(st?.gold9 || 0) };
+                let cur = 0;
+                let hasAll = true;
+                ['big','small','nine'].forEach(k => {
+                    const count = Number(c[k] || 0);
+                    const total = Number(totals[k] || 0);
+                    const w = Number(weights[k] || 0);
+                    if (count === 0) hasAll = false;
+                    const mono = (total >= 2) && (count === total) && (count > 0);
+                    const mul = mono ? 2.0 : 1.0;
+                    cur += (count * w * mul);
+                });
+                const slam = hasAll ? 1.2 : 1.0;
+                return Math.round((cur * slam) * 100) / 100;
+            };
+            let bounty = { id: null, score: 0 };
+            players.forEach(p => {
+                const sc = calcBounty(p.stats || emptyStats());
+                if (!bounty.id || sc > bounty.score || (sc === bounty.score && (p.score || 0) > (players.find(x => x.id === bounty.id)?.score || 0))) {
+                    bounty = { id: p.id, score: sc };
+                }
+            });
+
+            let steady = { id: null, n: 0 };
+            if ((state.mode || 0) === 3) {
+                const pacer = new Map(ids.map(id => [id, 0]));
+                (rt || []).forEach(e => {
+                    if (!e || !Array.isArray(e.orderBefore)) return;
+                    const order = e.orderBefore;
+                    if (order.length !== 3) return;
+                    const deltaById = new Map(order.map(id => [id, 0]));
+                    (e.changes || []).forEach(c => {
+                        if (!c) return;
+                        deltaById.set(c.playerId, (deltaById.get(c.playerId) || 0) + Number(c.delta || 0));
+                    });
+                    order.forEach(id => {
+                        const d = Number(deltaById.get(id) || 0);
+                        if (d === 0) pacer.set(id, (pacer.get(id) || 0) + 1);
+                    });
+                });
+                ids.forEach(id => {
+                    const n = pacer.get(id) || 0;
+                    if (n > steady.n) steady = { id, n };
+                });
+            }
+
+            let comeback = { id: null, gain: 0 };
+            if ((rt || []).length >= 2) {
+                const nR = rt.length;
+                const splitK = Math.max(1, Math.floor(nR / 2));
+                const mid = rt[splitK - 1];
+                const end = rt[nR - 1];
+
+                const rankOf = (scoresById, id) => {
+                    const arr = ids.map(pid => ({ id: pid, v: Number(scoresById.get(pid) || 0) }));
+                    arr.sort((a,b) => b.v - a.v);
+                    return arr.findIndex(x => x.id === id) + 1;
+                };
+
+                const midScores = new Map(ids.map(id => [id, getScoreByIdFromSnapshot(mid.scores, id)]));
+                const endScores = new Map(ids.map(id => [id, getScoreByIdFromSnapshot(end.scores, id)]));
+                ids.forEach(id => {
+                    const rMid = rankOf(midScores, id);
+                    const rEnd = rankOf(endScores, id);
+                    const sMid = Number(midScores.get(id) || 0);
+                    const sEnd = Number(endScores.get(id) || 0);
+                    const gain2 = sEnd - sMid;
+
+                    const condA = rMid > Math.floor(ids.length / 2);
+                    const condB = rEnd <= 2;
+                    const condC = (gain2 > 0);
+
+                    if (condA && condB && condC) {
+                        if (!comeback.id || gain2 > comeback.gain) {
+                            comeback = { id, gain: gain2 };
+                        }
+                    }
+                });
+            }
+
+            return {
+                rounds,
+                turning,
+                bestWin,
+                bestFoul,
+                titleWinners: {
+                    mvp,
+                    loser,
+                    hotHead,
+                    emptyAll,
+                    bounty,
+                    steady,
+                    comeback
+                }
+            };
         }
 
         function buildOverviewHtml(sortedPlayers, extra) {
             const medals = ['🥇', '🥈', '🥉'];
+            const tw = extra && extra.titleWinners ? extra.titleWinners : {};
+            const maxScore = sortedPlayers && sortedPlayers.length ? Number(sortedPlayers[0].score || 0) : 0;
+            const fmt2 = (n) => String(Number(n || 0));
+
+            const buildTagSpan = (t) => `<span class="title-tag ${t.cls}"><span>${t.icon}</span><span>${escapeAttr(t.name)}</span></span>`;
+            const buildTitleGridHtml = (tags) => {
+                const total = (tags || []).length;
+                const remain = total > 6 ? (total - 5) : 0;
+                const shown = total > 6 ? (tags || []).slice(0, 5) : (tags || []).slice(0, 6);
+                const cells = [...shown];
+                if (remain > 0) cells.push({ cls: 'tt-more', icon: '', name: `+${remain}` });
+                while (cells.length < 6) cells.push(null);
+
+                return `<div class="res-title-grid">${cells.map(t => {
+                    if (!t) return `<span class="title-slot"></span>`;
+                    if (t.cls === 'tt-more') return `<span class="title-tag tt-more"><span>${escapeAttr(t.name)}</span></span>`;
+                    return buildTagSpan(t);
+                }).join('')}</div>`;
+            };
+
             let html = `
                 <div class="help-row">
                     <button class="help-btn" onclick="showOverviewHelp()">?</button>
@@ -2952,48 +3150,49 @@
                 const totalWins = (st.bigGold||0) + (st.smallGold||0) + (st.gold9||0) + (st.normal||0);
                 const blackCount = (st.blackGold||0);
                 const foulCount = (st.fouls||0);
+                const normalCount = (st.normal||0);
                 const actionCount = totalWins + blackCount + foulCount;
                 const foulRate = actionCount > 0 ? Math.round((foulCount / actionCount) * 100) : 0;
-                const avgPerRound = (state.round > 0) ? (p.score / state.round) : 0;
+
+                const tags = [];
+                if (state.gameType !== 'cn8') {
+                    if (tw.mvp && tw.mvp.id === p.id) tags.push({ cls: 'tt-mvp', icon: '🏆', name: 'MVP' });
+                    if (tw.loser && tw.loser.id === p.id) tags.push({ cls: 'tt-loser', icon: '🧊', name: '失败者' });
+                    if (tw.hotHead && tw.hotHead.id === p.id) tags.push({ cls: 'tt-hot', icon: '🤬', name: '暴躁老哥' });
+                    if (extra?.bestWin?.id === p.id && (extra.bestWin.n || 0) > 0) tags.push({ cls: 'tt-streak', icon: '🔥', name: '连胜王' });
+                    if ((tw.emptyAll || []).some(x => x && x.id === p.id)) tags.push({ cls: 'tt-empty', icon: '🫥', name: '四大皆空' });
+                    if (tw.bounty && tw.bounty.id === p.id) tags.push({ cls: 'tt-bounty', icon: '🎯', name: '赏金猎人' });
+                    if (tw.steady && tw.steady.id === p.id && (tw.steady.n || 0) > 0) tags.push({ cls: 'tt-steady', icon: '🧘', name: '稳如老狗' });
+                    if (tw.comeback && tw.comeback.id === p.id) tags.push({ cls: 'tt-comeback', icon: '🦅', name: '逆风翻盘' });
+                }
+                const rowCls = (Number(p.score || 0) === maxScore) ? 'result-row is-top' : 'result-row';
                 if (state.gameType === 'cn8') {
                     html += `
-                        <div class="result-row">
-                            <div class="res-rank">${medal}</div>
-                            <div style="flex:1;">
-                                <div style="display:flex; justify-content:space-between;">
-                                    <span class="res-name">${p.name}</span>
-                                    <span class="res-score" style="color:${color}">${sign}${p.score}</span>
-                                </div>
+                        <div class="${rowCls}">
+                            <div class="res-top">
+                                <div class="res-top-left"><span class="res-medal">${medal}</span><span class="res-name">${p.name}</span></div>
+                                <div class="res-top-mid"></div>
+                                <div class="res-top-right"><span class="res-score" style="color:${color}">${sign}${p.score}</span></div>
                             </div>
                         </div>
                     `;
                 } else {
-                    const m = (extra.metrics || []).find(x => x && x.id === p.id);
-                    const hard = m ? m.hard : 0;
-                    const luck = m ? m.luck : 0;
-                    const poked = m ? m.poked : 0;
-                    const title = m ? (m.title || '') : '';
+                    const titleGridHtml = buildTitleGridHtml(tags);
                     html += `
-                        <div class="result-row">
-                            <div class="res-rank">${medal}</div>
-                            <div style="flex:1;">
-                                <div style="display:flex; justify-content:space-between;">
-                                    <span class="res-name">${p.name}</span>
-                                    <span class="res-score" style="color:${color}">${sign}${p.score}</span>
-                                </div>
+                        <div class="${rowCls}">
+                            <div class="res-top">
+                                <div class="res-top-left"><span class="res-medal">${medal}</span><span class="res-name">${p.name}</span></div>
+                                <div class="res-top-mid">${titleGridHtml}</div>
+                                <div class="res-top-right"><span class="res-score" style="color:${color}">${sign}${p.score}</span></div>
+                            </div>
+                            <div class="res-bottom">
                                 <div class="res-stats-grid">
-                                    <span class="stat-badge sb-win">胜局:${totalWins}</span>
-                                    <span class="stat-badge sb-gold">大金:${st.bigGold||0}</span>
-                                    <span class="stat-badge sb-gold">小金:${st.smallGold||0}</span>
-                                    <span class="stat-badge sb-gold">黄金9:${st.gold9||0}</span>
-                                    <span class="stat-badge" style="background:#333;color:#fff">黑金:${st.blackGold||0}</span>
-                                    <span class="stat-badge sb-foul">犯规:${st.fouls||0}</span>
-                                    <span class="stat-badge" style="background:#E5E5EA;color:#333">操作:${actionCount}</span>
-                                    <span class="stat-badge" style="background:#E8FFF0;color:#0E7A2E">均分:${avgPerRound.toFixed(1)}</span>
-                                    <span class="stat-badge" style="background:#FFF0F0;color:#A60000">犯规率:${foulRate}%</span>
-                                    <span class="stat-badge" style="background:rgba(0,122,255,0.14);color:var(--c-primary)">硬度:${(hard*100).toFixed(0)}%</span>
-                                    <span class="stat-badge" style="background:rgba(255,149,0,0.16);color:var(--c-gold-s)">运气:${(luck*100).toFixed(0)}%</span>
-                                    <span class="stat-badge" style="background:rgba(142,142,147,0.18);color:var(--c-text)">被捅:${poked}</span>
+                                    <span class="stat-badge sb-gold">大金:${fmt2(st.bigGold||0)}</span>
+                                    <span class="stat-badge sb-gold">小金:${fmt2(st.smallGold||0)}</span>
+                                    <span class="stat-badge sb-gold">黄金九:${fmt2(st.gold9||0)}</span>
+                                    <span class="stat-badge sb-win">普胜:${fmt2(normalCount)}</span>
+                                    <span class="stat-badge" style="background:#333;color:#fff">黑金:${fmt2(st.blackGold||0)}</span>
+                                    <span class="stat-badge sb-foul">犯规:${fmt2(st.fouls||0)} (${foulRate}%)</span>
                                 </div>
                             </div>
                         </div>
@@ -3006,36 +3205,19 @@
         function buildTitleHtml(extra) {
             if (state.gameType === 'cn8') return '';
             const players = state.players || [];
-            const byScoreDesc = [...players].sort((a,b)=> (b.score||0)-(a.score||0));
-            const byScoreAsc = [...players].sort((a,b)=> (a.score||0)-(b.score||0));
-            const byFoul = [...players].sort((a,b)=> ((b.stats?.fouls||0)-(a.stats?.fouls||0)));
-            const byBlack = [...players].sort((a,b)=> ((b.stats?.blackGold||0)-(a.stats?.blackGold||0)));
-            const metrics = extra.metrics || [];
-            const byHard = [...metrics].sort((a,b)=> (b.hard||0)-(a.hard||0));
-            const byLuck = [...metrics].sort((a,b)=> (b.luck||0)-(a.luck||0));
-
-            const pickName = (arr) => (arr[0]?.name) ? arr[0].name : '—';
-            const pickFoul = () => {
-                const p = byFoul[0];
-                return p ? `${p.name} (${p.stats?.fouls||0}次)` : '—';
+            const tw = extra && extra.titleWinners ? extra.titleWinners : {};
+            const nameById = (id) => {
+                const p = players.find(x => x && x.id === id);
+                return p ? p.name : '—';
             };
-            const pickBlack = () => {
-                const p = byBlack[0];
-                return p ? `${p.name} (${p.stats?.blackGold||0}次)` : '—';
-            };
-            const pickHard = () => {
-                const m = byHard[0];
-                const p = players.find(pp => pp.id === m?.id);
-                return p ? `${p.name} (${(m.hard*100).toFixed(0)}%)` : '—';
-            };
-            const pickLuck = () => {
-                const m = byLuck[0];
-                const p = players.find(pp => pp.id === m?.id);
-                return p ? `${p.name} (${(m.luck*100).toFixed(0)}%)` : '—';
-            };
-
-            const maxScore = pickName(byScoreDesc);
-            const minScore = pickName(byScoreAsc);
+            const mvpName = tw.mvp ? tw.mvp.name : '—';
+            const loserName = tw.loser ? tw.loser.name : '—';
+            const hotText = tw.hotHead ? `${tw.hotHead.name} (${tw.hotHead.stats?.fouls||0}次)` : '—';
+            const streakText = (extra?.bestWin?.id && extra?.bestWin?.n) ? `${nameById(extra.bestWin.id)} (x${extra.bestWin.n})` : '—';
+            const emptyText = (tw.emptyAll && tw.emptyAll.length > 0) ? tw.emptyAll.map(p => p.name).join('、') : '—';
+            const bountyText = (tw.bounty && tw.bounty.id !== null) ? `${nameById(tw.bounty.id)} (${Number(tw.bounty.score||0).toFixed(2)})` : '—';
+            const steadyText = (tw.steady && tw.steady.id !== null && (tw.steady.n || 0) > 0) ? `${nameById(tw.steady.id)} (${tw.steady.n}次)` : '—';
+            const comebackText = (tw.comeback && tw.comeback.id !== null) ? `${nameById(tw.comeback.id)} (+${tw.comeback.gain})` : '—';
 
             const grid = `
                 <div class="help-row">
@@ -3044,27 +3226,35 @@
                 <div class="ach-grid">
                     <div class="ach-item">
                         <div class="ach-left"><div class="ach-title">MVP</div><span class="ach-icon">🏆</span></div>
-                        <div class="ach-val">${escapeAttr(maxScore)}</div>
+                        <div class="ach-val">${escapeAttr(mvpName)}</div>
                     </div>
                     <div class="ach-item">
-                        <div class="ach-left"><div class="ach-title">慈善家</div><span class="ach-icon">🤝</span></div>
-                        <div class="ach-val">${escapeAttr(minScore)}</div>
+                        <div class="ach-left"><div class="ach-title">失败者</div><span class="ach-icon">🧊</span></div>
+                        <div class="ach-val">${escapeAttr(loserName)}</div>
                     </div>
                     <div class="ach-item">
                         <div class="ach-left"><div class="ach-title">暴躁老哥</div><span class="ach-icon">🤬</span></div>
-                        <div class="ach-val">${escapeAttr(pickFoul())}</div>
+                        <div class="ach-val">${escapeAttr(hotText)}</div>
                     </div>
                     <div class="ach-item">
-                        <div class="ach-left"><div class="ach-title">硬汉</div><span class="ach-icon">🗿</span></div>
-                        <div class="ach-val">${escapeAttr(pickHard())}</div>
+                        <div class="ach-left"><div class="ach-title">连胜王</div><span class="ach-icon">🔥</span></div>
+                        <div class="ach-val">${escapeAttr(streakText)}</div>
                     </div>
                     <div class="ach-item">
-                        <div class="ach-left"><div class="ach-title">运气王</div><span class="ach-icon">🍀</span></div>
-                        <div class="ach-val">${escapeAttr(pickLuck())}</div>
+                        <div class="ach-left"><div class="ach-title">四大皆空</div><span class="ach-icon">🫥</span></div>
+                        <div class="ach-val">${escapeAttr(emptyText)}</div>
                     </div>
                     <div class="ach-item">
-                        <div class="ach-left"><div class="ach-title">黑金王</div><span class="ach-icon">🖤</span></div>
-                        <div class="ach-val">${escapeAttr(pickBlack())}</div>
+                        <div class="ach-left"><div class="ach-title">赏金猎人</div><span class="ach-icon">🎯</span></div>
+                        <div class="ach-val">${escapeAttr(bountyText)}</div>
+                    </div>
+                    <div class="ach-item">
+                        <div class="ach-left"><div class="ach-title">稳如老狗</div><span class="ach-icon">🧘</span></div>
+                        <div class="ach-val">${escapeAttr(steadyText)}</div>
+                    </div>
+                    <div class="ach-item">
+                        <div class="ach-left"><div class="ach-title">逆风翻盘</div><span class="ach-icon">🦅</span></div>
+                        <div class="ach-val">${escapeAttr(comebackText)}</div>
                     </div>
                 </div>
             `;
@@ -3076,12 +3266,19 @@
             const title = document.getElementById('helpTitle');
             const body = document.getElementById('helpBody');
             if (title) title.innerText = '称号说明';
-            if (body) body.innerText = `MVP：净分最高
-慈善家：净分最低
-暴躁老哥：犯规次数最多
-硬汉：硬度最高（普胜+大金占回合比）
-运气王：运气最高（黑金+黄金9占回合比）
-黑金王：黑金次数最多`;
+            if (body) body.innerHTML = `
+                <div class="help-sec">
+                    <div class="help-sec-title">8 个称号</div>
+                    <div class="help-line"><span class="help-emoji">🏆</span><div><b>MVP</b>：今天分数最高</div></div>
+                    <div class="help-line"><span class="help-emoji">🧊</span><div><b>失败者</b>：分数最低</div></div>
+                    <div class="help-line"><span class="help-emoji">🤬</span><div><b>暴躁老哥</b>：犯规次数最多</div></div>
+                    <div class="help-line"><span class="help-emoji">🔥</span><div><b>连胜王</b>：连续得分回合最多（普胜/大金/小金/黄金九/上家黑金）</div></div>
+                    <div class="help-line"><span class="help-emoji">🫥</span><div><b>四大皆空</b>：大金/小金/黄金九都没有</div></div>
+                    <div class="help-line"><span class="help-emoji">🎯</span><div><b>赏金猎人</b>：赏金猎人指数最高（含独吞与大满贯加成）</div></div>
+                    <div class="help-line"><span class="help-emoji">🧘</span><div><b>稳如老狗</b>：3人局陪跑次数最多（该回合分数不动）</div></div>
+                    <div class="help-line"><span class="help-emoji">🦅</span><div><b>逆风翻盘</b>：半程落后（后50%）但终局进入前二</div></div>
+                </div>
+            `;
             if (modal) { modal.style.display = 'flex'; setTimeout(() => modal.classList.add('show'), 10); }
         };
 
@@ -3089,16 +3286,26 @@
             const modal = document.getElementById('helpModal');
             const title = document.getElementById('helpTitle');
             const body = document.getElementById('helpBody');
-            if (title) title.innerText = '统计说明';
-            if (body) body.innerText = `胜局：普胜+小金+大金+黄金9
-大金/小金/黄金9/黑金：各自次数
-犯规：犯规总次数
-操作：胜局+黑金+犯规总数
-均分：总分 / 回合数
-犯规率：犯规 / 操作
-硬度：(普胜+大金) / 回合
-运气：(黑金+黄金9) / 回合
-被捅：被对手让杆/开球犯规等导致得分的次数`;
+            if (title) title.innerText = '统计与称号说明';
+            if (body) body.innerHTML = `
+                <div class="help-sec">
+                    <div class="help-sec-title">统计说明</div>
+                    <div class="help-line"><span class="help-emoji">📌</span><div><b>普胜</b>：普胜次数</div></div>
+                    <div class="help-line"><span class="help-emoji">📌</span><div><b>大金/小金/黄金九/黑金</b>：各自次数</div></div>
+                    <div class="help-line"><span class="help-emoji">📌</span><div><b>犯规</b>：犯规总次数（括号为犯规率 = 犯规 / ((普胜+大金+小金+黄金九) + 黑金 + 犯规)）</div></div>
+                </div>
+                <div class="help-sec">
+                    <div class="help-sec-title">称号说明（显示为玩家名后面的椭圆 Tag）</div>
+                    <div class="help-line"><span class="help-emoji">🏆</span><div><b>MVP</b>：今天分数最高</div></div>
+                    <div class="help-line"><span class="help-emoji">🧊</span><div><b>失败者</b>：分数最低</div></div>
+                    <div class="help-line"><span class="help-emoji">🤬</span><div><b>暴躁老哥</b>：犯规次数最多</div></div>
+                    <div class="help-line"><span class="help-emoji">🔥</span><div><b>连胜王</b>：连续得分回合最多（普胜/大金/小金/黄金九/上家黑金）</div></div>
+                    <div class="help-line"><span class="help-emoji">🫥</span><div><b>四大皆空</b>：大金/小金/黄金九都没有</div></div>
+                    <div class="help-line"><span class="help-emoji">🎯</span><div><b>赏金猎人</b>：赏金猎人指数最高（含独吞与大满贯加成）</div></div>
+                    <div class="help-line"><span class="help-emoji">🧘</span><div><b>稳如老狗</b>：3人局陪跑次数最多（该回合分数不动）</div></div>
+                    <div class="help-line"><span class="help-emoji">🦅</span><div><b>逆风翻盘</b>：半程落后（后50%）但终局进入前二</div></div>
+                </div>
+            `;
             if (modal) { modal.style.display = 'flex'; setTimeout(() => modal.classList.add('show'), 10); }
         };
 
@@ -3135,26 +3342,7 @@
             const sortedPlayers = [...state.players].sort((a, b) => b.score - a.score);
             const extra = computeReportExtras();
             const overviewHtml = buildOverviewHtml(sortedPlayers, extra);
-            const titleHtml = buildTitleHtml(extra);
-
-            const tabs = (state.gameType === 'cn8') ? '' : `
-                <div class="summary-tabs">
-                    <button class="tab-btn active" data-tab="overview" onclick="switchSummaryTab('overview')">总览</button>
-                    <button class="tab-btn" data-tab="title" onclick="switchSummaryTab('title')">称号</button>
-                </div>
-                <div id="summaryViewContainer" class="summary-view"></div>
-            `;
-
-            if (state.gameType === 'cn8') {
-                document.getElementById('summaryContent').innerHTML = overviewHtml;
-            } else {
-                summaryViews = {
-                    overview: overviewHtml,
-                    title: titleHtml
-                };
-                document.getElementById('summaryContent').innerHTML = tabs;
-                switchSummaryTab(summaryActiveTab);
-            }
+            document.getElementById('summaryContent').innerHTML = overviewHtml;
             const modal = document.getElementById('summaryModal');
             modal.style.display = 'flex';
             setTimeout(() => modal.classList.add('show'), 10);
@@ -3188,7 +3376,6 @@
                     const foulCount = (st.fouls||0);
                     const actionCount = totalWins + blackCount + foulCount;
                     const foulRate = actionCount > 0 ? Math.round((foulCount / actionCount) * 100) : 0;
-                    const avgPerRound = (state.round > 0) ? (p.score / state.round) : 0;
                     return {
                         name: p.name,
                         score: p.score,
@@ -3199,8 +3386,7 @@
                         blackGold: st.blackGold || 0,
                         fouls: foulCount,
                         actionCount,
-                        foulRate,
-                        avgPerRound
+                        foulRate
                     };
                 })
             };
@@ -3359,8 +3545,8 @@
                 if (state.gameType !== 'cn8') {
                     ctx.fillStyle = '#8E8E93';
                     ctx.font = '650 30px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
-                    const line1 = `胜局 ${p.totalWins}  ·  犯规 ${p.fouls}  ·  操作 ${p.actionCount}`;
-                    const line2 = `均分 ${Number(p.avgPerRound || 0).toFixed(1)}  ·  犯规率 ${p.foulRate}%  ·  黑金 ${p.blackGold}`;
+                    const line1 = `胜局 ${p.totalWins}  ·  黑金 ${p.blackGold}  ·  犯规 ${p.fouls} (${p.foulRate}%)`;
+                    const line2 = `大金 ${p.bigGold}  ·  小金 ${p.smallGold}  ·  黄金九 ${p.gold9}`;
                     ctx.fillText(line1, cardX + 150, rowY + 124);
                     ctx.fillText(line2, cardX + 150, rowY + 166);
                 }
@@ -3448,11 +3634,17 @@
             if (state.gameType !== 'cn8') {
                 try {
                     const extra = computeReportExtras();
+                    const tw = extra && extra.titleWinners ? extra.titleWinners : {};
                     const turningText = extra.turning ? (`第${extra.turning.round}回合 ${extra.turning.actionName}（${extra.turning.deltasText}）`) : '-';
                     text += `⭐ 亮点:\n`;
-                    text += `   MVP: ${(extra.mvpNet && extra.mvpNet.name) ? extra.mvpNet.name : '-'}\n`;
+                    text += `   MVP: ${(tw.mvp && tw.mvp.name) ? tw.mvp.name : '-'}\n`;
+                    text += `   失败者: ${(tw.loser && tw.loser.name) ? tw.loser.name : '-'}\n`;
+                    text += `   暴躁老哥: ${(tw.hotHead && tw.hotHead.name) ? (tw.hotHead.name + ' ' + (tw.hotHead.stats?.fouls||0) + '次') : '-'}\n`;
+                    text += `   连胜王: ${extra.bestWin.id ? (getPlayerNameById(extra.bestWin.id) + ' x' + extra.bestWin.n) : '-'}\n`;
+                    text += `   赏金猎人: ${(tw.bounty && tw.bounty.id !== null) ? (getPlayerNameById(tw.bounty.id) + ' ' + Number(tw.bounty.score||0).toFixed(2)) : '-'}\n`;
+                    text += `   稳如老狗: ${(tw.steady && tw.steady.id !== null && (tw.steady.n||0) > 0) ? (getPlayerNameById(tw.steady.id) + ' ' + tw.steady.n + '次') : '-'}\n`;
+                    text += `   逆风翻盘: ${(tw.comeback && tw.comeback.id !== null) ? (getPlayerNameById(tw.comeback.id) + ' +' + tw.comeback.gain) : '-'}\n`;
                     text += `   转折点: ${turningText}\n`;
-                    text += `   连胜: ${extra.bestWin.id ? (getPlayerNameById(extra.bestWin.id) + ' x' + extra.bestWin.n) : '-'}\n`;
                     text += `   连犯: ${extra.bestFoul.id ? (getPlayerNameById(extra.bestFoul.id) + ' x' + extra.bestFoul.n) : '-'}\n`;
                     text += `------------------\n`;
                 } catch(e) {}
@@ -3464,15 +3656,13 @@
                     const foulCount = (st.fouls||0);
                     const actionCount = totalWins + blackCount + foulCount;
                     const foulRate = actionCount > 0 ? Math.round((foulCount / actionCount) * 100) : 0;
-                    const avgPerRound = (state.round > 0) ? (p.score / state.round) : 0;
                     
                     text += `👤 ${p.name}\n`;
-                    text += `   胜局: ${totalWins} | 犯规: ${foulCount} | 操作: ${actionCount}\n`;
-                    text += `   均分: ${avgPerRound.toFixed(1)} | 犯规率: ${foulRate}% | 黑金: ${blackCount}\n`;
+                    text += `   胜局: ${totalWins} | 黑金: ${blackCount} | 犯规: ${foulCount} (${foulRate}%)\n`;
                     const specials = [];
                     if(st.bigGold > 0) specials.push(`大金x${st.bigGold}`);
                     if(st.smallGold > 0) specials.push(`小金x${st.smallGold}`);
-                    if(st.gold9 > 0) specials.push(`黄金9x${st.gold9}`);
+                    if(st.gold9 > 0) specials.push(`黄金九x${st.gold9}`);
                     if(st.blackGold > 0) specials.push(`黑金x${st.blackGold}`);
                     
                     if(specials.length > 0) {
