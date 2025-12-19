@@ -2315,12 +2315,7 @@
                 ], { duration: life * 1.25, easing: 'cubic-bezier(.18,.9,.3,1)', fill: 'forwards' }).onfinish = () => { try { ring.remove(); } catch(e) {} };
             };
             const scale = 1.8; // 放大范围
-            const bursts = [
-                { delay: 0, spread: 140 * scale, life: 1100 * scale, count: 100 },
-                { delay: 700, spread: 210 * scale, life: 1250 * scale, count: 150 },
-                { delay: 1400, spread: 280 * scale, life: 1400 * scale, count: 180 }
-            ];
-            bursts.forEach(b => setTimeout(() => burst(b.spread, b.life, b.count), b.delay));
+            burst(210 * scale, 1250 * scale, 150); // 单次强烈爆炸
         }
 
         function spawnConfettiAroundElement(el, winClass = 'gold9') {
