@@ -171,6 +171,9 @@
             border: 1.5px solid rgba(142, 142, 147, 0.3); 
             background: #ECF1F6; /* 冷灰蓝背景 */
         }
+        /* 结算前端列表：第2/第3张背景交换 */
+        #container > .player-card:nth-child(2) { background: var(--bg-card); border-color: rgba(229,229,234,0.75); }
+        #container > .player-card:nth-child(3) { background: #ECF1F6; border-color: rgba(142, 142, 147, 0.3); }
         
         .card-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
         .left-info { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: clamp(19px, 2.6vh, 24px); }
@@ -1241,6 +1244,13 @@
                 this.playTone(150, 'sawtooth', 0.3);
                 setTimeout(()=>this.playTone(100, 'sawtooth', 0.3), 150);
             }
+        };
+
+        const hasProgress = () => {
+            const rounds = Math.max(0, Number(state.round || 0));
+            const anyScoreChange = (state.players || []).some(p => Number(p?.score || 0) !== 0);
+            const anyAction = (state.timeline || []).length > 0 || (state.logs || []).length > 0;
+            return rounds > 0 || anyScoreChange || anyAction;
         };
 
         // --- 核心逻辑 ---
@@ -3058,11 +3068,46 @@
             `;
         }
 
+        const compareByRank = (a, b) => {
+            const sa = Number(a?.score || 0);
+            const sb = Number(b?.score || 0);
+            if (sb !== sa) return sb - sa;
+            const sta = a?.stats || emptyStats();
+            const stb = b?.stats || emptyStats();
+            const bigA = Number(sta.bigGold || 0), bigB = Number(stb.bigGold || 0);
+            if (bigB !== bigA) return bigB - bigA;
+            const smallA = Number(sta.smallGold || 0), smallB = Number(stb.smallGold || 0);
+            if (smallB !== smallA) return smallB - smallA;
+            const normA = Number(sta.normal || 0), normB = Number(stb.normal || 0);
+            if (normB !== normA) return normB - normA;
+            const foulA = Number(sta.fouls || 0), foulB = Number(stb.fouls || 0);
+            if (foulA !== foulB) return foulA - foulB; // 少犯规优先
+            return String(a?.id || '').localeCompare(String(b?.id || ''));
+        };
+
         function computeReportExtras() {
             const players = state.players || [];
             const rounds = Math.max(0, Number(state.round || 0));
             const ids = (players || []).map(p => p.id);
             const rt = getRoundEndTimeline();
+
+            if (!hasProgress()) {
+                return {
+                    rounds,
+                    turning: null,
+                    bestWin: { id: null, n: 0 },
+                    bestFoul: { id: null, n: 0 },
+                    titleWinners: {
+                        mvp: null,
+                        loser: null,
+                        hotHead: null,
+                        emptyAll: [],
+                        bounty: null,
+                        steady: null,
+                        comeback: null
+                    }
+                };
+            }
 
             const foulTypes = new Set(['foul','letFoul','openFoul']);
 
@@ -3095,12 +3140,12 @@
                 }
             }
 
-            const byScoreDesc = [...players].sort((a,b) => (b.score||0) - (a.score||0));
-            const byScoreAsc = [...players].sort((a,b) => (a.score||0) - (b.score||0));
+            const byScoreDesc = [...players].sort(compareByRank);
+            const byScoreAsc = [...players].sort((a,b) => compareByRank(b,a)); // 反转
             const mvp = byScoreDesc[0] || null;
             const loser = byScoreAsc[0] || null;
             const byFoulTotal = [...players].sort((a,b) => ((b.stats?.fouls||0) - (a.stats?.fouls||0)));
-            const hotHead = byFoulTotal[0] || null;
+            const hotHead = (byFoulTotal[0] && (byFoulTotal[0].stats?.fouls || 0) > 0) ? byFoulTotal[0] : null;
 
             const bestWin = { id: null, n: 0 };
             const streakScore = new Map(ids.map(id => [id, 0]));
@@ -3245,11 +3290,9 @@
             };
         }
 
-        function buildOverviewHtml(sortedPlayers, extra) {
+        function buildOverviewHtml(sortedPlayers, extra, hasProg = true) {
             const medals = ['🥇', '🥈', '🥉'];
             const tw = extra && extra.titleWinners ? extra.titleWinners : {};
-            const maxScore = sortedPlayers && sortedPlayers.length ? Number(sortedPlayers[0].score || 0) : 0;
-            const minScore = sortedPlayers && sortedPlayers.length ? Number(sortedPlayers[sortedPlayers.length - 1].score || 0) : 0;
             const fmt2 = (n) => String(Number(n || 0));
 
             const buildTagSpan = (t) => `<span class="title-tag ${t.cls}"><span>${t.icon}</span><span>${escapeAttr(t.name)}</span></span>`;
@@ -3290,7 +3333,7 @@
                 const foulRate = actionCount > 0 ? Math.round((foulCount / actionCount) * 100) : 0;
 
                 const tags = [];
-                if (state.gameType !== 'cn8') {
+                if (hasProg && state.gameType !== 'cn8') {
                     if (tw.mvp && tw.mvp.id === p.id) tags.push({ cls: 'tt-mvp', icon: '🏆', name: 'MVP' });
                     if (tw.loser && tw.loser.id === p.id) tags.push({ cls: 'tt-loser', icon: '🧊', name: '送分童子' });
                     if (tw.hotHead && tw.hotHead.id === p.id) tags.push({ cls: 'tt-hot', icon: '🤬', name: '暴躁老哥' });
@@ -3301,8 +3344,8 @@
                     if (tw.comeback && tw.comeback.id === p.id) tags.push({ cls: 'tt-comeback', icon: '🦅', name: '逆风翻盘' });
                 }
                 let rowCls = 'result-row';
-                if (Number(p.score || 0) === maxScore) rowCls += ' is-top';
-                if (maxScore !== minScore && Number(p.score || 0) === minScore) rowCls += ' is-bottom';
+                if (hasProg && idx === 0) rowCls += ' is-top';
+                if (hasProg && sortedPlayers.length > 1 && idx === sortedPlayers.length - 1) rowCls += ' is-bottom';
                 if (state.gameType === 'cn8') {
                     html += `
                         <div class="${rowCls}">
@@ -3476,9 +3519,10 @@
                 document.getElementById('summaryTitle').innerText = `战局结算`;
                 document.getElementById('summaryTime').innerText = `共${state.round}回合 · 时长${timeText} · ${rsName}`;
             }
-            const sortedPlayers = [...state.players].sort((a, b) => b.score - a.score);
+            const sortedPlayers = [...state.players].sort(compareByRank);
             const extra = computeReportExtras();
-            const overviewHtml = buildOverviewHtml(sortedPlayers, extra);
+            const hasProg = hasProgress();
+            const overviewHtml = buildOverviewHtml(sortedPlayers, extra, hasProg);
             document.getElementById('summaryContent').innerHTML = overviewHtml;
             const modal = document.getElementById('summaryModal');
             modal.style.display = 'flex';
