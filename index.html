@@ -553,7 +553,8 @@
         /* 与卡片背景拉开：偏冷蓝灰 */
         #summaryModal .tt-loser { background: #D7E3FF; color: #2E5AA7; }
         /* 与背景区分：淡紫色 */
-        #summaryModal .tt-empty { background: #E9E3FF; color: #5B4ACB; }
+        #summaryModal .tt-empty { background: #DCD3FF; color: #5E4CC7; }
+        #summaryModal .tt-leak { background: #D7F5E5; color: #0B8F5A; }
         #summaryModal .tt-hot { background: #FFEEEE; color: var(--c-foul); }
         #summaryModal .tt-streak { background: #E1F0FF; color: var(--c-primary); }
         #summaryModal .tt-bounty { background: #F3E5F5; color: var(--c-gold-b); }
@@ -707,6 +708,7 @@
         .sb-gold { background: #F3E5F5; color: var(--c-gold-b); }
         .sb-win { background: #E1F0FF; color: var(--c-primary); }
         .sb-foul { background: #FFEEEE; color: var(--c-foul); }
+        .sb-leak { background: #E8FFF4; color: #0B8F5A; }
         .result-row { display: flex; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid #F2F2F7; }
 
         .summary-tabs {
@@ -980,6 +982,7 @@
             #summaryModal .tt-mvp { background: rgba(255,201,71,0.30); color: #FFD36A; }
             #summaryModal .tt-loser { background: rgba(90,138,255,0.22); color: #BCD4FF; }
             #summaryModal .tt-empty { background: rgba(150,132,255,0.22); color: #E1D8FF; }
+            #summaryModal .tt-leak { background: rgba(52,199,89,0.24); color: #5FFFB0; }
         }
     </style>
 </head>
@@ -1286,7 +1289,7 @@
         let summaryViews = {};
         let summaryActiveTab = 'overview';
 
-        const emptyStats = () => ({ bigGold: 0, smallGold: 0, gold9: 0, normal: 0, blackGold: 0, fouls: 0 });
+        const emptyStats = () => ({ bigGold: 0, smallGold: 0, gold9: 0, normal: 0, blackGold: 0, fouls: 0, leak: 0 });
         
         let state = {
             gameType: 'chase',
@@ -2211,6 +2214,21 @@
                 if (!ps[c.i]) return;
                 ps[c.i].score += c.v;
             });
+
+            const leakExemptTypes = new Set(['normal','smallGold','bigGold','gold9']);
+            if (!leakExemptTypes.has(type)) {
+                const actorId = idxToIdBeforeRotate[idx];
+                ps.forEach(p => {
+                    if (!p || p.id === null || p.id === undefined || p.id === actorId) return;
+                    const prev = Number(prevScoreById.get(p.id) || 0);
+                    const cur = Number(p.score || 0);
+                    const gain = cur - prev;
+                    if (gain > 0) {
+                        if (!p.stats) p.stats = emptyStats();
+                        p.stats.leak = Number(p.stats.leak || 0) + gain;
+                    }
+                });
+            }
 
             if (!state.logs) state.logs = [];
             state.logs.unshift({
@@ -3236,6 +3254,7 @@
                         mvp: null,
                         loser: null,
                         hotHead: null,
+                        leak: null,
                         emptyAll: [],
                         bounty: null,
                         steady: null,
@@ -3281,6 +3300,11 @@
             const loser = byScoreAsc[0] || null;
             const byFoulTotal = [...players].sort((a,b) => ((b.stats?.fouls||0) - (a.stats?.fouls||0)));
             const hotHead = (byFoulTotal[0] && (byFoulTotal[0].stats?.fouls || 0) > 0) ? byFoulTotal[0] : null;
+            const byLeak = [...players].sort((a,b) => ((b.stats?.leak||0) - (a.stats?.leak||0)));
+            const bestLeak = Number(byLeak[0]?.stats?.leak || 0);
+            const leak = bestLeak > 0
+                ? byLeak.filter(p => p && Number(p.stats?.leak || 0) === bestLeak).map(p => ({ id: p.id, n: bestLeak }))
+                : null;
 
             const bestWin = { id: null, n: 0 };
             const streakScore = new Map(ids.map(id => [id, 0]));
@@ -3417,6 +3441,7 @@
                     mvp,
                     loser,
                     hotHead,
+                    leak,
                     emptyAll,
                     bounty,
                     steady,
@@ -3472,6 +3497,7 @@
                     if (tw.mvp && tw.mvp.id === p.id) tags.push({ cls: 'tt-mvp', icon: '🏆', name: 'MVP' });
                     if (tw.loser && tw.loser.id === p.id) tags.push({ cls: 'tt-loser', icon: '🧊', name: '送分童子' });
                     if (tw.hotHead && tw.hotHead.id === p.id) tags.push({ cls: 'tt-hot', icon: '🤬', name: '暴躁老哥' });
+                    if ((Array.isArray(tw.leak) ? tw.leak.some(x => x && x.id === p.id) : (tw.leak && tw.leak.id === p.id))) tags.push({ cls: 'tt-leak', icon: '🪝', name: '捡漏王' });
                     if (extra?.bestWin?.id === p.id && (extra.bestWin.n || 0) > 0) tags.push({ cls: 'tt-streak', icon: '🔥', name: '连胜王' });
                     if ((tw.emptyAll || []).some(x => x && x.id === p.id)) tags.push({ cls: 'tt-empty', icon: '🫥', name: '四大皆空' });
                     if (tw.bounty && tw.bounty.id === p.id) tags.push({ cls: 'tt-bounty', icon: '🎯', name: '赏金猎人' });
@@ -3508,6 +3534,7 @@
                                     <span class="stat-badge sb-win">普胜:${fmt2(normalCount)}</span>
                                     <span class="stat-badge" style="background:#333;color:#fff">黑金:${fmt2(st.blackGold||0)}</span>
                                     <span class="stat-badge sb-foul">犯规:${fmt2(st.fouls||0)} (${foulRate}%)</span>
+                                    <span class="stat-badge sb-leak">捡漏分:${fmt2(st.leak||0)}</span>
                                 </div>
                             </div>
                         </div>
@@ -3528,6 +3555,9 @@
             const mvpName = tw.mvp ? tw.mvp.name : '—';
             const loserName = tw.loser ? tw.loser.name : '—';
             const hotText = tw.hotHead ? `${tw.hotHead.name} (${tw.hotHead.stats?.fouls||0}次)` : '—';
+            const leakText = (Array.isArray(tw.leak) && tw.leak.length > 0)
+                ? `${tw.leak.map(x => nameById(x.id)).join('、')} (+${Number(tw.leak[0].n||0)})`
+                : ((tw.leak && tw.leak.id !== null && tw.leak.id !== undefined) ? `${nameById(tw.leak.id)} (+${Number(tw.leak.n||0)})` : '—');
             const streakText = (extra?.bestWin?.id && extra?.bestWin?.n) ? `${nameById(extra.bestWin.id)} (x${extra.bestWin.n})` : '—';
             const emptyText = (tw.emptyAll && tw.emptyAll.length > 0) ? tw.emptyAll.map(p => p.name).join('、') : '—';
             const bountyText = (tw.bounty && tw.bounty.id !== null) ? `${nameById(tw.bounty.id)} (${Number(tw.bounty.score||0).toFixed(2)})` : '—';
@@ -3550,6 +3580,10 @@
                     <div class="ach-item">
                         <div class="ach-left"><div class="ach-title">暴躁老哥</div><span class="ach-icon">🤬</span></div>
                         <div class="ach-val">${escapeAttr(hotText)}</div>
+                    </div>
+                    <div class="ach-item">
+                        <div class="ach-left"><div class="ach-title">捡漏王</div><span class="ach-icon">🪝</span></div>
+                        <div class="ach-val">${escapeAttr(leakText)}</div>
                     </div>
                     <div class="ach-item">
                         <div class="ach-left"><div class="ach-title">连胜王</div><span class="ach-icon">🔥</span></div>
@@ -3608,12 +3642,14 @@
                     <div class="help-line"><span class="help-emoji">📌</span><div><b>普胜</b>：普胜次数</div></div>
                     <div class="help-line"><span class="help-emoji">📌</span><div><b>大金/小金/黄金九/黑金</b>：各自次数</div></div>
                     <div class="help-line"><span class="help-emoji">📌</span><div><b>犯规</b>：犯规总次数（括号为犯规率 = 犯规 / ((普胜+大金+小金+黄金九) + 黑金 + 犯规)）</div></div>
+                    <div class="help-line"><span class="help-emoji">📌</span><div><b>捡漏分</b>：非普胜/大金/小金/黄金九产生的得分中，自己因他人操作获得的正向得分总和</div></div>
                 </div>
                 <div class="help-sec">
                     <div class="help-sec-title">称号说明（显示为玩家名后面的椭圆 Tag）</div>
                     <div class="help-line"><span class="help-emoji">🏆</span><div><b>MVP</b>：今天分数最高</div></div>
                     <div class="help-line"><span class="help-emoji">🧊</span><div><b>送分童子</b>：分数最低</div></div>
                     <div class="help-line"><span class="help-emoji">🤬</span><div><b>暴躁老哥</b>：犯规次数最多</div></div>
+                    <div class="help-line"><span class="help-emoji">🪝</span><div><b>捡漏王</b>：捡漏分最高</div></div>
                     <div class="help-line"><span class="help-emoji">🔥</span><div><b>连胜王</b>：连续得分回合最多（普胜/大金/小金/黄金九/上家黑金）</div></div>
                     <div class="help-line"><span class="help-emoji">🫥</span><div><b>四大皆空</b>：大金/小金/黄金九都没有</div></div>
                     <div class="help-line"><span class="help-emoji">🎯</span><div><b>赏金猎人</b>：赏金猎人指数最高（含独吞与大满贯加成）</div></div>
