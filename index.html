@@ -1571,7 +1571,7 @@
                     <input id="re_name" class="modal-input" style="margin:0; text-align:left;" value="${escapeAttr(ruleEditorDraft.name || '')}" />
                 </div>
                 <div style="display:flex; flex-direction:column; gap:10px;">
-                    ${meta.map(m => {
+                    ${actionArr.map(m => {
                         return `
                             <div style="padding:10px; border-radius:14px; background:#F2F2F7;">
                                 <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
@@ -1612,7 +1612,10 @@
             ];
 
             if (!ruleEditorDraft.chase) ruleEditorDraft.chase = {};
-            ruleEditorDraft.chase.dealerOnlyActions = [];
+            // 保留原有的 dealerOnlyActions，如果没有则使用默认值
+            if (!ruleEditorDraft.chase.dealerOnlyActions) {
+                ruleEditorDraft.chase.dealerOnlyActions = ['bigGold', 'gold9', 'openBlackGold', 'openFoul'];
+            }
             if (!ruleEditorDraft.chase.actions) ruleEditorDraft.chase.actions = {};
 
             const readBase = (k) => {
@@ -3324,13 +3327,13 @@
                 if (['normal','smallGold','bigGold','gold9'].includes(e.type)) {
                     const d = Number(deltaById.get(e.actorId) || 0);
                     if (d > 0) scored.add(e.actorId);
-                } else if (e.type === 'blackGold') {
-                    const ai = order.indexOf(e.actorId);
-                    if (ai >= 0) {
-                        const upId = order[(ai - 1 + n) % n];
-                        const d = Number(deltaById.get(upId) || 0);
-                        if (d > 0) scored.add(upId);
-                    }
+                } else if (e.type === 'blackGold' || e.type === 'openBlackGold') {
+                    // 黑金时，检查所有因此得分的玩家（上家和下家都可能得分）
+                    order.forEach(id => {
+                        if (id === e.actorId) return; // 黑金者自己不算连胜
+                        const d = Number(deltaById.get(id) || 0);
+                        if (d > 0) scored.add(id);
+                    });
                 }
 
                 ids.forEach(id => {
@@ -3621,7 +3624,7 @@
                     <div class="help-line"><span class="help-emoji">🏆</span><div><b>MVP</b>：今天分数最高</div></div>
                     <div class="help-line"><span class="help-emoji">🧊</span><div><b>送分童子</b>：分数最低</div></div>
                     <div class="help-line"><span class="help-emoji">🤬</span><div><b>暴躁老哥</b>：犯规次数最多</div></div>
-                    <div class="help-line"><span class="help-emoji">🔥</span><div><b>连胜王</b>：连续得分回合最多（普胜/大金/小金/黄金九/上家黑金）</div></div>
+                    <div class="help-line"><span class="help-emoji">🔥</span><div><b>连胜王</b>：连续得分回合最多（普胜/大金/小金/黄金九/他人黑金得分）</div></div>
                     <div class="help-line"><span class="help-emoji">🫥</span><div><b>四大皆空</b>：大金/小金/黄金九都没有</div></div>
                     <div class="help-line"><span class="help-emoji">🎯</span><div><b>赏金猎人</b>：赏金猎人指数最高（含独吞与大满贯加成）</div></div>
                     <div class="help-line"><span class="help-emoji">🧘</span><div><b>稳如老狗</b>：3人局陪跑次数最多（该回合分数不动）</div></div>
@@ -3650,7 +3653,7 @@
                     <div class="help-line"><span class="help-emoji">🧊</span><div><b>送分童子</b>：分数最低</div></div>
                     <div class="help-line"><span class="help-emoji">🤬</span><div><b>暴躁老哥</b>：犯规次数最多</div></div>
                     <div class="help-line"><span class="help-emoji">🪝</span><div><b>捡漏王</b>：捡漏分最高</div></div>
-                    <div class="help-line"><span class="help-emoji">🔥</span><div><b>连胜王</b>：连续得分回合最多（普胜/大金/小金/黄金九/上家黑金）</div></div>
+                    <div class="help-line"><span class="help-emoji">🔥</span><div><b>连胜王</b>：连续得分回合最多（普胜/大金/小金/黄金九/他人黑金得分）</div></div>
                     <div class="help-line"><span class="help-emoji">🫥</span><div><b>四大皆空</b>：大金/小金/黄金九都没有</div></div>
                     <div class="help-line"><span class="help-emoji">🎯</span><div><b>赏金猎人</b>：赏金猎人指数最高（含独吞与大满贯加成）</div></div>
                     <div class="help-line"><span class="help-emoji">🧘</span><div><b>稳如老狗</b>：3人局陪跑次数最多（该回合分数不动）</div></div>
